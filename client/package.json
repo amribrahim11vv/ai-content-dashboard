@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "npx kill-port 5173 && vite",
+    "lint": "tsc -b --pretty false",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test:e2e": "playwright test"

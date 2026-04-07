@@ -2,6 +2,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { industries, industryPrompts } from "../db/schema.js";
 import { campaignModeInstructionBlock } from "./campaignMode.js";
+import { composePrompt } from "./promptComposer.js";
 import type { SubmissionSnapshot } from "./constants.js";
 import { isStrictPromptTemplates } from "./promptStrictEnv.js";
 import { validatePromptTemplateContract } from "./promptTemplateValidation.js";
@@ -99,13 +100,19 @@ export async function resolvePrompt(industryInput: string, snapshot: SubmissionS
 
   const industryPrompt = renderPromptTemplate(selected.promptTemplate, snapshot);
   const prefix = campaignModeInstructionBlock(snapshot.campaign_mode);
+  const composed = composePrompt({
+    campaignPrefix: prefix,
+    creativeDirection: industryPrompt,
+    snapshot,
+    mode: snapshot.campaign_mode,
+  });
 
   return {
     industrySlugUsed: usedSlug,
     promptVersionId: selected.id,
     promptVersionUsed: selected.version,
     isFallback,
-    renderedPrompt: prefix + industryPrompt,
+    renderedPrompt: composed,
     rawTemplate: selected.promptTemplate,
   };
 }

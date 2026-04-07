@@ -46,6 +46,125 @@ const retryBodySchema = z.object({
   row_version: z.number().int().nonnegative(),
 });
 
+const regenerateItemBodySchema = z.object({
+  item_type: z.enum(["post", "image", "video"]),
+  index: z.number().int().nonnegative(),
+  row_version: z.number().int().nonnegative(),
+  feedback: z.string().trim().max(1200).optional(),
+});
+
+type RegenerateItemType = z.infer<typeof regenerateItemBodySchema>["item_type"];
+
+const SECTION_KEYS: Record<RegenerateItemType, string[]> = {
+  post: ["posts"],
+  image: ["image_designs", "image_prompts", "creative_prompts", "design_prompts", "visual_prompts"],
+  video: ["video_prompts", "video_assets", "ai_video_assets", "assets"],
+};
+
+export function getSectionArray(result: Record<string, unknown>, type: RegenerateItemType): { key: string; items: unknown[] } | null {
+  const keys = SECTION_KEYS[type];
+  for (const key of keys) {
+    const v = result[key];
+    if (Array.isArray(v)) return { key, items: v };
+  }
+  return null;
+}
+
+export function getRegenerateItemSchema(type: RegenerateItemType): Record<string, unknown> {
+  if (type === "post") {
+    return {
+      type: "OBJECT",
+      required: ["item"],
+      properties: {
+        item: {
+          type: "OBJECT",
+          required: ["platform", "format", "goal", "post_ar", "post_en", "hashtags", "cta"],
+          properties: {
+            platform: { type: "STRING" },
+            format: { type: "STRING" },
+            goal: { type: "STRING" },
+            post_ar: { type: "STRING" },
+            post_en: { type: "STRING" },
+            hashtags: { type: "ARRAY", items: { type: "STRING" } },
+            cta: { type: "STRING" },
+          },
+        },
+      },
+    };
+  }
+  if (type === "image") {
+    return {
+      type: "OBJECT",
+      required: ["item"],
+      properties: {
+        item: {
+          type: "OBJECT",
+          required: [
+            "platform_format",
+            "design_type",
+            "goal",
+            "visual_scene",
+            "headline_text_overlay",
+            "supporting_copy",
+            "full_ai_image_prompt",
+            "caption_ar",
+            "caption_en",
+            "text_policy",
+            "conversion_trigger",
+          ],
+          properties: {
+            platform_format: { type: "STRING" },
+            design_type: { type: "STRING" },
+            goal: { type: "STRING" },
+            visual_scene: { type: "STRING" },
+            headline_text_overlay: { type: "STRING" },
+            supporting_copy: { type: "STRING" },
+            full_ai_image_prompt: { type: "STRING" },
+            caption_ar: { type: "STRING" },
+            caption_en: { type: "STRING" },
+            text_policy: { type: "STRING" },
+            conversion_trigger: { type: "STRING" },
+          },
+        },
+      },
+    };
+  }
+  return {
+    type: "OBJECT",
+    required: ["item"],
+    properties: {
+      item: {
+        type: "OBJECT",
+        required: ["platform", "duration", "style", "hook_type", "scenes", "caption_ar", "caption_en", "ai_tool_instructions", "why_this_converts"],
+        properties: {
+          platform: { type: "STRING" },
+          duration: { type: "STRING" },
+          style: { type: "STRING" },
+          hook_type: { type: "STRING" },
+          scenes: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              required: ["time", "label", "visual", "text", "audio"],
+              properties: {
+                time: { type: "STRING" },
+                label: { type: "STRING" },
+                visual: { type: "STRING" },
+                text: { type: "STRING" },
+                audio: { type: "STRING" },
+              },
+            },
+          },
+          caption_ar: { type: "STRING" },
+          caption_en: { type: "STRING" },
+          ai_tool_instructions: { type: "STRING" },
+          why_this_converts: { type: "STRING" },
+        },
+      },
+    },
+  };
+}
+
 export function hashIdempotencyKey(key: string): string {
   return createHash("sha256").update(String(key).trim(), "utf8").digest("hex");
 }
@@ -449,6 +568,113 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
       recordKitNotification(fr);
       return c.json(serializeKit(fr));
     }
+  });
+
+  app.post("/api/kits/:id/regenerate-item", async (c) => {
+    const id = c.req.param("id");
+    let body: z.infer<typeof regenerateItemBodySchema>;
+    try {
+      body = regenerateItemBodySchema.parse(await c.req.json());
+    } catch {
+      return c.json({ error: "Invalid body: item_type, index, row_version required." }, 400);
+    }
+
+    const row = await db.select().from(kits).where(eq(kits.id, id)).get();
+    if (!row) return c.json({ error: "Not found" }, 404);
+    if (row.rowVersion !== body.row_version) {
+      return c.json({ error: "row_version mismatch; refresh and try again." }, 409);
+    }
+    if (!row.resultJson) {
+      return c.json({ error: "Kit has no generated content to regenerate." }, 422);
+    }
+
+    let snapshot;
+    try {
+      snapshot = parseSubmissionSnapshotJson(row.briefJson);
+    } catch (e) {
+      return c.json({ error: String(e) }, 400);
+    }
+
+    let resultObj: Record<string, unknown>;
+    try {
+      const parsed = JSON.parse(row.resultJson);
+      if (!isPlainObject(parsed)) {
+        return c.json({ error: "Existing result_json is invalid." }, 422);
+      }
+      resultObj = parsed as Record<string, unknown>;
+    } catch {
+      return c.json({ error: "Existing result_json is invalid JSON." }, 422);
+    }
+
+    const section = getSectionArray(resultObj, body.item_type);
+    if (!section) {
+      return c.json({ error: `No ${body.item_type} section found in kit.` }, 422);
+    }
+    if (body.index >= section.items.length) {
+      return c.json({ error: `Index out of range. max=${section.items.length - 1}` }, 422);
+    }
+
+    const currentItem = section.items[body.index];
+    const settings = loadGeminiSettingsFromEnv();
+    if (!settings.apiKey) {
+      return c.json({ error: "Missing GEMINI_API_KEY." }, 500);
+    }
+    const correlationId = nanoid();
+    const resolved = await resolvePrompt(snapshot.industry, snapshot);
+    const schema = getRegenerateItemSchema(body.item_type);
+    const feedbackLine = body.feedback?.trim()
+      ? `User feedback (must be applied): ${body.feedback.trim()}`
+      : "User feedback: none provided.";
+    const promptText = [
+      "You are regenerating exactly ONE item inside an existing content kit.",
+      "Return JSON with shape: {\"item\": { ... }} matching the provided schema exactly.",
+      "Do not return arrays, wrappers, markdown, or extra keys.",
+      `Target item type: ${body.item_type}`,
+      `Target section key: ${section.key}`,
+      `Target index: ${body.index}`,
+      feedbackLine,
+      "",
+      "Original full creative context:",
+      resolved.renderedPrompt,
+      "",
+      "Current item to replace:",
+      JSON.stringify(currentItem, null, 2),
+    ].join("\n");
+
+    let generated: unknown;
+    try {
+      generated = await callGeminiAPI(promptText, settings, schema);
+    } catch (e) {
+      return c.json({ error: `Regenerate failed: ${String(e)}` }, 502);
+    }
+
+    if (!isPlainObject(generated) || !("item" in generated) || !isPlainObject(generated.item)) {
+      return c.json({ error: "Model returned invalid regenerate payload." }, 502);
+    }
+
+    const merged = { ...resultObj } as Record<string, unknown>;
+    const updatedItems = [...section.items];
+    updatedItems[body.index] = generated.item as Record<string, unknown>;
+    merged[section.key] = updatedItems;
+
+    const nextVersion = row.rowVersion + 1;
+    const updated = await db
+      .update(kits)
+      .set({
+        resultJson: JSON.stringify(merged),
+        correlationId,
+        modelUsed: settings.model,
+        lastError: "",
+        rowVersion: nextVersion,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(kits.id, id), eq(kits.rowVersion, body.row_version)))
+      .returning();
+
+    if (!updated.length) {
+      return c.json({ error: "Concurrent update; refresh and try again." }, 409);
+    }
+    return c.json(serializeKit(updated[0]!));
   });
 
   return app;

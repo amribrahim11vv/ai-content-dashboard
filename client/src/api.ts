@@ -61,6 +61,28 @@ export async function retryKit(id: string, briefJson: string, rowVersion: number
   return res.json() as Promise<KitSummary>;
 }
 
+export async function regenerateKitItem(
+  id: string,
+  payload: {
+    item_type: "post" | "image" | "video";
+    index: number;
+    row_version: number;
+    feedback?: string;
+  }
+): Promise<KitSummary> {
+  const res = await fetch(`${base}/api/kits/${id}/regenerate-item`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}));
+    const msg = (j as { error?: string }).error ?? res.statusText;
+    throw new ApiError(msg, res.status);
+  }
+  return res.json() as Promise<KitSummary>;
+}
+
 export type NotificationItem = {
   id: string;
   title: string;
@@ -277,6 +299,18 @@ export async function activatePromptVersion(id: string): Promise<{ item: PromptC
   return res.json() as Promise<{ item: PromptCatalogPrompt }>;
 }
 
+export async function deletePromptVersion(id: string): Promise<{ ok: true }> {
+  const res = await fetch(`${base}/api/prompt-catalog/prompts/${id}`, {
+    method: "DELETE",
+    headers: headers(),
+  });
+  if (!res.ok) {
+    const j = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(j.error ?? "Failed to delete prompt version");
+  }
+  return res.json() as Promise<{ ok: true }>;
+}
+
 export async function getFallbackPrompt(): Promise<{ item: PromptCatalogPrompt }> {
   const res = await fetch(`${base}/api/prompt-catalog/fallback`, { headers: headers() });
   if (!res.ok) throw new Error("No active fallback prompt");
@@ -287,6 +321,7 @@ export async function validatePromptTemplate(prompt_template: string): Promise<{
   ok: boolean;
   missing_variables: string[];
   found_variables: string[];
+  mode?: "creative_only" | "template_placeholders";
   required_variables: readonly string[];
   strict_mode?: boolean;
 }> {
@@ -300,6 +335,7 @@ export async function validatePromptTemplate(prompt_template: string): Promise<{
     ok: boolean;
     missing_variables: string[];
     found_variables: string[];
+    mode?: "creative_only" | "template_placeholders";
     required_variables: readonly string[];
     strict_mode?: boolean;
   }>;

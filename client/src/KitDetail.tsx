@@ -16,11 +16,11 @@ function briefBrand(json: string): string {
 }
 
 const btnPrimary =
-  "inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary-container px-5 py-3 font-semibold text-on-primary-container shadow-lg transition hover:shadow-[0_0_20px_rgb(var(--c-primary)/0.35)] focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary-container px-5 py-3 font-semibold text-on-primary-container shadow-lg transition hover:shadow-[0_0_20px_rgb(var(--c-primary)/0.35)] focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50 dark:from-brand-primary dark:to-brand-accent dark:text-brand-darkText";
 const btnSecondary =
-  "inline-flex items-center gap-2 rounded-xl border border-outline/30 bg-surface-container-high px-5 py-3 font-semibold text-on-surface transition hover:bg-surface-container-highest focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex items-center gap-2 rounded-xl border border-outline/30 bg-surface-container-high px-5 py-3 font-semibold text-on-surface transition hover:bg-surface-container-highest focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50 dark:border-brand-muted/45 dark:bg-earth-darkCard dark:text-brand-darkText";
 const btnGhost =
-  "rounded-lg px-1 text-sm font-semibold text-primary hover:underline focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
+  "rounded-lg px-1 text-sm font-semibold text-primary hover:underline focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 focus-visible:ring-offset-surface dark:text-brand-sand";
 
 export default function KitDetail() {
   const { id } = useParams<{ id: string }>();
@@ -87,9 +87,9 @@ export default function KitDetail() {
     return (
       <div className="glass-panel rounded-3xl border border-outline/30 p-8 text-on-surface">
         <p className="mb-4">{err ?? "—"}</p>
-        <Link to="/" className={btnGhost + " inline-flex items-center gap-1"}>
+        <Link to="/generated-kits" className={btnGhost + " inline-flex items-center gap-1"}>
           <span className="material-symbols-outlined text-lg">arrow_back</span>
-          Back to dashboard
+          Back to generated kits
         </Link>
       </div>
     );
@@ -117,7 +117,7 @@ export default function KitDetail() {
         {toasts.map((t) => (
           <div
             key={t.id}
-            className="rounded-xl border border-outline/30 bg-surface-container-high px-4 py-2 text-sm text-on-surface shadow-lg"
+            className="rounded-xl border border-outline/30 bg-surface-container-high px-4 py-2 text-sm text-on-surface shadow-lg dark:border-brand-muted/45 dark:bg-earth-darkCard dark:text-brand-darkText"
             role="status"
           >
             {t.message}
@@ -127,9 +127,9 @@ export default function KitDetail() {
 
       <div className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <nav className="mb-3 flex flex-wrap items-center gap-2 text-xs text-on-surface-variant">
-            <Link to="/" className="hover:text-on-surface">
-              Dashboard
+          <nav className="mb-3 flex flex-wrap items-center gap-2 text-xs text-on-surface-variant dark:text-brand-darkText/75">
+            <Link to="/generated-kits" className="hover:text-on-surface">
+              Generated kits
             </Link>
             <span className="material-symbols-outlined text-[14px]">chevron_right</span>
             <span className="text-primary">Kit details</span>
@@ -170,9 +170,9 @@ export default function KitDetail() {
         </div>
       </div>
 
-      <div className="glass-panel mb-8 space-y-6 rounded-3xl border border-outline/30 p-6 md:p-8">
+      <div className="glass-panel mb-8 space-y-6 rounded-3xl border border-outline/30 p-6 md:p-8 dark:border-brand-muted/45 dark:bg-earth-darkCard/80">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <Link to="/" className={btnGhost + " inline-flex items-center gap-1"}>
+          <Link to="/generated-kits" className={btnGhost + " inline-flex items-center gap-1"}>
             <span className="material-symbols-outlined text-lg">arrow_back</span>
             Back
           </Link>
@@ -225,7 +225,7 @@ export default function KitDetail() {
             </div>
           }
         >
-          <LazyViewer kit={kit} />
+          <LazyViewer kit={kit} onKitUpdate={setKit} />
         </Suspense>
       )}
     </>

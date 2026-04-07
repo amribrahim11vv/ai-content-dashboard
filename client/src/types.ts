@@ -46,3 +46,44 @@ export type BriefForm = {
   num_image_designs: number;
   num_video_prompts: number;
 };
+
+export type KitPostItem = {
+  platform?: string;
+  format?: string;
+  goal?: string;
+  post_ar?: string;
+  post_en?: string;
+  post?: string;
+  /** Backward compatibility for historical kits. */
+  caption?: string;
+  hashtags?: string[];
+  cta?: string;
+};
+
+export type KitImageDesignItem = {
+  platform_format?: string;
+  design_type?: string;
+  goal?: string;
+  visual_scene?: string;
+  headline_text_overlay?: string;
+  supporting_copy?: string;
+  full_ai_image_prompt?: string;
+  caption_ar?: string;
+  caption_en?: string;
+  caption?: string;
+  text_policy?: string;
+  conversion_trigger?: string;
+};
+
+export type KitVideoPromptItem = {
+  platform?: string;
+  duration?: string;
+  style?: string;
+  hook_type?: string;
+  scenes?: Array<Record<string, unknown>>;
+  caption_ar?: string;
+  caption_en?: string;
+  caption?: string;
+  ai_tool_instructions?: string;
+  why_this_converts?: string;
+};

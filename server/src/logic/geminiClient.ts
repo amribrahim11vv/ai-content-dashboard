@@ -36,7 +36,11 @@ function truncate(value: string, maxLen: number): string {
   return t.slice(0, maxLen - 3) + "...";
 }
 
-export async function callGeminiAPI(promptText: string, settings: GeminiSettings): Promise<unknown> {
+export async function callGeminiAPI(
+  promptText: string,
+  settings: GeminiSettings,
+  responseSchema?: Record<string, unknown>
+): Promise<unknown> {
   const url =
     "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(settings.model) + ":generateContent";
   const payload = {
@@ -48,7 +52,7 @@ export async function callGeminiAPI(promptText: string, settings: GeminiSettings
     ],
     generationConfig: {
       responseMimeType: "application/json",
-      responseSchema: getGeminiResponseSchema(),
+      responseSchema: responseSchema ?? getGeminiResponseSchema(),
       temperature: 0.4,
       topP: 0.9,
     },

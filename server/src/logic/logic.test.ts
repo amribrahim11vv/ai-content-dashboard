@@ -6,6 +6,9 @@ import { validateGeminiResponse } from "./validate.js";
 import { validatePromptTemplateContract } from "./promptTemplateValidation.js";
 import { isStrictPromptTemplates } from "./promptStrictEnv.js";
 import { campaignModeInstructionBlock } from "./campaignMode.js";
+import { buildClientContextBlock, buildOutputPolicyBlock, composePrompt } from "./promptComposer.js";
+import { getGeminiResponseSchema } from "./responseSchema.js";
+import { getRegenerateItemSchema, getSectionArray } from "../routes/kits.js";
 
 describe("parse", () => {
   it("sanitizes counts", () => {
@@ -66,6 +69,13 @@ describe("promptTemplateValidation", () => {
     const r = validatePromptTemplateContract(t);
     expect(r.ok).toBe(true);
   });
+
+  it("accepts creative-only text without placeholders", () => {
+    const r = validatePromptTemplateContract("Focus on trust, clarity, and practical demonstrations.");
+    expect(r.ok).toBe(true);
+    expect(r.mode).toBe("creative_only");
+    expect(r.missingVariables.length).toBe(0);
+  });
 });
 
 describe("campaignModeInstructionBlock", () => {
@@ -73,6 +83,69 @@ describe("campaignModeInstructionBlock", () => {
     expect(campaignModeInstructionBlock("social").length).toBeGreaterThan(40);
     expect(campaignModeInstructionBlock("offer")).toContain("conversion");
     expect(campaignModeInstructionBlock("deep")).toContain("authority");
+  });
+});
+
+describe("promptComposer", () => {
+  it("injects client context and strict output policy", () => {
+    const snapshot = buildSubmissionSnapshot({
+      brand_name: "Alpha Seeds",
+      industry: "Agriculture",
+      target_audience: "Farm owners",
+      main_goal: "Increase inquiries",
+      platforms: "Instagram, YouTube",
+      campaign_mode: "offer",
+      num_posts: 6,
+      num_image_designs: 4,
+      num_video_prompts: 2,
+    });
+    const composed = composePrompt({
+      campaignPrefix: campaignModeInstructionBlock("offer"),
+      creativeDirection: "Show durability in real muddy field operations.",
+      snapshot,
+      mode: "offer",
+    });
+    expect(composed).toContain("Client Context (auto-injected)");
+    expect(composed).toContain("Brand name: Alpha Seeds");
+    expect(composed).toContain("Use `post_ar` and `post_en`");
+    expect(composed).toContain("equivalent versions in meaning");
+    expect(composed).toContain("DO NOT include Arabic typography");
+  });
+
+  it("output policy contains media caption constraints", () => {
+    const block = buildOutputPolicyBlock("social");
+    expect(block).toContain("caption_ar");
+    expect(block).toContain("caption_en");
+  });
+
+  it("client context block includes requested counts", () => {
+    const snapshot = buildSubmissionSnapshot({
+      num_posts: 9,
+      num_image_designs: 5,
+      num_video_prompts: 3,
+    });
+    const block = buildClientContextBlock(snapshot);
+    expect(block).toContain("Requested posts count: 9");
+    expect(block).toContain("Requested image designs count: 5");
+    expect(block).toContain("Requested video prompts count: 3");
+  });
+});
+
+describe("responseSchema", () => {
+  it("requires post key and media captions", () => {
+    const schema = getGeminiResponseSchema();
+    const props = (schema.properties ?? {}) as Record<string, any>;
+    const postReq = props.posts.items.required as string[];
+    expect(postReq).toContain("post_ar");
+    expect(postReq).toContain("post_en");
+
+    const imageReq = props.image_designs.items.required as string[];
+    expect(imageReq).toContain("caption_ar");
+    expect(imageReq).toContain("caption_en");
+
+    const videoReq = props.video_prompts.items.required as string[];
+    expect(videoReq).toContain("caption_ar");
+    expect(videoReq).toContain("caption_en");
   });
 });
 
@@ -96,7 +169,7 @@ describe("validate", () => {
   it("requires kpi for high budget", () => {
     const data = buildSubmissionSnapshot({ brand_name: "b", budget_level: "7", num_posts: 1, num_image_designs: 1, num_video_prompts: 1 });
     const bad = {
-      posts: [{ platform: "x", format: "y", goal: "g", caption: "c", hashtags: ["#a"], cta: "x" }],
+      posts: [{ platform: "x", format: "y", goal: "g", post_ar: "c", post_en: "c", hashtags: ["#a"], cta: "x" }],
       image_designs: [
         {
           platform_format: "1:1",
@@ -106,6 +179,8 @@ describe("validate", () => {
           headline_text_overlay: "h",
           supporting_copy: "s",
           full_ai_image_prompt: "9:16 detailed",
+          caption_ar: "تعليق الصورة",
+          caption_en: "Image caption",
           text_policy: "ar",
           conversion_trigger: "t",
         },
@@ -117,6 +192,8 @@ describe("validate", () => {
           style: "s",
           hook_type: "h",
           scenes: [{ time: "0", label: "l", visual: "v", text: "t", audio: "a" }],
+          caption_ar: "تعليق الفيديو",
+          caption_en: "Video caption",
           ai_tool_instructions: "i",
           why_this_converts: "w",
         },
@@ -143,5 +220,25 @@ describe("validate", () => {
       },
     };
     expect(validateGeminiResponse(bad, data).some((e) => e.includes("kpi_tracking"))).toBe(true);
+  });
+});
+
+describe("regenerate-item helpers", () => {
+  it("selects correct section by item type", () => {
+    const obj = {
+      posts: [{ post_ar: "a", post_en: "a" }],
+      image_designs: [{ caption_ar: "a", caption_en: "a" }],
+      video_prompts: [{ caption_ar: "a", caption_en: "a" }],
+    };
+    expect(getSectionArray(obj, "post")?.key).toBe("posts");
+    expect(getSectionArray(obj, "image")?.key).toBe("image_designs");
+    expect(getSectionArray(obj, "video")?.key).toBe("video_prompts");
+  });
+
+  it("builds bilingual regenerate schema for post", () => {
+    const schema = getRegenerateItemSchema("post") as Record<string, any>;
+    const req = schema.properties.item.required as string[];
+    expect(req).toContain("post_ar");
+    expect(req).toContain("post_en");
   });
 });

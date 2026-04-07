@@ -41,7 +41,7 @@ export function validateGeminiResponse(aiContent: unknown, data: SubmissionSnaps
 
   const posts = Array.isArray(aiContent.posts) ? aiContent.posts : [];
   posts.forEach((item: unknown, idx: number) => {
-    validateObjectKeys(item, ["platform", "format", "goal", "caption", "hashtags", "cta"], "posts[" + idx + "]", errors);
+    validateObjectKeys(item, ["platform", "format", "goal", "post_ar", "post_en", "hashtags", "cta"], "posts[" + idx + "]", errors);
     if (isPlainObject(item) && !Array.isArray(item.hashtags)) {
       errors.push("posts[" + idx + "].hashtags must be an array.");
     }
@@ -59,6 +59,8 @@ export function validateGeminiResponse(aiContent: unknown, data: SubmissionSnaps
         "headline_text_overlay",
         "supporting_copy",
         "full_ai_image_prompt",
+        "caption_ar",
+        "caption_en",
         "text_policy",
         "conversion_trigger",
       ],
@@ -71,7 +73,7 @@ export function validateGeminiResponse(aiContent: unknown, data: SubmissionSnaps
   videos.forEach((item: unknown, idx: number) => {
     validateObjectKeys(
       item,
-      ["platform", "duration", "style", "hook_type", "scenes", "ai_tool_instructions", "why_this_converts"],
+      ["platform", "duration", "style", "hook_type", "scenes", "caption_ar", "caption_en", "ai_tool_instructions", "why_this_converts"],
       "video_prompts[" + idx + "]",
       errors
     );

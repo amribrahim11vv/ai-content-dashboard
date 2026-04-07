@@ -41,8 +41,8 @@ function navLinkClass(active: boolean) {
   return [
     "flex items-center gap-3 rounded-xl px-4 py-3 font-manrope text-xs font-semibold uppercase tracking-wider transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
     active
-      ? "scale-[1.02] border-e-2 border-primary bg-primary/15 text-primary"
-      : "text-on-surface-variant hover:bg-surface-container-high/70 hover:text-on-surface",
+      ? "scale-[1.02] border-e-2 border-primary bg-primary/15 text-primary dark:border-brand-sand dark:bg-brand-primary/20 dark:text-brand-darkText"
+      : "text-on-surface-variant hover:bg-surface-container-high/70 hover:text-on-surface dark:text-brand-darkText/80 dark:hover:bg-earth-darkBg/55 dark:hover:text-brand-darkText",
   ].join(" ");
 }
 
@@ -185,7 +185,7 @@ export default function AppLayout({
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-surface text-on-surface">
+    <div className="min-h-screen overflow-x-hidden bg-surface text-on-surface dark:bg-earth-darkBg dark:text-brand-darkText">
       <GlobalSearchOverlay
         open={searchOpen}
         onClose={() => setSearchOpen(false)}
@@ -194,12 +194,12 @@ export default function AppLayout({
         onQueryChange={setSearchQuery}
       />
 
-      <aside className="fixed start-0 top-0 z-50 flex h-screen w-64 flex-col border-e border-outline/25 bg-surface-container-low/70 px-4 py-8 shadow-[20px_0_40px_rgb(var(--c-on-surface)/0.2)] backdrop-blur-3xl">
+      <aside className="fixed start-0 top-0 z-50 flex h-screen w-64 flex-col border-e border-outline/25 bg-surface-container-low/70 px-4 py-8 shadow-[20px_0_40px_rgb(var(--c-on-surface)/0.2)] backdrop-blur-3xl dark:border-brand-muted/40 dark:bg-earth-darkCard/85">
         <div className="mb-10 px-4">
           <h1 className="bg-gradient-to-r from-primary to-tertiary bg-clip-text font-headline text-2xl font-bold tracking-tighter text-transparent">
             Ethereal Engine
           </h1>
-          <p className="mt-1 font-manrope text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+          <p className="mt-1 font-manrope text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant dark:text-brand-darkText/75">
             AI Content Studio
           </p>
         </div>
@@ -207,6 +207,10 @@ export default function AppLayout({
           <NavLink to="/" end className={({ isActive }) => navLinkClass(isActive)}>
             {icon("dashboard")}
             <span>Dashboard</span>
+          </NavLink>
+          <NavLink to="/generated-kits" className={({ isActive }) => navLinkClass(isActive)}>
+            {icon("inventory_2")}
+            <span>Generated Kits</span>
           </NavLink>
           <NavLink to="/wizard" className={({ isActive }) => navLinkClass(isActive)}>
             {icon("auto_awesome")}
@@ -216,14 +220,14 @@ export default function AppLayout({
         <div className="mt-auto space-y-2 border-t border-outline/25 pt-6">
           <Link
             to="/wizard"
-            className="mb-6 block w-full scale-[1.02] rounded-xl bg-gradient-to-r from-primary to-primary-container py-3 text-center font-headline font-bold text-on-primary-container shadow-lg shadow-primary-container/20 transition-opacity hover:opacity-90 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+            className="mb-6 block w-full scale-[1.02] rounded-xl bg-gradient-to-r from-primary to-primary-container py-3 text-center font-headline font-bold text-on-primary-container shadow-lg shadow-primary-container/20 transition-opacity hover:opacity-90 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface dark:from-brand-primary dark:to-primary"
           >
             Create new Kit
           </Link>
         </div>
       </aside>
 
-      <header className="fixed end-0 top-0 z-40 flex h-16 w-[calc(100%-16rem)] items-center justify-between border-b border-outline/20 bg-surface/65 px-8 backdrop-blur-xl">
+      <header className="fixed end-0 top-0 z-40 flex h-16 w-[calc(100%-16rem)] items-center justify-between border-b border-outline/20 bg-surface/65 px-8 backdrop-blur-xl dark:border-brand-muted/35 dark:bg-earth-darkBg/80">
         <div className="flex items-center gap-4">
           <div className="group relative">
             <span className="material-symbols-outlined pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant">
@@ -234,7 +238,7 @@ export default function AppLayout({
               readOnly
               onFocus={openSearch}
               onClick={openSearch}
-              className="w-64 cursor-pointer rounded-full border-none bg-surface-container-lowest py-1.5 ps-10 pe-4 text-sm text-on-surface placeholder:text-on-surface-variant/60 transition-all focus:ring-2 focus:ring-primary/45"
+              className="w-64 cursor-pointer rounded-full border-none bg-surface-container-lowest py-1.5 ps-10 pe-4 text-sm text-on-surface placeholder:text-on-surface-variant/60 transition-all focus:ring-2 focus:ring-primary/45 dark:bg-earth-darkCard/80 dark:text-brand-darkText"
               placeholder="Search kits…"
               aria-label="Open search"
               aria-haspopup="dialog"
@@ -263,7 +267,7 @@ export default function AppLayout({
           <button
             type="button"
             onClick={toggleTheme}
-            className="inline-flex items-center gap-2 rounded-lg border border-outline/30 bg-surface-container-high px-3 py-2 text-xs font-bold text-on-surface transition hover:bg-surface-container-highest focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+            className="inline-flex items-center gap-2 rounded-lg border border-outline/30 bg-surface-container-high px-3 py-2 text-xs font-bold text-on-surface transition hover:bg-surface-container-highest focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface dark:border-brand-muted/40 dark:bg-earth-darkCard dark:text-brand-darkText"
             aria-label="Toggle theme"
             title={themeMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           >
@@ -292,7 +296,7 @@ export default function AppLayout({
               </button>
               {notifOpen && (
                 <div
-                  className="absolute end-0 top-full z-[70] mt-2 w-96 max-w-[calc(100vw-2rem)] rounded-2xl border border-outline-variant/35 bg-surface-container-high/95 p-4 shadow-2xl backdrop-blur-xl"
+                  className="absolute end-0 top-full z-[70] mt-2 w-96 max-w-[calc(100vw-2rem)] rounded-2xl border border-outline-variant/35 bg-surface-container-high/95 p-4 shadow-2xl backdrop-blur-xl dark:border-brand-muted/40 dark:bg-earth-darkCard/95"
                   role="region"
                   aria-label="Notifications"
                 >
@@ -349,7 +353,7 @@ export default function AppLayout({
               </button>
               {settingsOpen && (
                 <div
-                  className="absolute end-0 top-full z-[70] mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-outline-variant/35 bg-surface-container-high/95 p-4 shadow-2xl backdrop-blur-xl"
+                  className="absolute end-0 top-full z-[70] mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-outline-variant/35 bg-surface-container-high/95 p-4 shadow-2xl backdrop-blur-xl dark:border-brand-muted/40 dark:bg-earth-darkCard/95"
                   role="region"
                   aria-label="Quick settings"
                 >
@@ -394,15 +398,15 @@ export default function AppLayout({
             >
               <div>
                 <p className="font-manrope text-sm font-bold text-on-surface">{profileName}</p>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">AI Studio</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant dark:text-brand-darkText/75">AI Studio</p>
               </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary-container/40 font-headline text-sm font-bold text-on-primary-container ring-2 ring-primary/30">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary-container/40 font-headline text-sm font-bold text-on-primary-container ring-2 ring-primary/30 dark:from-brand-primary/30 dark:to-brand-accent/30 dark:text-brand-darkText">
                 {(profileName.trim().slice(0, 2) || "AI").toUpperCase()}
               </div>
             </button>
             {userOpen && (
               <div
-                className="absolute end-0 top-full z-[70] mt-2 w-56 rounded-2xl border border-outline-variant/35 bg-surface-container-high/95 py-2 shadow-2xl backdrop-blur-xl"
+                className="absolute end-0 top-full z-[70] mt-2 w-56 rounded-2xl border border-outline-variant/35 bg-surface-container-high/95 py-2 shadow-2xl backdrop-blur-xl dark:border-brand-muted/40 dark:bg-earth-darkCard/95"
                 role="menu"
                 aria-label="Account menu"
               >

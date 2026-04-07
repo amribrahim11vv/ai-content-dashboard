@@ -15,6 +15,7 @@ export type PromptTemplateValidation = {
   ok: boolean;
   missingVariables: string[];
   foundVariables: string[];
+  mode: "creative_only" | "template_placeholders";
 };
 
 export function extractPromptVariables(template: string): string[] {
@@ -37,6 +38,14 @@ function hasIndustryPlaceholder(foundSet: Set<string>): boolean {
 
 export function validatePromptTemplateContract(template: string): PromptTemplateValidation {
   const foundVariables = extractPromptVariables(template);
+  if (foundVariables.length === 0) {
+    return {
+      ok: true,
+      missingVariables: [],
+      foundVariables: [],
+      mode: "creative_only",
+    };
+  }
   const foundSet = new Set(foundVariables);
   const missingVariables = REQUIRED_VARIABLES.filter((v) => {
     if (v === "industry") return !hasIndustryPlaceholder(foundSet);
@@ -46,6 +55,7 @@ export function validatePromptTemplateContract(template: string): PromptTemplate
     ok: missingVariables.length === 0,
     missingVariables,
     foundVariables,
+    mode: "template_placeholders",
   };
 }
 

@@ -8,6 +8,22 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Earth/Brand aliases (additive, semantic tokens remain source of truth)
+        earth: {
+          bg: "#D7D2C8",
+          alt: "#D6EAE0",
+          card: "#FFFFFF",
+          darkBg: "#1A1004",
+          darkCard: "#2A1A07",
+        },
+        brand: {
+          text: "#362108",
+          muted: "#4B411A",
+          primary: "#004D3D",
+          accent: "#6A2E2A",
+          sand: "#E1BC80",
+          darkText: "#D7D2C8",
+        },
         // Digital Luxury palette (via CSS variables)
         background: "rgb(var(--c-background) / <alpha-value>)",
         "on-background": "rgb(var(--c-on-background) / <alpha-value>)",

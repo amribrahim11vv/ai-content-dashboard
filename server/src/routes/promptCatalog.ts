@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { db } from "../db/index.js";
-import { industries, industryPrompts } from "../db/schema.js";
+import { industries, industryPrompts, kits } from "../db/schema.js";
 import { normalizeIndustrySlug } from "../logic/promptResolver.js";
 import { isStrictPromptTemplates } from "../logic/promptStrictEnv.js";
 import { requiredPromptVariables, validatePromptTemplateContract } from "../logic/promptTemplateValidation.js";
@@ -129,6 +129,7 @@ export function createPromptCatalogRouter(mw: (c: import("hono").Context, next: 
       ok: result.ok,
       missing_variables: result.missingVariables,
       found_variables: result.foundVariables,
+      mode: result.mode,
       required_variables: requiredPromptVariables(),
       strict_mode: isStrictPromptTemplates(),
     });
@@ -237,6 +238,24 @@ export function createPromptCatalogRouter(mw: (c: import("hono").Context, next: 
     await db.update(industryPrompts).set({ status: "active", updatedAt: now }).where(eq(industryPrompts.id, id)).run();
     const updated = await db.select().from(industryPrompts).where(eq(industryPrompts.id, id)).get();
     return c.json({ item: toPromptDto(updated!) });
+  });
+
+  app.delete("/prompt-catalog/prompts/:id", async (c) => {
+    const id = c.req.param("id");
+    const target = await db.select().from(industryPrompts).where(eq(industryPrompts.id, id)).get();
+    if (!target) return c.json({ error: "Prompt version not found" }, 404);
+
+    if (target.status === "active") {
+      return c.json({ error: "Cannot delete active prompt version. Activate another version first." }, 400);
+    }
+
+    const usedByKit = await db.select().from(kits).where(eq(kits.promptVersionId, id)).get();
+    if (usedByKit) {
+      return c.json({ error: "Cannot delete prompt version already referenced by generated kits." }, 400);
+    }
+
+    await db.delete(industryPrompts).where(eq(industryPrompts.id, id)).run();
+    return c.json({ ok: true });
   });
 
   app.get("/prompt-catalog/fallback", async (c) => {

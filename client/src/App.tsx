@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import ContentWizard from "./ContentWizard";
 import KitDetail from "./KitDetail";
 import Dashboard from "./Dashboard";
+import GeneratedKitsPage from "./GeneratedKitsPage";
 import AppLayout from "./layout/AppLayout";
 import PromptCatalogPage from "./pages/PromptCatalogPage";
 import SocialCampaignWizard from "./pages/wizards/SocialCampaignWizard";
@@ -26,6 +27,7 @@ export default function App() {
     >
       <Routes>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/generated-kits" element={<GeneratedKitsPage />} />
         <Route path="/wizard" element={<ContentWizard />} />
         <Route path="/wizard/social" element={<SocialCampaignWizard />} />
         <Route path="/wizard/offer" element={<OfferProductWizard />} />

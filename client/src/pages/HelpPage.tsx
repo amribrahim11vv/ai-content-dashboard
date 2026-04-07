@@ -62,10 +62,10 @@ export default function HelpPage() {
       <section className="mx-auto mb-16 max-w-5xl text-center">
         <h1 className="headline mb-6 text-4xl font-black tracking-tight text-on-surface md:text-6xl">
           How can we{" "}
-          <span className="bg-gradient-to-r from-tertiary to-primary bg-clip-text text-transparent">illuminate</span> your
+          <span className="bg-gradient-to-r from-tertiary to-primary bg-clip-text text-transparent dark:from-brand-sand dark:to-brand-primary">illuminate</span> your
           journey?
         </h1>
-        <p className="mx-auto mb-10 max-w-2xl text-lg text-on-surface-variant">
+        <p className="mx-auto mb-10 max-w-2xl text-lg text-on-surface-variant dark:text-brand-darkText/80">
           Access the Ethereal Engine knowledge base, technical documentation, and direct support lines to keep your vision
           in focus.
         </p>
@@ -79,7 +79,7 @@ export default function HelpPage() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="glow-focus w-full rounded-2xl border-none bg-surface-container-lowest py-5 ps-14 pe-6 text-on-surface placeholder:text-outline transition-all focus:ring-2 focus:ring-primary/35"
+            className="glow-focus w-full rounded-2xl border-none bg-surface-container-lowest py-5 ps-14 pe-6 text-on-surface placeholder:text-outline transition-all focus:ring-2 focus:ring-primary/35 dark:bg-earth-darkCard dark:text-brand-darkText dark:placeholder:text-brand-darkText/45"
             placeholder="Search guides and FAQ (API)…"
             aria-label="Filter help topics"
           />
@@ -90,7 +90,7 @@ export default function HelpPage() {
         {filteredResources.map((r) => (
           <div
             key={r.id}
-            className="glass-panel group rounded-[1.5rem] border-none p-8 transition-all hover:bg-surface-container-high"
+            className="glass-panel group rounded-[1.5rem] border-none p-8 transition-all hover:bg-surface-container-high dark:bg-earth-darkCard/85 dark:hover:bg-earth-darkCard"
           >
             <div
               className={
@@ -114,15 +114,15 @@ export default function HelpPage() {
           </div>
         ))}
 
-        <div className="glass-panel flex flex-col items-center justify-center rounded-[1.5rem] border-none bg-gradient-to-br from-surface-container-high to-surface-container p-8 text-center">
+        <div className="glass-panel flex flex-col items-center justify-center rounded-[1.5rem] border-none bg-gradient-to-br from-surface-container-high to-surface-container p-8 text-center dark:from-earth-darkCard dark:to-earth-darkBg">
           <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-secondary-container/20 text-secondary">
             <span className="material-symbols-outlined text-4xl">support_agent</span>
           </div>
           <h3 className="headline mb-3 text-xl font-bold">Need Direct Help?</h3>
-          <p className="mb-6 text-sm text-on-surface-variant">Our senior architects are available for high-tier support requests.</p>
+          <p className="mb-6 text-sm text-on-surface-variant dark:text-brand-darkText/75">Our senior architects are available for high-tier support requests.</p>
           <button
             type="button"
-            className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-container py-4 font-black tracking-tight text-on-primary-container transition-all hover:scale-[1.02] active:scale-95"
+            className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-container py-4 font-black tracking-tight text-on-primary-container transition-all hover:scale-[1.02] active:scale-95 dark:from-brand-primary dark:to-brand-accent dark:text-brand-darkText"
           >
             CONTACT SUPPORT
           </button>
@@ -142,10 +142,10 @@ export default function HelpPage() {
         </div>
         <div className="space-y-4">
           {filteredFaq.map((item, i) => (
-            <div key={i} className="overflow-hidden rounded-2xl bg-surface-container-low">
+            <div key={i} className="overflow-hidden rounded-2xl bg-surface-container-low dark:bg-earth-darkCard/85">
               <button
                 type="button"
-                className="flex w-full items-center justify-between px-8 py-6 text-start transition-colors hover:bg-surface-container"
+                className="flex w-full items-center justify-between px-8 py-6 text-start transition-colors hover:bg-surface-container dark:hover:bg-earth-darkBg/65"
               >
                 <span className="font-bold text-on-surface">{item.q}</span>
                 <span className="material-symbols-outlined text-on-surface-variant">expand_more</span>
@@ -163,19 +163,19 @@ export default function HelpPage() {
         )}
       </section>
 
-      <section className="relative mx-auto flex max-w-5xl flex-col items-center gap-12 overflow-hidden rounded-[2.5rem] bg-surface-container-highest p-12 md:flex-row">
+      <section className="relative mx-auto flex max-w-5xl flex-col items-center gap-12 overflow-hidden rounded-[2.5rem] bg-surface-container-highest p-12 md:flex-row dark:bg-earth-darkCard">
         <div className="absolute -end-32 -top-32 h-64 w-64 bg-tertiary/10 blur-[100px]" />
         <div className="absolute -bottom-32 -start-32 h-64 w-64 bg-primary/10 blur-[100px]" />
         <div className="relative z-10 flex-1">
           <h2 className="headline mb-4 text-3xl font-bold">Still seeking answers?</h2>
-          <p className="text-on-surface-variant">
+          <p className="text-on-surface-variant dark:text-brand-darkText/80">
             Join our Discord community where over 50,000 directors share techniques, workflows, and custom node configurations.
           </p>
         </div>
         <div className="relative z-10 flex shrink-0 gap-4">
           <button
             type="button"
-            className="flex items-center gap-3 rounded-xl border border-outline-variant/30 bg-surface-container-low px-8 py-4 font-bold transition-all hover:bg-surface-container-high"
+            className="flex items-center gap-3 rounded-xl border border-outline-variant/30 bg-surface-container-low px-8 py-4 font-bold transition-all hover:bg-surface-container-high dark:border-brand-muted/45 dark:bg-earth-darkBg/55 dark:hover:bg-earth-darkBg/75"
           >
             <span className="material-symbols-outlined">forum</span>
             Discord Community

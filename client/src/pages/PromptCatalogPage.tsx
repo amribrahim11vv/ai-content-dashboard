@@ -3,6 +3,7 @@ import {
   activatePromptVersion,
   createPromptCatalogIndustry,
   createPromptVersion,
+  deletePromptVersion,
   getFallbackPrompt,
   listPromptCatalogIndustries,
   listPromptVersions,
@@ -32,6 +33,10 @@ export default function PromptCatalogPage() {
   const selectedSlug = useMemo(
     () => (selectedIndustry === "__fallback__" ? null : selectedIndustry),
     [selectedIndustry]
+  );
+  const isCreativeOnlyTemplate = useMemo(
+    () => !/\{\{\s*[a-zA-Z0-9_]+\s*\}\}/.test(template),
+    [template]
   );
 
   async function refreshIndustries() {
@@ -71,15 +76,16 @@ export default function PromptCatalogPage() {
     <section className="space-y-6">
       <header className="space-y-2">
         <h1 className="headline text-4xl font-black tracking-tight text-on-surface md:text-5xl">Prompt Catalog</h1>
-        <p className="max-w-3xl text-on-surface-variant">
-          Dynamic prompt management per industry with versioning and global fallback. Use placeholders like{" "}
-          <code>{"{{brand_name}}"}</code> in templates.
+        <p className="max-w-3xl text-brand-muted dark:text-on-surface-variant">
+          Dynamic prompt management per industry with versioning and global fallback. Write the creative direction only —
+          client data from the wizard is injected automatically before generation. Placeholder templates remain supported
+          for legacy versions.
         </p>
       </header>
 
       {message && (
         <div
-          className="rounded-xl border border-outline-variant/20 bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant"
+          className="rounded-xl border border-brand-sand/30 bg-earth-card px-4 py-3 text-sm text-brand-muted dark:border-outline/30 dark:bg-surface-container-low dark:text-on-surface-variant"
           role="status"
         >
           {message}
@@ -92,7 +98,7 @@ export default function PromptCatalogPage() {
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-3xl border border-outline-variant/25 bg-surface-container p-6 lg:col-span-2">
+        <div className="rounded-3xl border border-brand-sand/30 bg-earth-card p-6 lg:col-span-2 dark:border-outline/30 dark:bg-surface-container-low">
           <h2 className="headline mb-4 text-xl font-bold">Add industry</h2>
           <div className="grid grid-cols-1 gap-3">
             <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
@@ -100,7 +106,7 @@ export default function PromptCatalogPage() {
               <input
                 value={newIndustryName}
                 onChange={(e) => setNewIndustryName(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-outline-variant/30 bg-surface-container-lowest px-3 py-2 text-sm focus:ring-2 focus:ring-primary/35"
+                className="mt-2 w-full rounded-xl border border-brand-sand/30 bg-earth-card px-3 py-2 text-sm focus:ring-2 focus:ring-primary/35 dark:border-outline/30 dark:bg-surface-container-high"
                 placeholder="e.g. Travel"
               />
             </label>
@@ -109,7 +115,7 @@ export default function PromptCatalogPage() {
               <input
                 value={newIndustrySlug}
                 onChange={(e) => setNewIndustrySlug(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-outline-variant/30 bg-surface-container-lowest px-3 py-2 text-sm focus:ring-2 focus:ring-primary/35"
+                className="mt-2 w-full rounded-xl border border-brand-sand/30 bg-earth-card px-3 py-2 text-sm focus:ring-2 focus:ring-primary/35 dark:border-outline/30 dark:bg-surface-container-high"
                 placeholder="e.g. travel"
               />
             </label>
@@ -117,7 +123,7 @@ export default function PromptCatalogPage() {
               <button
                 type="button"
                 disabled={creatingIndustry}
-                className="h-[38px] w-full rounded-xl bg-primary px-6 text-sm font-bold text-on-primary disabled:opacity-50"
+                className="h-[38px] w-full rounded-xl bg-brand-primary px-6 text-sm font-bold text-white disabled:opacity-50 hover:bg-brand-primary/90 dark:bg-primary dark:text-on-primary"
                 onClick={() => {
                   const name = newIndustryName.trim();
                   const slugInput = newIndustrySlug.trim();
@@ -156,12 +162,12 @@ export default function PromptCatalogPage() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-outline-variant/25 bg-surface-container p-6">
+        <div className="rounded-3xl border border-brand-sand/30 bg-earth-card p-6 dark:border-outline/30 dark:bg-surface-container-low">
           <h2 className="headline mb-4 text-xl font-bold">Create new version</h2>
           <label className="mb-3 block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
             Industry
             <select
-              className="mt-2 w-full rounded-xl border border-outline-variant/30 bg-surface-container-lowest px-3 py-2 text-sm focus:ring-2 focus:ring-primary/35"
+              className="mt-2 w-full rounded-xl border border-brand-sand/30 bg-earth-card px-3 py-2 text-sm focus:ring-2 focus:ring-primary/35 dark:border-outline/30 dark:bg-surface-container-high"
               value={selectedIndustry}
               onChange={(e) => setSelectedIndustry(e.target.value)}
             >
@@ -177,7 +183,7 @@ export default function PromptCatalogPage() {
           <label className="mb-3 block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
             Status
             <select
-              className="mt-2 w-full rounded-xl border border-outline-variant/30 bg-surface-container-lowest px-3 py-2 text-sm focus:ring-2 focus:ring-primary/35"
+              className="mt-2 w-full rounded-xl border border-brand-sand/30 bg-earth-card px-3 py-2 text-sm focus:ring-2 focus:ring-primary/35 dark:border-outline/30 dark:bg-surface-container-high"
               value={status}
               onChange={(e) => setStatus(e.target.value as "draft" | "active")}
             >
@@ -191,7 +197,7 @@ export default function PromptCatalogPage() {
             <input
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-outline-variant/30 bg-surface-container-lowest px-3 py-2 text-sm focus:ring-2 focus:ring-primary/35"
+              className="mt-2 w-full rounded-xl border border-brand-sand/30 bg-earth-card px-3 py-2 text-sm focus:ring-2 focus:ring-primary/35 dark:border-outline/30 dark:bg-surface-container-high"
               placeholder="What changed in this version?"
             />
           </label>
@@ -202,39 +208,46 @@ export default function PromptCatalogPage() {
               value={template}
               onChange={(e) => setTemplate(e.target.value)}
               rows={14}
-              className="mt-2 w-full rounded-xl border border-outline-variant/30 bg-surface-container-lowest px-3 py-2 font-mono text-xs focus:ring-2 focus:ring-primary/35"
+              className="mt-2 w-full rounded-xl border border-brand-sand/30 bg-earth-card px-3 py-2 font-mono text-xs focus:ring-2 focus:ring-primary/35 dark:border-outline/30 dark:bg-surface-container-high"
               placeholder="Paste template here..."
             />
-            <p className="mt-2 text-xs leading-relaxed text-on-surface-variant">
-              This must be <strong className="text-on-surface">instruction text for the model</strong>, not a JSON &quot;output schema&quot;. Prefer including the placeholders below; if{" "}
-              <code className="rounded bg-surface-container-high px-1">STRICT_PROMPT_TEMPLATES</code> is off (default), you can save drafts with missing variables — generation will substitute empty strings.
+            <p className="mt-2 text-xs leading-relaxed text-brand-muted dark:text-on-surface-variant">
+              This must be <strong className="text-on-surface">instruction text for the model</strong>, not a JSON &quot;output schema&quot;.{" "}
+              <strong className="text-on-surface">Placeholders are optional.</strong> If{" "}
+              <code className="rounded bg-surface-container-high px-1">STRICT_PROMPT_TEMPLATES</code> is off (default), legacy templates with missing placeholders can still be saved and missing values render as empty strings.
+            </p>
+            <p className="mt-2 text-xs leading-relaxed text-brand-muted dark:text-on-surface-variant">
+              Recommended workflow: enter only the industry creative strategy here (tone, hooks, angles, offers). The
+              backend appends a fixed client-context block automatically (brand, audience, goals, counts, etc.).
             </p>
           </label>
 
-          <div className="mb-3 rounded-xl border border-primary/20 bg-primary/10 p-3 text-xs text-on-surface-variant">
-            <p className="font-semibold text-on-surface">Required variables</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {(requiredVars.length ? requiredVars : []).map((v) => (
-                <span key={v} className="rounded-full bg-surface-container-low px-2 py-1">
-                  {"{{"}
-                  {v}
-                  {"}}"}
-                </span>
-              ))}
+          {!isCreativeOnlyTemplate ? (
+            <div className="mb-3 rounded-xl border border-brand-primary/20 bg-brand-primary/10 p-3 text-xs text-brand-muted dark:border-primary/20 dark:bg-primary/10 dark:text-on-surface-variant">
+              <p className="font-semibold text-on-surface">Required variables (legacy placeholder mode)</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(requiredVars.length ? requiredVars : []).map((v) => (
+                  <span key={v} className="rounded-full bg-earth-alt px-2 py-1 dark:bg-surface-container-high">
+                    {"{{"}
+                    {v}
+                    {"}}"}
+                  </span>
+                ))}
+              </div>
+              {missingVars.length > 0 && (
+                <p className={strictMode === true ? "mt-2 text-error" : "mt-2 text-tertiary"}>
+                  {strictMode === true ? "Missing (required in strict mode): " : "Missing (warning — save still allowed): "}
+                  {missingVars.map((v) => `{{${v}}}`).join(", ")}
+                </p>
+              )}
             </div>
-            {missingVars.length > 0 && (
-              <p className={strictMode === true ? "mt-2 text-error" : "mt-2 text-tertiary"}>
-                {strictMode === true ? "Missing (required in strict mode): " : "Missing (warning — save still allowed): "}
-                {missingVars.map((v) => `{{${v}}}`).join(", ")}
-              </p>
-            )}
-          </div>
+          ) : null}
 
           <div className="flex gap-2">
             <button
               type="button"
               disabled={saving}
-              className="rounded-xl bg-surface-container-low px-4 py-2 text-sm font-bold disabled:opacity-50"
+              className="rounded-xl border border-brand-sand/30 bg-earth-alt px-4 py-2 text-sm font-bold text-brand-text disabled:opacity-50 dark:border-outline/30 dark:bg-surface-container-high dark:text-on-surface"
               onClick={() => {
                 validatePromptTemplate(template)
                   .then((r) => {
@@ -242,10 +255,12 @@ export default function PromptCatalogPage() {
                     setStrictMode(r.strict_mode ?? false);
                     setMessage(
                       r.ok
-                        ? "Template contract is valid."
+                        ? r.mode === "creative_only"
+                          ? "Creative-only prompt is valid. Placeholders optional."
+                          : "Template contract is valid."
                         : r.strict_mode
                           ? "Template is missing required variables (strict mode would block save)."
-                          : "Template is missing some placeholders — you can still save."
+                          : "Template is missing some placeholders — placeholders are optional in creative-only mode, and save is still allowed."
                     );
                   })
                   .catch(() => setMessage("Validation failed."));
@@ -256,7 +271,7 @@ export default function PromptCatalogPage() {
             <button
               type="button"
               disabled={saving}
-              className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-on-primary disabled:opacity-50"
+              className="rounded-xl bg-brand-primary px-4 py-2 text-sm font-bold text-white disabled:opacity-50 hover:bg-brand-primary/90 dark:bg-primary dark:text-on-primary"
               onClick={() => {
                 const trimmed = template.trim();
                 if (!trimmed) {
@@ -293,14 +308,14 @@ export default function PromptCatalogPage() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-outline-variant/25 bg-surface-container p-6">
+        <div className="rounded-3xl border border-brand-sand/30 bg-earth-card p-6 dark:border-outline/30 dark:bg-surface-container-low">
           <h2 className="headline mb-4 text-xl font-bold">Version history</h2>
           <div className="space-y-3">
             {versions.length === 0 ? (
               <p className="text-sm text-on-surface-variant">No versions found.</p>
             ) : (
               versions.map((v) => (
-                <article key={v.id} className="rounded-xl border border-outline-variant/20 bg-surface-container-low p-3">
+                <article key={v.id} className="rounded-xl border border-brand-sand/30 bg-earth-card p-3 dark:border-outline/30 dark:bg-surface-container-high">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-sm font-bold text-on-surface">
@@ -311,7 +326,8 @@ export default function PromptCatalogPage() {
                     <button
                       type="button"
                       disabled={v.status === "active"}
-                      className="rounded-lg bg-tertiary px-3 py-1 text-xs font-bold text-on-tertiary disabled:opacity-55"
+                      className="rounded-lg bg-brand-primary px-3 py-1 text-xs font-bold text-white disabled:opacity-55 dark:bg-primary dark:text-on-primary"
+                      title={v.status === "active" ? "Already active" : `Activate version v${v.version}`}
                       onClick={() => {
                         activatePromptVersion(v.id)
                           .then(async () => {
@@ -324,8 +340,33 @@ export default function PromptCatalogPage() {
                     >
                       Activate
                     </button>
+                    <button
+                      type="button"
+                      disabled={v.status === "active"}
+                      className="rounded-lg bg-brand-accent px-3 py-1 text-xs font-bold text-white disabled:opacity-55 dark:bg-error dark:text-on-error"
+                      title={
+                        v.status === "active"
+                          ? "Cannot delete an active version. Activate another version first."
+                          : `Delete version v${v.version}`
+                      }
+                      onClick={() => {
+                        const ok = window.confirm(
+                          `Delete prompt version v${v.version}? This cannot be undone.`
+                        );
+                        if (!ok) return;
+                        deletePromptVersion(v.id)
+                          .then(async () => {
+                            setMessage(`Deleted v${v.version}`);
+                            await refreshIndustries();
+                            await refreshVersions();
+                          })
+                          .catch((e) => setMessage(e instanceof Error ? e.message : "Delete failed."));
+                      }}
+                    >
+                      Delete
+                    </button>
                   </div>
-                  <pre className="mt-3 max-h-44 overflow-auto rounded-lg bg-surface-container-lowest p-2 text-[11px] text-on-surface-variant">
+                  <pre className="mt-3 max-h-44 overflow-auto rounded-lg bg-earth-alt p-2 text-[11px] text-brand-muted dark:bg-surface-container-low dark:text-on-surface-variant">
                     {v.prompt_template}
                   </pre>
                 </article>

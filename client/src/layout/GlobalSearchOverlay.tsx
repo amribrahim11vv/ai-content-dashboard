@@ -65,7 +65,7 @@ export default function GlobalSearchOverlay({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-surface/80 px-4 pb-12 pt-24 backdrop-blur-md"
+      className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-surface/80 px-4 pb-12 pt-24 backdrop-blur-md dark:bg-earth-darkBg/85"
       role="dialog"
       aria-modal="true"
       aria-label="Search kits"
@@ -74,7 +74,7 @@ export default function GlobalSearchOverlay({
       }}
     >
       <div className="flex w-full max-w-4xl flex-col gap-4" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="glass-panel glow-focus rounded-2xl border border-outline-variant/30 p-2 shadow-2xl">
+        <div className="glass-panel glow-focus rounded-2xl border border-outline-variant/30 p-2 shadow-2xl dark:border-brand-muted/45 dark:bg-earth-darkCard/90">
           <div className="flex h-14 items-center gap-4 px-4">
             <span className="material-symbols-outlined text-tertiary">search</span>
             <input
@@ -86,13 +86,13 @@ export default function GlobalSearchOverlay({
               placeholder="Search kits, brands, or status…"
               aria-label="Search query"
             />
-            <kbd className="hidden items-center justify-center rounded-md border border-outline-variant/20 bg-surface-container-highest px-2 py-1 text-[10px] font-bold tracking-widest text-on-surface-variant md:flex">
+            <kbd className="hidden items-center justify-center rounded-md border border-outline-variant/20 bg-surface-container-highest px-2 py-1 text-[10px] font-bold tracking-widest text-on-surface-variant md:flex dark:border-brand-muted/45 dark:bg-earth-darkBg/80">
               ESC
             </kbd>
           </div>
         </div>
 
-        <div className="glass-panel mb-12 overflow-hidden rounded-3xl border border-outline-variant/30 shadow-2xl">
+        <div className="glass-panel mb-12 overflow-hidden rounded-3xl border border-outline-variant/30 shadow-2xl dark:border-brand-muted/45 dark:bg-earth-darkCard/90">
           <div className="grid grid-cols-1 lg:grid-cols-12">
             <div className="space-y-8 border-outline-variant/25 p-8 lg:col-span-4 lg:border-e">
               <section>
@@ -136,7 +136,7 @@ export default function GlobalSearchOverlay({
               </section>
             </div>
 
-            <div className="bg-surface-container-low/30 p-8 lg:col-span-8">
+            <div className="bg-surface-container-low/30 p-8 lg:col-span-8 dark:bg-earth-darkBg/45">
               <div className="mb-6 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-on-surface">
                   Results{" "}
@@ -179,15 +179,15 @@ export default function GlobalSearchOverlay({
                           pushRecent(query || brand);
                           onClose();
                         }}
-                        className="group relative flex cursor-pointer items-center gap-4 rounded-2xl border border-transparent bg-surface-container-high/40 p-4 transition-all hover:border-primary/20 hover:bg-surface-container-highest focus-visible:ring-2 focus-visible:ring-primary/40"
+                        className="group relative flex cursor-pointer items-center gap-4 rounded-2xl border border-transparent bg-surface-container-high/40 p-4 transition-all hover:border-primary/20 hover:bg-surface-container-highest focus-visible:ring-2 focus-visible:ring-primary/40 dark:bg-earth-darkCard/70 dark:hover:bg-earth-darkCard"
                       >
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-container">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-container dark:from-brand-primary dark:to-brand-accent">
                           <span className="material-symbols-outlined text-2xl text-on-primary">auto_fix_high</span>
                         </div>
                         <div className="flex-1">
                           <div className="mb-0.5 flex items-center justify-between">
                             <span className="font-headline font-bold text-on-surface">{brand}</span>
-                            <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+                            <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary dark:bg-brand-primary/20 dark:text-brand-darkText">
                               {k.status_badge}
                             </span>
                           </div>
@@ -220,7 +220,7 @@ export default function GlobalSearchOverlay({
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-6 border-t border-outline-variant/10 bg-surface-container-highest/50 px-8 py-3">
+          <div className="flex items-center justify-center gap-6 border-t border-outline-variant/10 bg-surface-container-highest/50 px-8 py-3 dark:border-brand-muted/30 dark:bg-earth-darkBg/55">
             <div className="flex items-center gap-2 text-[10px] font-medium text-on-surface-variant">
               <kbd className="rounded border border-outline-variant/20 bg-surface-container px-1.5 py-0.5">esc</kbd>
               <span>to close</span>

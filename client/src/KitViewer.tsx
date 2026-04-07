@@ -3,20 +3,13 @@ import {
   useEffect,
   useId,
   useMemo,
+  useRef,
   useState,
   type MouseEvent,
   type ReactNode,
 } from "react";
-import type { KitSummary } from "./types";
-
-type Post = {
-  platform?: string;
-  format?: string;
-  goal?: string;
-  caption?: string;
-  hashtags?: string[];
-  cta?: string;
-};
+import { ApiError, regenerateKitItem } from "./api";
+import type { KitPostItem, KitSummary } from "./types";
 
 const TOC_ID = "kit-plan-toc";
 const SCROLL_MARGIN = "6rem";
@@ -54,12 +47,37 @@ function CopyFieldButton({ text, label }: { text: string; label: string }) {
         e.stopPropagation();
         void copy();
       }}
-      className="relative z-10 inline-flex shrink-0 touch-manipulation items-center gap-1 rounded-lg border border-outline/25 bg-surface-container-high px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-on-surface transition hover:bg-surface-container-highest focus-visible:ring-2 focus-visible:ring-primary/40"
+      className="relative z-10 inline-flex shrink-0 touch-manipulation items-center gap-1 rounded-lg border border-brand-sand/30 bg-earth-card px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-on-surface transition hover:bg-earth-alt dark:border-outline/25 dark:bg-surface-container-high dark:hover:bg-surface-container-highest focus-visible:ring-2 focus-visible:ring-primary/40"
       title={label}
       aria-label={label}
     >
       <span className="material-symbols-outlined text-sm">{done ? "check" : "content_copy"}</span>
       {done ? "Copied" : "Copy"}
+    </button>
+  );
+}
+
+function RegenerateButton({
+  onClick,
+  loading,
+}: {
+  onClick: (e: MouseEvent<HTMLButtonElement>) => void;
+  loading: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={onClick}
+      disabled={loading}
+      className="relative z-10 inline-flex shrink-0 touch-manipulation items-center gap-1 rounded-lg border border-brand-sand/30 bg-earth-card px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-primary transition hover:bg-earth-alt dark:border-outline/25 dark:bg-surface-container-high dark:text-on-surface dark:hover:bg-surface-container-highest focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-55"
+      title="Regenerate this item"
+      aria-label="Regenerate this item"
+    >
+      <span className={"material-symbols-outlined text-sm " + (loading ? "animate-spin" : "")}>
+        {loading ? "autorenew" : "refresh"}
+      </span>
+      {loading ? "Regenerating..." : "Regenerate"}
     </button>
   );
 }
@@ -107,8 +125,8 @@ function FieldBlock({
   bodyClassName?: string;
 }) {
   return (
-    <div className="min-w-0 overflow-hidden rounded-xl border border-outline/20 bg-surface-container-lowest/75 shadow-sm shadow-surface/20">
-      <div className="flex min-w-0 items-center justify-between gap-3 border-b border-outline/15 bg-surface-container-high/20 px-3 py-2.5">
+    <div className="min-w-0 overflow-hidden rounded-xl border border-brand-sand/25 bg-earth-card/90 shadow-sm shadow-surface/20 dark:border-outline/20 dark:bg-surface-container-lowest/75">
+      <div className="flex min-w-0 items-center justify-between gap-3 border-b border-brand-sand/20 bg-earth-alt/50 px-3 py-2.5 dark:border-outline/15 dark:bg-surface-container-high/20">
         <span className="min-w-0 text-[11px] font-bold uppercase tracking-wide text-on-surface-variant">
           {label}
         </span>
@@ -130,9 +148,30 @@ const IMAGE_DESIGN_FIELD_DEFS: { key: string; label: string }[] = [
   { key: "headline_text_overlay", label: "Headline overlay" },
   { key: "supporting_copy", label: "Supporting copy" },
   { key: "full_ai_image_prompt", label: "Full AI image prompt" },
+  { key: "caption", label: "Caption" },
   { key: "text_policy", label: "Text policy" },
   { key: "conversion_trigger", label: "Conversion trigger" },
 ];
+
+type ViewerLang = "ar" | "en";
+
+function pickByLang(
+  item: Record<string, unknown> | KitPostItem,
+  lang: ViewerLang,
+  keyAr: string,
+  keyEn: string,
+  legacyKey?: string
+): string {
+  const ar = (item as Record<string, unknown>)[keyAr];
+  const en = (item as Record<string, unknown>)[keyEn];
+  const legacy = legacyKey ? (item as Record<string, unknown>)[legacyKey] : undefined;
+  if (lang === "ar" && typeof ar === "string" && ar.trim()) return ar.trim();
+  if (lang === "en" && typeof en === "string" && en.trim()) return en.trim();
+  if (typeof ar === "string" && ar.trim()) return ar.trim();
+  if (typeof en === "string" && en.trim()) return en.trim();
+  if (typeof legacy === "string" && legacy.trim()) return legacy.trim();
+  return "";
+}
 
 function isVideoBlueprint(rec: Record<string, unknown>): boolean {
   const s = rec.scenes;
@@ -182,6 +221,7 @@ function videoBlueprintFormattedCopy(rec: Record<string, unknown>): string {
 function imageDesignFormattedCopy(rec: Record<string, unknown>): string {
   const parts: string[] = [];
   for (const { key, label } of IMAGE_DESIGN_FIELD_DEFS) {
+    if (key === "caption") continue;
     const v = rec[key];
     if (typeof v === "string" && v.trim()) parts.push(`${label}: ${v}`);
   }
@@ -224,19 +264,32 @@ function getKitMediaPlainBody(rec: Record<string, unknown>, kind: "image" | "vid
 
 function kitArticleShellClass(expanded: boolean): string {
   return (
-    "relative isolate min-h-0 min-w-0 max-w-full overflow-x-clip overflow-y-visible rounded-2xl border border-outline/25 bg-surface-container-lowest/60 p-3 sm:p-4 " +
+    "relative isolate min-h-0 min-w-0 max-w-full overflow-x-clip overflow-y-visible rounded-2xl border border-brand-sand/30 bg-earth-card/90 p-3 sm:p-4 dark:border-outline/25 dark:bg-surface-container-lowest/60 " +
     (expanded ? "z-20 shadow-lg shadow-surface/30" : "z-0")
   );
 }
 
 /** Video / YouTube-style blueprint with `scenes[]` — one plain-text block (all beats together), optional raw JSON. */
-function VideoBlueprintCard({ item, index }: { item: Record<string, unknown>; index: number }) {
+function VideoBlueprintCard({
+  item,
+  index,
+  lang,
+  onRegenerate,
+  regenerating,
+}: {
+  item: Record<string, unknown>;
+  index: number;
+  lang: ViewerLang;
+  onRegenerate: (index: number) => void;
+  regenerating: boolean;
+}) {
   const uid = useId();
   const toggleId = `${uid}-toggle`;
   const panelId = `${uid}-panel`;
   const [expanded, setExpanded] = useState(false);
   const jsonFull = JSON.stringify(item, null, 2);
   const brief = videoBlueprintFormattedCopy(item);
+  const caption = pickByLang(item, lang, "caption_ar", "caption_en", "caption");
   const header =
     [typeof item.platform === "string" ? item.platform : null, typeof item.style === "string" ? item.style : null]
       .filter(Boolean)
@@ -244,29 +297,39 @@ function VideoBlueprintCard({ item, index }: { item: Record<string, unknown>; in
 
   return (
     <article className={kitArticleShellClass(expanded)}>
-      <button
-        type="button"
-        className="flex w-full min-w-0 max-w-full touch-manipulation items-center justify-between gap-2 rounded-lg px-1 py-2 text-start transition hover:bg-surface-container-high/20"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setExpanded((v) => !v);
-        }}
-        aria-expanded={expanded}
-        id={toggleId}
-        aria-controls={panelId}
-      >
-        <h3 className="min-w-0 flex-1 font-headline text-sm font-bold text-on-surface">{header}</h3>
-        <span
-          className={
-            "material-symbols-outlined shrink-0 text-on-surface-variant transition-transform " +
-            (expanded ? "rotate-180" : "")
-          }
-          aria-hidden
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          className="flex min-w-0 flex-1 touch-manipulation items-center justify-between gap-2 rounded-lg px-1 py-2 text-start transition hover:bg-surface-container-high/20"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setExpanded((v) => !v);
+          }}
+          aria-expanded={expanded}
+          id={toggleId}
+          aria-controls={panelId}
         >
-          expand_more
-        </span>
-      </button>
+          <h3 className="min-w-0 flex-1 font-headline text-sm font-bold text-on-surface">{header}</h3>
+          <span
+            className={
+              "material-symbols-outlined shrink-0 text-on-surface-variant transition-transform " +
+              (expanded ? "rotate-180" : "")
+            }
+            aria-hidden
+          >
+            expand_more
+          </span>
+        </button>
+        <RegenerateButton
+          loading={regenerating}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRegenerate(index);
+          }}
+        />
+      </div>
       {expanded ? (
         <div
           id={panelId}
@@ -275,9 +338,16 @@ function VideoBlueprintCard({ item, index }: { item: Record<string, unknown>; in
           aria-labelledby={toggleId}
           onPointerDown={(e) => e.stopPropagation()}
         >
+          {caption ? (
+            <FieldBlock label="Caption" copyText={caption} copyLabel="Copy caption">
+              <p className="min-w-0 text-sm leading-relaxed text-on-surface [overflow-wrap:anywhere]" dir="auto">
+                {caption}
+              </p>
+            </FieldBlock>
+          ) : null}
           <FieldBlock label="Brief (full script)" copyText={brief} copyLabel="Copy full brief">
             <div
-              className="max-h-[min(70vh,36rem)] min-w-0 overflow-y-auto rounded-lg bg-surface-container-high/15 p-3 text-sm leading-relaxed text-on-surface [overflow-wrap:anywhere] whitespace-pre-wrap"
+                className="max-h-[min(70vh,36rem)] min-w-0 overflow-y-auto rounded-lg bg-earth-alt/70 p-3 text-sm leading-relaxed text-on-surface [overflow-wrap:anywhere] whitespace-pre-wrap dark:bg-surface-container-high/15"
               dir="auto"
             >
               {brief}
@@ -293,13 +363,26 @@ function VideoBlueprintCard({ item, index }: { item: Record<string, unknown>; in
 }
 
 /** `image_designs`-style objects — one plain-text brief (all fields), optional raw JSON. */
-function ImageDesignCard({ item, index }: { item: Record<string, unknown>; index: number }) {
+function ImageDesignCard({
+  item,
+  index,
+  lang,
+  onRegenerate,
+  regenerating,
+}: {
+  item: Record<string, unknown>;
+  index: number;
+  lang: ViewerLang;
+  onRegenerate: (index: number) => void;
+  regenerating: boolean;
+}) {
   const uid = useId();
   const toggleId = `${uid}-toggle`;
   const panelId = `${uid}-panel`;
   const [expanded, setExpanded] = useState(false);
   const jsonFull = JSON.stringify(item, null, 2);
   const brief = imageDesignFormattedCopy(item);
+  const caption = pickByLang(item, lang, "caption_ar", "caption_en", "caption");
   const header =
     [
       typeof item.design_type === "string" ? item.design_type : null,
@@ -310,29 +393,39 @@ function ImageDesignCard({ item, index }: { item: Record<string, unknown>; index
 
   return (
     <article className={kitArticleShellClass(expanded)}>
-      <button
-        type="button"
-        className="flex w-full min-w-0 max-w-full touch-manipulation items-center justify-between gap-2 rounded-lg px-1 py-2 text-start transition hover:bg-surface-container-high/20"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setExpanded((v) => !v);
-        }}
-        aria-expanded={expanded}
-        id={toggleId}
-        aria-controls={panelId}
-      >
-        <h3 className="min-w-0 flex-1 font-headline text-sm font-bold text-on-surface">{header}</h3>
-        <span
-          className={
-            "material-symbols-outlined shrink-0 text-on-surface-variant transition-transform " +
-            (expanded ? "rotate-180" : "")
-          }
-          aria-hidden
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          className="flex min-w-0 flex-1 touch-manipulation items-center justify-between gap-2 rounded-lg px-1 py-2 text-start transition hover:bg-surface-container-high/20"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setExpanded((v) => !v);
+          }}
+          aria-expanded={expanded}
+          id={toggleId}
+          aria-controls={panelId}
         >
-          expand_more
-        </span>
-      </button>
+          <h3 className="min-w-0 flex-1 font-headline text-sm font-bold text-on-surface">{header}</h3>
+          <span
+            className={
+              "material-symbols-outlined shrink-0 text-on-surface-variant transition-transform " +
+              (expanded ? "rotate-180" : "")
+            }
+            aria-hidden
+          >
+            expand_more
+          </span>
+        </button>
+        <RegenerateButton
+          loading={regenerating}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRegenerate(index);
+          }}
+        />
+      </div>
       {expanded ? (
         <div
           id={panelId}
@@ -341,9 +434,16 @@ function ImageDesignCard({ item, index }: { item: Record<string, unknown>; index
           aria-labelledby={toggleId}
           onPointerDown={(e) => e.stopPropagation()}
         >
+          {caption ? (
+            <FieldBlock label="Caption" copyText={caption} copyLabel="Copy caption">
+              <p className="min-w-0 text-sm leading-relaxed text-on-surface [overflow-wrap:anywhere]" dir="auto">
+                {caption}
+              </p>
+            </FieldBlock>
+          ) : null}
           <FieldBlock label="Brief (full design)" copyText={brief} copyLabel="Copy full brief">
             <div
-              className="max-h-[min(70vh,36rem)] min-w-0 overflow-y-auto rounded-lg bg-surface-container-high/15 p-3 text-sm leading-relaxed text-on-surface [overflow-wrap:anywhere] whitespace-pre-wrap"
+                className="max-h-[min(70vh,36rem)] min-w-0 overflow-y-auto rounded-lg bg-earth-alt/70 p-3 text-sm leading-relaxed text-on-surface [overflow-wrap:anywhere] whitespace-pre-wrap dark:bg-surface-container-high/15"
               dir="auto"
             >
               {brief}
@@ -362,10 +462,16 @@ function ImageDesignCard({ item, index }: { item: Record<string, unknown>; index
 function KitPromptCard({
   title,
   body,
+  caption,
+  onRegenerate,
+  regenerating,
   copyLabel,
 }: {
   title: string;
   body: string;
+  caption?: string;
+  onRegenerate: () => void;
+  regenerating: boolean;
   copyLabel: string;
 }) {
   const uid = useId();
@@ -376,33 +482,43 @@ function KitPromptCard({
   return (
     <article
       className={
-        "relative isolate min-h-0 min-w-0 max-w-full overflow-x-clip overflow-y-visible rounded-2xl border border-outline/25 bg-surface-container-lowest/60 p-3 sm:p-4 " +
+        "relative isolate min-h-0 min-w-0 max-w-full overflow-x-clip overflow-y-visible rounded-2xl border border-brand-sand/30 bg-earth-card/90 p-3 sm:p-4 dark:border-outline/25 dark:bg-surface-container-lowest/60 " +
         (expanded ? "z-20 shadow-lg shadow-surface/30" : "z-0")
       }
     >
-      <button
-        type="button"
-        className="flex w-full min-w-0 max-w-full touch-manipulation items-center justify-between gap-2 rounded-lg px-1 py-2 text-start transition hover:bg-surface-container-high/20"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setExpanded((v) => !v);
-        }}
-        aria-expanded={expanded}
-        id={toggleId}
-        aria-controls={panelId}
-      >
-        <h3 className="min-w-0 flex-1 font-headline text-sm font-bold text-on-surface">{title}</h3>
-        <span
-          className={
-            "material-symbols-outlined shrink-0 text-on-surface-variant transition-transform " +
-            (expanded ? "rotate-180" : "")
-          }
-          aria-hidden
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          className="flex min-w-0 flex-1 touch-manipulation items-center justify-between gap-2 rounded-lg px-1 py-2 text-start transition hover:bg-surface-container-high/20"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setExpanded((v) => !v);
+          }}
+          aria-expanded={expanded}
+          id={toggleId}
+          aria-controls={panelId}
         >
-          expand_more
-        </span>
-      </button>
+          <h3 className="min-w-0 flex-1 font-headline text-sm font-bold text-on-surface">{title}</h3>
+          <span
+            className={
+              "material-symbols-outlined shrink-0 text-on-surface-variant transition-transform " +
+              (expanded ? "rotate-180" : "")
+            }
+            aria-hidden
+          >
+            expand_more
+          </span>
+        </button>
+        <RegenerateButton
+          loading={regenerating}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRegenerate();
+          }}
+        />
+      </div>
       {expanded ? (
         <div
           id={panelId}
@@ -411,14 +527,23 @@ function KitPromptCard({
           aria-labelledby={toggleId}
           onPointerDown={(e) => e.stopPropagation()}
         >
-          <BlockWithCopy copyText={body} copyLabel={copyLabel}>
-            <pre
-              className="max-h-48 min-h-[2.5rem] min-w-0 max-w-full overflow-auto whitespace-pre-wrap break-words p-3 text-xs leading-relaxed text-on-surface-variant [overflow-wrap:anywhere]"
-              dir="auto"
-            >
-              {body}
-            </pre>
-          </BlockWithCopy>
+          <div className="space-y-4">
+            {caption ? (
+              <FieldBlock label="Caption" copyText={caption} copyLabel="Copy caption">
+                <p className="min-w-0 text-sm leading-relaxed text-on-surface [overflow-wrap:anywhere]" dir="auto">
+                  {caption}
+                </p>
+              </FieldBlock>
+            ) : null}
+            <FieldBlock label="Brief" copyText={body} copyLabel={copyLabel} bodyClassName="p-0">
+              <pre
+                className="max-h-48 min-h-[2.5rem] min-w-0 max-w-full overflow-auto whitespace-pre-wrap break-words p-3 text-xs leading-relaxed text-on-surface-variant [overflow-wrap:anywhere]"
+                dir="auto"
+              >
+                {body}
+              </pre>
+            </FieldBlock>
+          </div>
         </div>
       ) : null}
     </article>
@@ -426,18 +551,30 @@ function KitPromptCard({
 }
 
 /** One social post: independent expand/collapse + layout isolation (no overlapping copy targets). */
-function PostCard({ post, index }: { post: Post; index: number }) {
+function PostCard({
+  post,
+  index,
+  lang,
+  onRegenerate,
+  regenerating,
+}: {
+  post: KitPostItem;
+  index: number;
+  lang: ViewerLang;
+  onRegenerate: (index: number) => void;
+  regenerating: boolean;
+}) {
   const uid = useId();
   const toggleId = `${uid}-toggle`;
   const panelId = `${uid}-panel`;
   const [expanded, setExpanded] = useState(false);
-  const caption = post.caption ?? "—";
+  const postText = pickByLang(post, lang, "post_ar", "post_en", "post") || post.caption || "—";
   const hashtags = Array.isArray(post.hashtags) && post.hashtags.length ? post.hashtags.join(" ") : "";
   const cta = post.cta ?? "";
   const goal = post.goal ?? "";
   const combined = [
     goal && `Goal: ${goal}`,
-    caption,
+    postText,
     hashtags && `Hashtags: ${hashtags}`,
     cta && `CTA: ${cta}`,
   ]
@@ -447,41 +584,49 @@ function PostCard({ post, index }: { post: Post; index: number }) {
   return (
     <article
       className={
-        "relative isolate min-h-0 min-w-0 max-w-full overflow-x-clip overflow-y-visible rounded-2xl border border-outline/25 bg-surface-container-lowest/60 p-3 sm:p-4 " +
+        "relative isolate min-h-0 min-w-0 max-w-full overflow-x-clip overflow-y-visible rounded-2xl border border-brand-sand/30 bg-earth-card/90 p-3 sm:p-4 dark:border-outline/25 dark:bg-surface-container-lowest/60 " +
         (expanded ? "z-20 shadow-lg shadow-surface/30" : "z-0")
       }
     >
-      <button
-        type="button"
-        className="flex w-full min-w-0 max-w-full touch-manipulation items-center justify-between gap-2 rounded-lg px-1 py-2 text-start transition hover:bg-surface-container-high/20"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setExpanded((v) => !v);
-        }}
-        aria-expanded={expanded}
-        id={toggleId}
-        aria-controls={panelId}
-      >
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <span className="rounded-lg bg-surface-container-highest px-2 py-1 text-xs font-bold text-tertiary">
-            {post.platform ?? "Platform"}
-          </span>
-          <span className="text-xs text-on-surface-variant">Post {index + 1}</span>
-          {post.format ? (
-            <span className="text-xs text-on-surface-variant">{post.format}</span>
-          ) : null}
-        </div>
-        <span
-          className={
-            "material-symbols-outlined shrink-0 text-on-surface-variant transition-transform " +
-            (expanded ? "rotate-180" : "")
-          }
-          aria-hidden
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          className="flex min-w-0 flex-1 touch-manipulation items-center justify-between gap-2 rounded-lg px-1 py-2 text-start transition hover:bg-surface-container-high/20"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setExpanded((v) => !v);
+          }}
+          aria-expanded={expanded}
+          id={toggleId}
+          aria-controls={panelId}
         >
-          expand_more
-        </span>
-      </button>
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <span className="rounded-lg border border-brand-sand/35 bg-brand-sand/20 px-2 py-1 text-xs font-bold text-brand-accent dark:border-outline/35 dark:bg-surface-container-highest dark:text-tertiary">
+              {post.platform ?? "Platform"}
+            </span>
+            <span className="text-xs text-on-surface-variant">Post {index + 1}</span>
+            {post.format ? <span className="text-xs text-on-surface-variant">{post.format}</span> : null}
+          </div>
+          <span
+            className={
+              "material-symbols-outlined shrink-0 text-on-surface-variant transition-transform " +
+              (expanded ? "rotate-180" : "")
+            }
+            aria-hidden
+          >
+            expand_more
+          </span>
+        </button>
+        <RegenerateButton
+          loading={regenerating}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRegenerate(index);
+          }}
+        />
+      </div>
       {expanded ? (
         <div
           id={panelId}
@@ -495,20 +640,20 @@ function PostCard({ post, index }: { post: Post; index: number }) {
               <p className="min-w-0 text-sm leading-relaxed text-on-surface">{goal}</p>
             </FieldBlock>
           ) : null}
-          <FieldBlock label="Caption" copyText={caption} copyLabel="Copy caption" bodyClassName="p-0">
-            <pre className="max-h-[min(40vh,280px)] min-h-[3rem] min-w-0 max-w-full overflow-auto overflow-x-auto whitespace-pre-wrap break-words bg-surface-container-high/10 p-3 font-body text-sm leading-relaxed text-on-surface [overflow-wrap:anywhere]">
-              {caption}
+          <FieldBlock label="Post" copyText={postText} copyLabel="Copy post" bodyClassName="p-0">
+            <pre className="max-h-[min(40vh,280px)] min-h-[3rem] min-w-0 max-w-full overflow-auto overflow-x-auto whitespace-pre-wrap break-words bg-earth-alt/70 p-3 font-body text-sm leading-relaxed text-on-surface [overflow-wrap:anywhere] dark:bg-surface-container-high/10">
+              {postText}
             </pre>
           </FieldBlock>
           {hashtags ? (
             <FieldBlock label="Hashtags" copyText={hashtags} copyLabel="Copy hashtags">
-              <p className="min-w-0 text-sm leading-relaxed text-secondary [overflow-wrap:anywhere]">{hashtags}</p>
+              <p className="min-w-0 text-sm leading-relaxed text-brand-primary [overflow-wrap:anywhere] dark:text-secondary">{hashtags}</p>
             </FieldBlock>
           ) : null}
           {cta ? (
             <FieldBlock label="Call to action" copyText={cta} copyLabel="Copy CTA">
               <p className="min-w-0 text-sm leading-relaxed text-on-surface [overflow-wrap:anywhere]">
-                <span className="font-semibold text-tertiary">CTA: </span>
+                <span className="font-semibold text-brand-accent dark:text-tertiary">CTA: </span>
                 {cta}
               </p>
             </FieldBlock>
@@ -520,7 +665,7 @@ function PostCard({ post, index }: { post: Post; index: number }) {
             bodyClassName="px-3 py-2.5"
           >
             <p className="text-xs leading-relaxed text-on-surface-variant">
-              One copy with goal, caption, hashtags, and CTA — for pasting into your scheduler or doc.
+              One copy with goal, post, hashtags, and CTA — for pasting into your scheduler or doc.
             </p>
           </FieldBlock>
         </div>
@@ -556,7 +701,7 @@ function CollapsibleSection({
     <section
       id={id}
       className={
-        "scroll-mt-24 overflow-x-clip overflow-y-visible rounded-3xl border border-outline/30 bg-surface-container-low/40 " +
+        "scroll-mt-24 overflow-x-clip overflow-y-visible rounded-3xl border border-brand-sand/30 bg-earth-card/90 dark:border-outline/30 dark:bg-surface-container-low/40 " +
         (open ? "relative z-10" : "relative z-0")
       }
       style={{ scrollMarginTop: SCROLL_MARGIN }}
@@ -564,7 +709,7 @@ function CollapsibleSection({
     >
       <button
         type="button"
-        className="flex w-full touch-manipulation items-center justify-between gap-3 px-5 py-4 text-start transition hover:bg-surface-container-high/30 focus-visible:outline focus-visible:ring-2 focus-visible:ring-primary/40"
+        className="flex w-full touch-manipulation items-center justify-between gap-3 px-5 py-4 text-start transition hover:bg-earth-alt/60 dark:hover:bg-surface-container-high/30 focus-visible:outline focus-visible:ring-2 focus-visible:ring-primary/40"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -597,7 +742,7 @@ function CollapsibleSection({
       {open ? (
         <div
           id={id + "-panel"}
-          className="min-w-0 max-w-full border-t border-outline/20 px-5 pb-5 pt-2"
+          className="min-w-0 max-w-full border-t border-brand-sand/25 px-5 pb-5 pt-2 dark:border-outline/20"
           role="region"
           aria-labelledby={id + "-heading"}
           onPointerDown={(e) => e.stopPropagation()}
@@ -618,11 +763,21 @@ function CollapsibleSection({
   );
 }
 
-export default function KitViewer({ kit }: { kit: KitSummary }) {
+export default function KitViewer({ kit, onKitUpdate }: { kit: KitSummary; onKitUpdate?: (next: KitSummary) => void }) {
   const data = kit.result_json as Record<string, unknown> | null;
   const [openMap, setOpenMap] = useState<Record<string, boolean>>({});
+  const [lang, setLang] = useState<ViewerLang>("ar");
+  const [regeneratingKey, setRegeneratingKey] = useState<string | null>(null);
+  const [regenError, setRegenError] = useState<string | null>(null);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackDraft, setFeedbackDraft] = useState("");
+  const [pendingRegenerate, setPendingRegenerate] = useState<{
+    item_type: "post" | "image" | "video";
+    index: number;
+  } | null>(null);
+  const feedbackTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const posts = useMemo(() => (Array.isArray(data?.posts) ? (data!.posts as Post[]) : []), [data]);
+  const posts = useMemo(() => (Array.isArray(data?.posts) ? (data!.posts as KitPostItem[]) : []), [data]);
 
   const videoSection = useMemo(() => {
     if (!data) return null;
@@ -690,24 +845,131 @@ export default function KitViewer({ kit }: { kit: KitSummary }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const regenerateItem = useCallback(
+    async (item_type: "post" | "image" | "video", index: number, feedback?: string) => {
+      const key = `${item_type}-${index}`;
+      setRegenError(null);
+      setRegeneratingKey(key);
+      try {
+        const next = await regenerateKitItem(kit.id, {
+          item_type,
+          index,
+          row_version: kit.row_version,
+          feedback: feedback?.trim() || undefined,
+        });
+        onKitUpdate?.(next);
+      } catch (e) {
+        const msg = e instanceof ApiError || e instanceof Error ? e.message : String(e);
+        setRegenError(msg);
+      } finally {
+        setRegeneratingKey(null);
+      }
+    },
+    [kit.id, kit.row_version, onKitUpdate]
+  );
+
+  const openFeedbackModal = useCallback((item_type: "post" | "image" | "video", index: number) => {
+    setFeedbackDraft("");
+    setPendingRegenerate({ item_type, index });
+    setFeedbackOpen(true);
+  }, []);
+
+  const closeFeedbackModal = useCallback(() => {
+    if (regeneratingKey) return;
+    setFeedbackOpen(false);
+    setPendingRegenerate(null);
+    setFeedbackDraft("");
+  }, [regeneratingKey]);
+
+  const submitRegenerate = useCallback(
+    async (skipFeedback: boolean) => {
+      if (!pendingRegenerate) return;
+      await regenerateItem(
+        pendingRegenerate.item_type,
+        pendingRegenerate.index,
+        skipFeedback ? undefined : feedbackDraft
+      );
+      setFeedbackOpen(false);
+      setPendingRegenerate(null);
+      setFeedbackDraft("");
+    },
+    [pendingRegenerate, regenerateItem, feedbackDraft]
+  );
+
+  useEffect(() => {
+    if (!feedbackOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeFeedbackModal();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        if (!regeneratingKey) {
+          void submitRegenerate(false);
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [feedbackOpen, closeFeedbackModal, regeneratingKey, submitRegenerate]);
+
+  useEffect(() => {
+    if (!feedbackOpen) return;
+    const timer = window.setTimeout(() => {
+      feedbackTextareaRef.current?.focus();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [feedbackOpen]);
+
   if (!data) return null;
 
   return (
     <div className="relative space-y-6 pb-20">
       <nav
         id={TOC_ID}
-        className="sticky top-4 z-20 scroll-mt-24 rounded-2xl border border-primary/20 bg-surface-container-low/95 p-4 shadow-lg shadow-surface/50 backdrop-blur-sm md:p-5"
+        className="sticky top-4 z-20 scroll-mt-24 rounded-2xl border border-brand-sand/30 bg-earth-card/95 p-4 shadow-lg shadow-surface/50 backdrop-blur-sm dark:border-primary/20 dark:bg-surface-container-low/95 md:p-5"
         style={{ scrollMarginTop: SCROLL_MARGIN }}
         aria-label="Plan sections"
       >
-        <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Jump to section</p>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Jump to section</p>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full border border-brand-sand/30 bg-earth-alt px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-muted dark:border-outline/30 dark:bg-surface-container-high dark:text-on-surface-variant">
+              Showing: {lang === "ar" ? "Arabic" : "English"}
+            </span>
+            <div className="inline-flex items-center gap-1 rounded-full border border-brand-sand/30 bg-earth-alt p-1 dark:border-outline/30 dark:bg-surface-container-high">
+            <button
+              type="button"
+              onClick={() => setLang("ar")}
+              className={
+                "rounded-full px-2.5 py-1 text-[11px] font-semibold transition " +
+                (lang === "ar" ? "bg-primary text-on-primary" : "text-on-surface-variant")
+              }
+            >
+              AR
+            </button>
+            <button
+              type="button"
+              onClick={() => setLang("en")}
+              className={
+                "rounded-full px-2.5 py-1 text-[11px] font-semibold transition " +
+                (lang === "en" ? "bg-primary text-on-primary" : "text-on-surface-variant")
+              }
+            >
+              EN
+            </button>
+            </div>
+          </div>
+        </div>
         <ul className="flex flex-wrap gap-2">
           {tocItems.map((item) => (
             <li key={item.id}>
               <button
                 type="button"
                 onClick={(e) => openAndScroll(item.id, e)}
-                className="touch-manipulation rounded-full border border-outline/30 bg-surface-container-high px-3 py-1.5 text-xs font-semibold text-on-surface transition hover:border-primary/35 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/40"
+                className="touch-manipulation rounded-full border border-brand-sand/30 bg-earth-card px-3 py-1.5 text-xs font-semibold text-on-surface transition hover:border-brand-primary/35 hover:bg-earth-alt dark:border-outline/30 dark:bg-surface-container-high dark:hover:border-primary/35 dark:hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 {item.label}
               </button>
@@ -715,6 +977,11 @@ export default function KitViewer({ kit }: { kit: KitSummary }) {
           ))}
         </ul>
       </nav>
+      {regenError ? (
+        <p className="rounded-xl border border-error/30 bg-error/10 px-4 py-3 text-sm text-error" role="alert">
+          {regenError}
+        </p>
+      ) : null}
 
       {posts.length > 0 && (
         <CollapsibleSection
@@ -722,7 +989,7 @@ export default function KitViewer({ kit }: { kit: KitSummary }) {
           title="Copy & posts"
           subtitle={`${posts.length} item(s)`}
           icon="chat"
-          iconBg="bg-primary/15 text-primary"
+          iconBg="bg-brand-primary/15 text-brand-primary dark:bg-primary/15 dark:text-primary"
           open={!!openMap["kit-section-posts"]}
           onToggle={() => toggle("kit-section-posts")}
           tocLabel="Social posts and captions"
@@ -734,7 +1001,14 @@ export default function KitViewer({ kit }: { kit: KitSummary }) {
           */}
           <div className="grid grid-cols-1 gap-4">
             {posts.map((p, i) => (
-              <PostCard key={`${kit.id}-post-${i}`} post={p} index={i} />
+              <PostCard
+                key={`${kit.id}-post-${i}`}
+                post={p}
+                index={i}
+                lang={lang}
+                onRegenerate={(idx) => openFeedbackModal("post", idx)}
+                regenerating={regeneratingKey === `post-${i}`}
+              />
             ))}
           </div>
         </CollapsibleSection>
@@ -746,7 +1020,7 @@ export default function KitViewer({ kit }: { kit: KitSummary }) {
           title="Visual & image prompts"
           subtitle={imageSection.title}
           icon="imagesmode"
-          iconBg="bg-secondary/15 text-secondary"
+          iconBg="bg-brand-accent/15 text-brand-accent dark:bg-secondary/15 dark:text-secondary"
           open={!!openMap["kit-section-image"]}
           onToggle={() => toggle("kit-section-image")}
           tocLabel="Image and visual prompts"
@@ -755,18 +1029,40 @@ export default function KitViewer({ kit }: { kit: KitSummary }) {
             {imageSection.items.map((item, i) => {
               const rec = isRecord(item) ? item : {};
               if (isVideoBlueprint(rec)) {
-                return <VideoBlueprintCard key={`${kit.id}-image-${i}`} item={rec} index={i} />;
+                return (
+                  <VideoBlueprintCard
+                    key={`${kit.id}-image-${i}`}
+                    item={rec}
+                    index={i}
+                    lang={lang}
+                    onRegenerate={(idx) => openFeedbackModal("image", idx)}
+                    regenerating={regeneratingKey === `image-${i}`}
+                  />
+                );
               }
               if (isRichImageDesign(rec)) {
-                return <ImageDesignCard key={`${kit.id}-image-${i}`} item={rec} index={i} />;
+                return (
+                  <ImageDesignCard
+                    key={`${kit.id}-image-${i}`}
+                    item={rec}
+                    index={i}
+                    lang={lang}
+                    onRegenerate={(idx) => openFeedbackModal("image", idx)}
+                    regenerating={regeneratingKey === `image-${i}`}
+                  />
+                );
               }
               const title = getKitMediaItemTitle(rec, i, "image");
               const body = getKitMediaPlainBody(rec, "image");
+              const caption = pickByLang(rec, lang, "caption_ar", "caption_en", "caption");
               return (
                 <KitPromptCard
                   key={`${kit.id}-image-${i}`}
                   title={title}
                   body={body}
+                  caption={caption || undefined}
+                  onRegenerate={() => openFeedbackModal("image", i)}
+                  regenerating={regeneratingKey === `image-${i}`}
                   copyLabel="Copy prompt"
                 />
               );
@@ -781,7 +1077,7 @@ export default function KitViewer({ kit }: { kit: KitSummary }) {
           title="Video & motion"
           subtitle={videoSection.title}
           icon="movie"
-          iconBg="bg-tertiary/15 text-tertiary"
+          iconBg="bg-brand-sand/20 text-brand-accent dark:bg-tertiary/15 dark:text-tertiary"
           open={!!openMap["kit-section-video"]}
           onToggle={() => toggle("kit-section-video")}
           tocLabel="Video prompts"
@@ -790,15 +1086,28 @@ export default function KitViewer({ kit }: { kit: KitSummary }) {
             {videoSection.items.map((item, i) => {
               const rec = isRecord(item) ? item : {};
               if (isVideoBlueprint(rec)) {
-                return <VideoBlueprintCard key={`${kit.id}-video-${i}`} item={rec} index={i} />;
+                return (
+                  <VideoBlueprintCard
+                    key={`${kit.id}-video-${i}`}
+                    item={rec}
+                    index={i}
+                    lang={lang}
+                    onRegenerate={(idx) => openFeedbackModal("video", idx)}
+                    regenerating={regeneratingKey === `video-${i}`}
+                  />
+                );
               }
               const title = getKitMediaItemTitle(rec, i, "video");
               const body = getKitMediaPlainBody(rec, "video");
+              const caption = pickByLang(rec, lang, "caption_ar", "caption_en", "caption");
               return (
                 <KitPromptCard
                   key={`${kit.id}-video-${i}`}
                   title={title}
                   body={body}
+                  caption={caption || undefined}
+                  onRegenerate={() => openFeedbackModal("video", i)}
+                  regenerating={regeneratingKey === `video-${i}`}
                   copyLabel="Copy video prompt"
                 />
               );
@@ -813,7 +1122,7 @@ export default function KitViewer({ kit }: { kit: KitSummary }) {
           title="Output summary"
           subtitle="Structured blocks not detected"
           icon="dataset"
-          iconBg="bg-primary/15 text-primary"
+          iconBg="bg-brand-primary/15 text-brand-primary dark:bg-primary/15 dark:text-primary"
           open={!!openMap["kit-section-summary"]}
           onToggle={() => toggle("kit-section-summary")}
           tocLabel="Output summary"
@@ -830,7 +1139,7 @@ export default function KitViewer({ kit }: { kit: KitSummary }) {
           title="Strategy & additional fields"
           subtitle="Offer line & strategy object"
           icon="auto_awesome"
-          iconBg="bg-secondary/15 text-secondary"
+          iconBg="bg-brand-accent/15 text-brand-accent dark:bg-secondary/15 dark:text-secondary"
           open={!!openMap["kit-section-strategy"]}
           onToggle={() => toggle("kit-section-strategy")}
           tocLabel="Strategy"
@@ -841,7 +1150,7 @@ export default function KitViewer({ kit }: { kit: KitSummary }) {
               copyLabel="Copy headline"
               className="mb-4"
             >
-              <blockquote className="border-s-4 border-secondary bg-surface-container-lowest/50 p-4 text-lg italic text-on-surface">
+              <blockquote className="border-s-4 border-brand-accent bg-earth-alt/60 p-4 text-lg italic text-on-surface dark:border-secondary dark:bg-surface-container-lowest/50">
                 {data.offer_headline}
               </blockquote>
             </BlockWithCopy>
@@ -852,7 +1161,7 @@ export default function KitViewer({ kit }: { kit: KitSummary }) {
               copyLabel="Copy strategy JSON"
             >
               <pre
-                className="max-h-80 overflow-auto rounded-2xl bg-surface-container-lowest p-4 text-xs text-on-surface-variant"
+                className="max-h-80 overflow-auto rounded-2xl bg-earth-alt p-4 text-xs text-brand-muted dark:bg-surface-container-lowest dark:text-on-surface-variant"
                 dir="ltr"
               >
                 {JSON.stringify(data.strategy, null, 2)}
@@ -868,7 +1177,7 @@ export default function KitViewer({ kit }: { kit: KitSummary }) {
           title="Pain points"
           subtitle={`${painPoints.length} item(s)`}
           icon="error_outline"
-          iconBg="bg-error/10 text-error"
+          iconBg="bg-brand-accent/10 text-brand-accent dark:bg-error/10 dark:text-error"
           open={!!openMap["kit-section-pain"]}
           onToggle={() => toggle("kit-section-pain")}
           tocLabel="Pain points"
@@ -877,11 +1186,11 @@ export default function KitViewer({ kit }: { kit: KitSummary }) {
             {painPoints.map((line, i) => (
               <li
                 key={i}
-                className="min-w-0 max-w-full overflow-x-clip rounded-xl border border-outline/15 bg-surface-container-lowest/40 p-3"
+                className="min-w-0 max-w-full overflow-x-clip rounded-xl border border-brand-sand/25 bg-earth-card/80 p-3 dark:border-outline/15 dark:bg-surface-container-lowest/40"
               >
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                   <span className="flex min-w-0 flex-1 items-start gap-2 text-on-surface-variant">
-                    <span className="material-symbols-outlined mt-0.5 shrink-0 text-sm text-error">error_outline</span>
+                    <span className="material-symbols-outlined mt-0.5 shrink-0 text-sm text-brand-accent dark:text-error">error_outline</span>
                     <span className="min-w-0 [overflow-wrap:anywhere]">{line}</span>
                   </span>
                   <div className="shrink-0 sm:pt-0.5">
@@ -902,7 +1211,7 @@ export default function KitViewer({ kit }: { kit: KitSummary }) {
         title="Full JSON"
         subtitle="Raw payload"
         icon="code"
-        iconBg="bg-surface-container-highest text-on-surface-variant"
+        iconBg="bg-brand-sand/20 text-brand-muted dark:bg-surface-container-highest dark:text-on-surface-variant"
         open={!!openMap["kit-section-json"]}
         onToggle={() => toggle("kit-section-json")}
         tocLabel="Full JSON"
@@ -912,7 +1221,7 @@ export default function KitViewer({ kit }: { kit: KitSummary }) {
         </p>
         <BlockWithCopy copyText={JSON.stringify(data, null, 2)} copyLabel="Copy full JSON">
           <pre
-            className="max-h-[min(70vh,520px)] overflow-auto rounded-2xl bg-surface-container-lowest p-4 text-[0.75rem] leading-relaxed text-on-surface-variant"
+            className="max-h-[min(70vh,520px)] overflow-auto rounded-2xl bg-earth-alt p-4 text-[0.75rem] leading-relaxed text-brand-muted dark:bg-surface-container-lowest dark:text-on-surface-variant"
             dir="ltr"
           >
             {JSON.stringify(data, null, 2)}
@@ -924,11 +1233,72 @@ export default function KitViewer({ kit }: { kit: KitSummary }) {
         <button
           type="button"
           onClick={scrollToToc}
-          className="fixed bottom-6 end-6 z-50 flex h-12 w-12 touch-manipulation items-center justify-center rounded-full border border-outline/30 bg-primary text-on-primary shadow-lg transition hover:scale-105 focus-visible:ring-2 focus-visible:ring-primary/50 md:bottom-10 md:end-10"
+          className="fixed bottom-6 end-6 z-50 flex h-12 w-12 touch-manipulation items-center justify-center rounded-full border border-brand-sand/35 bg-brand-primary text-white shadow-lg transition hover:scale-105 hover:bg-brand-primary/90 dark:border-outline/30 dark:bg-primary dark:text-on-primary focus-visible:ring-2 focus-visible:ring-primary/50 md:bottom-10 md:end-10"
           aria-label="Back to section index"
         >
           <span className="material-symbols-outlined">vertical_align_top</span>
         </button>
+      ) : null}
+      {feedbackOpen && pendingRegenerate ? (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-surface/65 p-4 backdrop-blur-sm"
+          onClick={closeFeedbackModal}
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-xl rounded-2xl border border-brand-sand/35 bg-earth-card p-5 shadow-2xl dark:border-outline/35 dark:bg-surface-container"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4">
+              <h3 className="font-headline text-lg font-bold text-on-surface">Regenerate item</h3>
+              <p className="mt-1 text-sm text-on-surface-variant">
+                Add optional feedback to guide the rewrite for this {pendingRegenerate.item_type} item.
+              </p>
+            </div>
+            <label className="block">
+              <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                Feedback (optional)
+              </span>
+              <textarea
+                ref={feedbackTextareaRef}
+                value={feedbackDraft}
+                onChange={(e) => setFeedbackDraft(e.target.value)}
+                rows={4}
+                maxLength={1200}
+                className="w-full rounded-xl border border-brand-sand/35 bg-earth-alt px-3 py-2 text-sm text-on-surface outline-none transition focus-visible:ring-2 focus-visible:ring-primary/45 dark:border-outline/35 dark:bg-surface-container-high"
+                placeholder="Example: make it more concise, stronger hook, less formal tone..."
+              />
+            </label>
+            <div className="mt-2 text-[11px] text-on-surface-variant">{feedbackDraft.length}/1200</div>
+            <div className="mt-1 text-[11px] text-on-surface-variant">Shortcut: Ctrl/Cmd + Enter to regenerate</div>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeFeedbackModal}
+                disabled={Boolean(regeneratingKey)}
+                className="rounded-xl border border-brand-sand/30 bg-earth-alt px-4 py-2 text-sm font-semibold text-on-surface disabled:opacity-50 dark:border-outline/30 dark:bg-surface-container-high"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void submitRegenerate(true)}
+                disabled={Boolean(regeneratingKey)}
+                className="rounded-xl border border-brand-sand/30 bg-earth-alt px-4 py-2 text-sm font-semibold text-on-surface disabled:opacity-50 dark:border-outline/30 dark:bg-surface-container-high"
+              >
+                Regenerate without feedback
+              </button>
+              <button
+                type="button"
+                onClick={() => void submitRegenerate(false)}
+                disabled={Boolean(regeneratingKey)}
+                className="rounded-xl bg-brand-primary px-4 py-2 text-sm font-bold text-white disabled:opacity-50 hover:bg-brand-primary/90 dark:bg-primary dark:text-on-primary"
+              >
+                {regeneratingKey ? "Regenerating..." : "Regenerate"}
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );

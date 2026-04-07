@@ -66,9 +66,9 @@ const inputCls =
 const textareaCls = cn(inputCls, "min-h-[100px] resize-y");
 const errCls = "mt-1 text-sm text-error";
 const btnPrimary =
-  "rounded-xl bg-gradient-to-r from-primary to-primary-container px-5 py-3 font-bold text-on-primary-container shadow-lg shadow-primary/15 transition active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50";
+  "rounded-xl bg-gradient-to-r from-primary to-primary-container px-5 py-3 font-bold text-on-primary-container shadow-lg shadow-primary/15 transition active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50 dark:from-brand-primary dark:to-brand-accent dark:text-brand-darkText";
 const btnSecondary =
-  "rounded-xl border border-outline/30 bg-surface-container-high px-5 py-3 font-semibold text-on-surface transition hover:bg-surface-container-highest focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50";
+  "rounded-xl border border-outline/30 bg-surface-container-high px-5 py-3 font-semibold text-on-surface transition hover:bg-surface-container-highest focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50 dark:border-brand-muted/40 dark:bg-earth-darkCard dark:text-brand-darkText";
 
 export default function WizardCore(props: WizardCoreProps) {
   const nav = useNavigate();
@@ -222,7 +222,7 @@ export default function WizardCore(props: WizardCoreProps) {
       <div className="mb-10">
         <h2 className="font-headline text-3xl font-extrabold tracking-tight text-on-surface md:text-4xl">{props.title}</h2>
         <p className="mt-2 max-w-3xl text-on-surface-variant">{props.subtitle}</p>
-        <div className="mt-4 rounded-xl border border-primary/25 bg-primary/10 px-4 py-3 text-sm text-on-surface">
+        <div className="mt-4 rounded-xl border border-primary/25 bg-primary/10 px-4 py-3 text-sm text-on-surface dark:border-brand-primary/40 dark:bg-brand-primary/15">
           <p className="font-semibold">Flow</p>
           <p className="mt-1 text-on-surface-variant">
             Fill this path then click <strong>Generate kit</strong>. Output opens at <code>{props.routeHint}</code>.
@@ -231,7 +231,7 @@ export default function WizardCore(props: WizardCoreProps) {
       </div>
 
       {showDraftBanner && (
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-tertiary/25 bg-tertiary/10 px-4 py-3 text-sm text-on-surface">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-tertiary/25 bg-tertiary/10 px-4 py-3 text-sm text-on-surface dark:border-brand-sand/40 dark:bg-brand-sand/10 dark:text-brand-darkText">
           <span>Restored a saved draft for this path.</span>
           <button type="button" className={btnSecondary + " py-2 text-sm"} onClick={clearDraft}>
             Clear draft
@@ -239,7 +239,7 @@ export default function WizardCore(props: WizardCoreProps) {
         </div>
       )}
 
-      <div className="wizard-root overflow-hidden rounded-3xl border border-outline/30 bg-surface-container-low" aria-busy={loading}>
+      <div className="wizard-root overflow-hidden rounded-3xl border border-outline/30 bg-surface-container-low dark:border-brand-muted/40 dark:bg-earth-darkCard/75" aria-busy={loading}>
         <div className={cn("wizard-body-wrap relative !rounded-3xl", loading && "wizard-body-wrap--loading")}>
           <div className="wizard-body p-6 md:p-8">
             <div className="mb-8 flex flex-wrap gap-2">
@@ -248,7 +248,9 @@ export default function WizardCore(props: WizardCoreProps) {
                   key={id}
                   className={cn(
                     "rounded-full border px-3 py-1.5 text-xs font-semibold transition",
-                    i === step ? "border-primary/30 bg-primary/20 text-primary" : "border-transparent bg-surface-container-lowest text-on-surface-variant"
+                    i === step
+                      ? "border-primary/30 bg-primary/20 text-primary dark:border-brand-primary/45 dark:bg-brand-primary/15 dark:text-brand-darkText"
+                      : "border-transparent bg-surface-container-lowest text-on-surface-variant dark:bg-earth-darkBg/55 dark:text-brand-darkText/70"
                   )}
                 >
                   {i + 1}. {props.stepTitles[id]}
@@ -443,10 +445,10 @@ export default function WizardCore(props: WizardCoreProps) {
               </div>
             )}
 
-            {err && <p className="mt-4 text-error">{err}</p>}
+            {err && <p className="mt-4 text-error dark:text-brand-accent">{err}</p>}
 
             {isFinalStep && !loading && (
-              <div className="mb-5 rounded-xl border border-primary/30 bg-primary/10 p-4">
+              <div className="mb-5 rounded-xl border border-primary/30 bg-primary/10 p-4 dark:border-brand-primary/40 dark:bg-brand-primary/15">
                 {!confirmSubmit ? (
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
