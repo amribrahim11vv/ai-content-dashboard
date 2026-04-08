@@ -99,7 +99,8 @@ export default function ContentWizard() {
                 className={cn(
                   "mb-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-container-highest transition duration-500 group-hover:scale-110",
                   c.accent === "primary" && "text-primary group-hover:bg-primary/10",
-                  c.accent === "tertiary" && "bg-tertiary-container/60 text-on-tertiary-container group-hover:bg-tertiary-container",
+                  c.accent === "tertiary" &&
+                    "bg-brand-sand/70 text-brand-accent group-hover:bg-brand-sand dark:bg-brand-sand/75 dark:text-brand-accent",
                   c.accent === "secondary" && "text-secondary group-hover:bg-secondary/10"
                 )}
               >
