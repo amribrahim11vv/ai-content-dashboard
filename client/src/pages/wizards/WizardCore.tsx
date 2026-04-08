@@ -5,10 +5,36 @@ import type { z } from "zod";
 import { useNavigate } from "react-router-dom";
 import { generateKit, listPromptCatalogIndustries } from "../../api";
 import { BRIEF_LIMITS, briefSchema, initialBriefForm } from "../../briefSchema";
+import PillGroup from "../../components/selection/PillGroup";
+import SelectableCard from "../../components/selection/SelectableCard";
+import {
+  decodeMultiSelection,
+  decodeSingleSelection,
+  encodeMultiSelection,
+  encodeSingleSelection,
+} from "../../lib/selectionFieldCodec";
 import { isWizardDirty, parseWizardDraft } from "../../wizardDraft";
 import type { BriefForm } from "../../types";
+import {
+  BRAND_TONE_OPTIONS,
+  MAIN_GOAL_OPTIONS,
+  OTHER_OPTION,
+  PLATFORM_OPTIONS,
+  TARGET_AUDIENCE_OPTIONS,
+} from "./selectionOptions";
 
 type StepId = "brand" | "audience" | "channels" | "offer" | "creative" | "volume";
+
+type SelectionState = {
+  mainGoalSelected: string;
+  mainGoalOther: string;
+  brandToneSelected: string;
+  brandToneOther: string;
+  audienceSelected: string[];
+  audienceOther: string;
+  platformsSelected: string[];
+  platformsOther: string;
+};
 
 type WizardCoreProps = {
   draftKey: string;
@@ -116,6 +142,7 @@ export default function WizardCore(props: WizardCoreProps) {
   const {
     register,
     control,
+    setValue,
     watch,
     reset,
     getValues,
@@ -126,6 +153,23 @@ export default function WizardCore(props: WizardCoreProps) {
     resolver: zodResolverMemo,
     defaultValues: initialState.form,
     mode: "onTouched",
+  });
+
+  const [selectionState, setSelectionState] = useState<SelectionState>(() => {
+    const goal = decodeSingleSelection(initialState.form.main_goal, MAIN_GOAL_OPTIONS);
+    const tone = decodeSingleSelection(initialState.form.brand_tone, BRAND_TONE_OPTIONS);
+    const audience = decodeMultiSelection(initialState.form.target_audience, TARGET_AUDIENCE_OPTIONS);
+    const platforms = decodeMultiSelection(initialState.form.platforms, PLATFORM_OPTIONS);
+    return {
+      mainGoalSelected: goal.selected,
+      mainGoalOther: goal.otherText,
+      brandToneSelected: tone.selected,
+      brandToneOther: tone.otherText,
+      audienceSelected: audience.selected,
+      audienceOther: audience.otherText,
+      platformsSelected: platforms.selected,
+      platformsOther: platforms.otherText,
+    };
   });
 
   function showField(step: StepId, key: keyof BriefForm): boolean {
@@ -180,9 +224,50 @@ export default function WizardCore(props: WizardCoreProps) {
   const clearDraft = () => {
     localStorage.removeItem(props.draftKey);
     reset(mergedDefaults);
+    setSelectionState({
+      mainGoalSelected: "",
+      mainGoalOther: "",
+      brandToneSelected: "",
+      brandToneOther: "",
+      audienceSelected: [],
+      audienceOther: "",
+      platformsSelected: [],
+      platformsOther: "",
+    });
     setStep(0);
     setShowDraftBanner(false);
   };
+
+  const toggleListValue = (list: readonly string[], value: string): string[] =>
+    list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
+
+  useEffect(() => {
+    const serializedGoal = encodeSingleSelection(
+      selectionState.mainGoalSelected,
+      selectionState.mainGoalOther,
+      MAIN_GOAL_OPTIONS
+    );
+    const serializedTone = encodeSingleSelection(
+      selectionState.brandToneSelected,
+      selectionState.brandToneOther,
+      BRAND_TONE_OPTIONS
+    );
+    const serializedAudience = encodeMultiSelection(
+      selectionState.audienceSelected,
+      selectionState.audienceOther,
+      TARGET_AUDIENCE_OPTIONS
+    );
+    const serializedPlatforms = encodeMultiSelection(
+      selectionState.platformsSelected,
+      selectionState.platformsOther,
+      PLATFORM_OPTIONS
+    );
+
+    setValue("main_goal", serializedGoal, { shouldDirty: true });
+    setValue("brand_tone", serializedTone, { shouldDirty: true });
+    setValue("target_audience", serializedAudience, { shouldDirty: true });
+    setValue("platforms", serializedPlatforms, { shouldDirty: true });
+  }, [selectionState, setValue]);
 
   const next = async () => {
     const current = props.stepOrder[step]!;
@@ -286,15 +371,91 @@ export default function WizardCore(props: WizardCoreProps) {
               <div className="space-y-6">
                 {showField("audience", "target_audience") && (
                   <div>
-                    <label htmlFor="target_audience" className={labelCls}>Target audience</label>
-                    <div className={fieldShell}><textarea id="target_audience" className={textareaCls} {...register("target_audience")} /></div>
+                    <label className={labelCls}>Target audience</label>
+                    <PillGroup
+                      options={TARGET_AUDIENCE_OPTIONS}
+                      selectedValues={selectionState.audienceSelected}
+                      onToggle={(value) => {
+                        setSelectionState((prev) => ({
+                          ...prev,
+                          audienceSelected: toggleListValue(prev.audienceSelected, value),
+                        }));
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="mt-3 inline-flex items-center gap-2 rounded-full border border-brand-sand/30 bg-earth-card px-3 py-1.5 text-xs font-semibold text-on-surface transition hover:bg-earth-alt dark:border-outline/30 dark:bg-surface-container-high dark:hover:bg-surface-container-highest"
+                      onClick={() =>
+                        setSelectionState((prev) => {
+                          const enabled = !!prev.audienceOther.trim() || prev.audienceSelected.includes(OTHER_OPTION.value);
+                          return {
+                            ...prev,
+                            audienceSelected: enabled
+                              ? prev.audienceSelected.filter((v) => v !== OTHER_OPTION.value)
+                              : [...prev.audienceSelected, OTHER_OPTION.value],
+                          };
+                        })
+                      }
+                    >
+                      <span>{OTHER_OPTION.icon}</span>
+                      <span>{OTHER_OPTION.labelAr}</span>
+                    </button>
+                    {selectionState.audienceSelected.includes(OTHER_OPTION.value) && (
+                      <div className={fieldShell + " mt-3"}>
+                        <input
+                          id="target_audience_other"
+                          className={inputCls}
+                          value={selectionState.audienceOther}
+                          onChange={(e) => setSelectionState((prev) => ({ ...prev, audienceOther: e.target.value }))}
+                          placeholder="اكتب جمهورك المستهدف..."
+                        />
+                      </div>
+                    )}
                     {errors.target_audience && <p className={errCls}>{errors.target_audience.message}</p>}
                   </div>
                 )}
                 {showField("audience", "main_goal") && (
                   <div>
-                    <label htmlFor="main_goal" className={labelCls}>Main campaign goal</label>
-                    <div className={fieldShell}><textarea id="main_goal" className={textareaCls} {...register("main_goal")} /></div>
+                    <label className={labelCls}>Main campaign goal</label>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {MAIN_GOAL_OPTIONS.map((option) => (
+                        <SelectableCard
+                          key={option.value}
+                          label={option.labelAr}
+                          icon={option.icon}
+                          selected={selectionState.mainGoalSelected === option.value}
+                          onClick={() =>
+                            setSelectionState((prev) => ({
+                              ...prev,
+                              mainGoalSelected: option.value,
+                              mainGoalOther: "",
+                            }))
+                          }
+                        />
+                      ))}
+                      <SelectableCard
+                        label={OTHER_OPTION.labelAr}
+                        icon={OTHER_OPTION.icon}
+                        selected={selectionState.mainGoalSelected === OTHER_OPTION.value}
+                        onClick={() =>
+                          setSelectionState((prev) => ({
+                            ...prev,
+                            mainGoalSelected: OTHER_OPTION.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    {selectionState.mainGoalSelected === OTHER_OPTION.value && (
+                      <div className={fieldShell + " mt-3"}>
+                        <input
+                          id="main_goal_other"
+                          className={inputCls}
+                          value={selectionState.mainGoalOther}
+                          onChange={(e) => setSelectionState((prev) => ({ ...prev, mainGoalOther: e.target.value }))}
+                          placeholder="اكتب هدف الحملة..."
+                        />
+                      </div>
+                    )}
                     {errors.main_goal && <p className={errCls}>{errors.main_goal.message}</p>}
                   </div>
                 )}
@@ -305,8 +466,46 @@ export default function WizardCore(props: WizardCoreProps) {
               <div className="space-y-6">
                 {showField("channels", "platforms") && (
                   <div>
-                    <label htmlFor="platforms" className={labelCls}>Active platforms</label>
-                    <div className={fieldShell}><textarea id="platforms" className={textareaCls} {...register("platforms")} /></div>
+                    <label className={labelCls}>Active platforms</label>
+                    <PillGroup
+                      options={PLATFORM_OPTIONS}
+                      selectedValues={selectionState.platformsSelected}
+                      onToggle={(value) =>
+                        setSelectionState((prev) => ({
+                          ...prev,
+                          platformsSelected: toggleListValue(prev.platformsSelected, value),
+                        }))
+                      }
+                    />
+                    <button
+                      type="button"
+                      className="mt-3 inline-flex items-center gap-2 rounded-full border border-brand-sand/30 bg-earth-card px-3 py-1.5 text-xs font-semibold text-on-surface transition hover:bg-earth-alt dark:border-outline/30 dark:bg-surface-container-high dark:hover:bg-surface-container-highest"
+                      onClick={() =>
+                        setSelectionState((prev) => {
+                          const enabled = !!prev.platformsOther.trim() || prev.platformsSelected.includes(OTHER_OPTION.value);
+                          return {
+                            ...prev,
+                            platformsSelected: enabled
+                              ? prev.platformsSelected.filter((v) => v !== OTHER_OPTION.value)
+                              : [...prev.platformsSelected, OTHER_OPTION.value],
+                          };
+                        })
+                      }
+                    >
+                      <span>{OTHER_OPTION.icon}</span>
+                      <span>{OTHER_OPTION.labelAr}</span>
+                    </button>
+                    {selectionState.platformsSelected.includes(OTHER_OPTION.value) && (
+                      <div className={fieldShell + " mt-3"}>
+                        <input
+                          id="platforms_other"
+                          className={inputCls}
+                          value={selectionState.platformsOther}
+                          onChange={(e) => setSelectionState((prev) => ({ ...prev, platformsOther: e.target.value }))}
+                          placeholder="اكتب منصة إضافية..."
+                        />
+                      </div>
+                    )}
                     {errors.platforms && <p className={errCls}>{errors.platforms.message}</p>}
                   </div>
                 )}
@@ -314,8 +513,46 @@ export default function WizardCore(props: WizardCoreProps) {
                   <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
                     {showField("channels", "brand_tone") && (
                       <div>
-                        <label htmlFor="brand_tone" className={labelCls}>Brand tone</label>
-                        <div className={fieldShell}><input id="brand_tone" className={inputCls} {...register("brand_tone")} /></div>
+                        <label className={labelCls}>Brand tone</label>
+                        <div className="space-y-3">
+                          {BRAND_TONE_OPTIONS.map((option) => (
+                            <SelectableCard
+                              key={option.value}
+                              label={option.labelAr}
+                              icon={option.icon}
+                              selected={selectionState.brandToneSelected === option.value}
+                              onClick={() =>
+                                setSelectionState((prev) => ({
+                                  ...prev,
+                                  brandToneSelected: option.value,
+                                  brandToneOther: "",
+                                }))
+                              }
+                            />
+                          ))}
+                          <SelectableCard
+                            label={OTHER_OPTION.labelAr}
+                            icon={OTHER_OPTION.icon}
+                            selected={selectionState.brandToneSelected === OTHER_OPTION.value}
+                            onClick={() =>
+                              setSelectionState((prev) => ({
+                                ...prev,
+                                brandToneSelected: OTHER_OPTION.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        {selectionState.brandToneSelected === OTHER_OPTION.value && (
+                          <div className={fieldShell + " mt-3"}>
+                            <input
+                              id="brand_tone_other"
+                              className={inputCls}
+                              value={selectionState.brandToneOther}
+                              onChange={(e) => setSelectionState((prev) => ({ ...prev, brandToneOther: e.target.value }))}
+                              placeholder="اكتب نبرة البراند..."
+                            />
+                          </div>
+                        )}
                         {errors.brand_tone && <p className={errCls}>{errors.brand_tone.message}</p>}
                       </div>
                     )}

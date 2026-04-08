@@ -59,25 +59,25 @@ const requiredStr = (message: string) => z.string().trim().min(1, { message });
 /** Social path: minimum viable brief for reach/engagement prompts. */
 export const socialBriefSchema = briefSchema.extend({
   industry: requiredStr("Select an industry"),
-  target_audience: requiredStr("Describe your audience"),
-  main_goal: requiredStr("Add a main campaign goal"),
-  platforms: requiredStr("List active platforms"),
-  brand_tone: requiredStr("Describe brand tone"),
+  target_audience: requiredStr("Select at least one audience"),
+  main_goal: requiredStr("Select a main campaign goal"),
+  platforms: requiredStr("Select at least one active platform"),
+  brand_tone: requiredStr("Select brand tone"),
 });
 
 /** Offer path: conversion-focused minimum. */
 export const offerBriefSchema = briefSchema.extend({
   industry: requiredStr("Select an industry"),
   offer: requiredStr("Describe your offer"),
-  target_audience: requiredStr("Describe your audience"),
-  main_goal: requiredStr("Add a main goal"),
+  target_audience: requiredStr("Select at least one audience"),
+  main_goal: requiredStr("Select a main goal"),
 });
 
 /** Deep path: authority content minimum. */
 export const deepBriefSchema = briefSchema.extend({
   industry: requiredStr("Select an industry"),
-  target_audience: requiredStr("Describe your audience"),
-  main_goal: requiredStr("Add a main goal"),
+  target_audience: requiredStr("Select at least one audience"),
+  main_goal: requiredStr("Select a main goal"),
   visual_notes: requiredStr("Add creative direction"),
   campaign_duration: requiredStr("Add timing or duration"),
   best_content_types: requiredStr("List content types you want"),
