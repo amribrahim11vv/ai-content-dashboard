@@ -20,7 +20,7 @@ export default function DeepContentWizard() {
       }}
       stepFields={{
         audience: ["target_audience", "main_goal"],
-        creative: ["visual_notes", "best_content_types", "campaign_duration"],
+        creative: ["visual_notes", "reference_image", "best_content_types", "campaign_duration"],
       }}
       defaults={{
         campaign_mode: "deep",
