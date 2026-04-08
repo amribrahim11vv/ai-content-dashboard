@@ -7,7 +7,7 @@ import { db } from "../db/index.js";
 import { kits, idempotencyKeys, type KitRow } from "../db/schema.js";
 import { buildSubmissionSnapshot, briefFingerprint, isPlainObject, parseSubmissionSnapshotJson } from "../logic/parse.js";
 import { resolvePrompt } from "../logic/promptResolver.js";
-import { callGeminiAPI, loadGeminiSettingsFromEnv, type GeminiSettings } from "../logic/geminiClient.js";
+import { callGeminiAPI, loadGeminiSettingsFromEnv, type GeminiReferenceImage, type GeminiSettings } from "../logic/geminiClient.js";
 import { validateGeminiResponse } from "../logic/validate.js";
 import { getStatusBadgeLabel, getStatusBadgePalette, normalizeDeliveryStatus } from "../logic/status.js";
 import { buildDemoKitContent } from "../logic/demoKit.js";
@@ -17,6 +17,8 @@ import type { SubmissionSnapshot } from "../logic/constants.js";
 import type { Next } from "hono";
 
 const IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000;
+const MAX_REFERENCE_IMAGE_BYTES = 2 * 1024 * 1024;
+const ALLOWED_REFERENCE_IMAGE_MIME = new Set(["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif"]);
 
 const generateBodySchema = z
   .object({
@@ -32,6 +34,7 @@ const generateBodySchema = z
     offer: z.string().optional().default(""),
     competitors: z.string().optional().default(""),
     visual_notes: z.string().optional().default(""),
+    reference_image: z.string().optional().default(""),
     campaign_duration: z.string().optional().default(""),
     budget_level: z.string().optional().default(""),
     best_content_types: z.string().optional().default(""),
@@ -302,14 +305,15 @@ function buildJsonCorrectionPrompt(basePrompt: string, validationErrors: string[
 async function generateWithGuardrails(
   basePrompt: string,
   snapshot: SubmissionSnapshot,
-  settings: GeminiSettings
+  settings: GeminiSettings,
+  referenceImage?: GeminiReferenceImage
 ): Promise<{ aiContent: Record<string, unknown>; jsonValid: boolean; retryCount: number }> {
   let retryCount = 0;
   let promptText = basePrompt;
   let lastErrors: string[] = [];
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
-    const raw = await callGeminiAPI(promptText, settings);
+    const raw = await callGeminiAPI(promptText, settings, undefined, referenceImage);
     if (!isPlainObject(raw)) {
       lastErrors = ["Gemini returned non-object JSON."];
     } else {
@@ -336,10 +340,39 @@ function logGenerationTelemetry(meta: {
   industrySource: "brief" | "fallback";
   jsonValid: boolean;
   retryCount: number;
+  has_reference_image: boolean;
   correlationId: string;
   kitId?: string;
 }) {
   console.info("[prompt_telemetry]", JSON.stringify(meta));
+}
+
+function estimateBase64ByteLength(base64Text: string): number {
+  const clean = String(base64Text ?? "").replace(/\s+/g, "");
+  const padding = clean.endsWith("==") ? 2 : clean.endsWith("=") ? 1 : 0;
+  return Math.floor((clean.length * 3) / 4) - padding;
+}
+
+function parseReferenceImageFromDataUrl(referenceImageValue: string): GeminiReferenceImage | undefined {
+  const raw = String(referenceImageValue ?? "").trim();
+  if (!raw) return undefined;
+  const match = raw.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) {
+    throw new Error("reference_image must be a valid base64 data URL.");
+  }
+  const mimeType = String(match[1] ?? "").trim().toLowerCase();
+  const dataBase64 = String(match[2] ?? "").trim();
+  if (!ALLOWED_REFERENCE_IMAGE_MIME.has(mimeType)) {
+    throw new Error("reference_image mime type is not supported.");
+  }
+  if (!dataBase64) {
+    throw new Error("reference_image payload is empty.");
+  }
+  const bytes = estimateBase64ByteLength(dataBase64);
+  if (bytes <= 0 || bytes > MAX_REFERENCE_IMAGE_BYTES) {
+    throw new Error(`reference_image is too large. Max allowed is ${MAX_REFERENCE_IMAGE_BYTES} bytes.`);
+  }
+  return { mimeType, dataBase64 };
 }
 
 export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => Promise<void | Response>) {
@@ -361,6 +394,12 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
     }
 
     const snapshot = buildSubmissionSnapshot(body as Record<string, unknown>);
+    let referenceImage: GeminiReferenceImage | undefined;
+    try {
+      referenceImage = parseReferenceImageFromDataUrl(snapshot.reference_image);
+    } catch (e) {
+      return c.json({ error: String(e) }, 400);
+    }
     const fp = briefFingerprint(snapshot);
     const keyHash = hashIdempotencyKey(idemHeader);
 
@@ -420,7 +459,7 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
 
     try {
       const promptText = resolved.renderedPrompt;
-      const { aiContent, jsonValid, retryCount } = await generateWithGuardrails(promptText, snapshot, settings);
+      const { aiContent, jsonValid, retryCount } = await generateWithGuardrails(promptText, snapshot, settings, referenceImage);
       const emailResult = await sendKitEmail(snapshot, aiContent);
       const delivery = resolveDeliveryStatus(emailResult);
       const row = await persistKit(snapshot, aiContent, {
@@ -437,6 +476,7 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
         industrySource: resolved.industrySource,
         jsonValid,
         retryCount,
+        has_reference_image: Boolean(referenceImage),
         correlationId,
         kitId: row.id,
       });
@@ -462,6 +502,7 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
         industrySource: resolved.industrySource,
         jsonValid: false,
         retryCount: 1,
+        has_reference_image: Boolean(referenceImage),
         correlationId,
         kitId: row.id,
       });
@@ -520,6 +561,12 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
     const correlationId = nanoid();
     const nextVersion = row.rowVersion + 1;
     const resolved = await resolvePrompt(snapshot.industry, snapshot);
+    let referenceImage: GeminiReferenceImage | undefined;
+    try {
+      referenceImage = parseReferenceImageFromDataUrl(snapshot.reference_image);
+    } catch (e) {
+      return c.json({ error: String(e) }, 400);
+    }
 
     const demoMode = String(process.env.DEMO_MODE ?? "").toLowerCase() === "true";
 
@@ -585,7 +632,7 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
 
     try {
       const promptText = resolved.renderedPrompt;
-      const { aiContent, jsonValid, retryCount } = await generateWithGuardrails(promptText, snapshot, settings);
+      const { aiContent, jsonValid, retryCount } = await generateWithGuardrails(promptText, snapshot, settings, referenceImage);
       const emailResult = await sendKitEmail(snapshot, aiContent);
       const delivery = resolveDeliveryStatus(emailResult);
       const finalRow = await db
@@ -610,6 +657,7 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
         industrySource: resolved.industrySource,
         jsonValid,
         retryCount,
+        has_reference_image: Boolean(referenceImage),
         correlationId,
         kitId: ok.id,
       });
@@ -639,6 +687,7 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
         industrySource: resolved.industrySource,
         jsonValid: false,
         retryCount: 1,
+        has_reference_image: Boolean(referenceImage),
         correlationId,
         kitId: fr.id,
       });

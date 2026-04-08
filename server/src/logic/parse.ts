@@ -65,6 +65,7 @@ export function buildSubmissionSnapshot(source: Record<string, unknown> | null |
     offer: String(s.offer ?? "").trim(),
     competitors: String(s.competitors ?? "").trim(),
     visual_notes: String(s.visual_notes ?? "").trim(),
+    reference_image: String(s.reference_image ?? "").trim(),
     campaign_duration: String(s.campaign_duration ?? "").trim(),
     budget_level: String(s.budget_level ?? "").trim(),
     best_content_types: String(s.best_content_types ?? "").trim(),

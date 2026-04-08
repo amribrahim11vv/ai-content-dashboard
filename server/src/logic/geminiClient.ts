@@ -8,6 +8,11 @@ export type GeminiSettings = {
   maxRetries: number;
 };
 
+export type GeminiReferenceImage = {
+  mimeType: string;
+  dataBase64: string;
+};
+
 function shouldRetryGemini(statusCode: number): boolean {
   return statusCode === 429 || statusCode >= 500;
 }
@@ -39,15 +44,26 @@ function truncate(value: string, maxLen: number): string {
 export async function callGeminiAPI(
   promptText: string,
   settings: GeminiSettings,
-  responseSchema?: Record<string, unknown>
+  responseSchema?: Record<string, unknown>,
+  referenceImage?: GeminiReferenceImage
 ): Promise<unknown> {
   const url =
     "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(settings.model) + ":generateContent";
+  const parts: Array<Record<string, unknown>> = [{ text: promptText }];
+  if (referenceImage) {
+    parts.push({
+      inlineData: {
+        mimeType: referenceImage.mimeType,
+        data: referenceImage.dataBase64,
+      },
+    });
+  }
+
   const payload = {
     contents: [
       {
         role: "user",
-        parts: [{ text: promptText }],
+        parts,
       },
     ],
     generationConfig: {

@@ -23,6 +23,7 @@ export function buildClientContextBlock(snapshot: SubmissionSnapshot): string {
     `Offer: ${cleanText(snapshot.offer)}`,
     `Competitors: ${cleanText(snapshot.competitors)}`,
     `Visual notes: ${cleanText(snapshot.visual_notes)}`,
+    `Reference image attached: ${cleanText(snapshot.reference_image) ? "yes" : "no"}`,
     `Campaign duration/timing: ${cleanText(snapshot.campaign_duration)}`,
     `Budget level: ${cleanText(snapshot.budget_level)}`,
     `Best content types: ${cleanText(snapshot.best_content_types)}`,
@@ -53,6 +54,7 @@ export function buildMetaPromptBlock(snapshot: SubmissionSnapshot): string {
   const goal = cleanText(snapshot.main_goal) || "Drive measurable marketing outcomes";
   const offer = cleanText(snapshot.offer) || "Not specified";
   const platforms = cleanText(snapshot.platforms) || "Not specified";
+  const hasReferenceImage = Boolean(cleanText(snapshot.reference_image));
   return [
     "You are a Creative Director and strategic marketer.",
     "Use a meta-prompting workflow internally before producing output.",
@@ -66,6 +68,11 @@ export function buildMetaPromptBlock(snapshot: SubmissionSnapshot): string {
     `Primary goal: ${goal}`,
     `Offer context: ${offer}`,
     `Target platforms: ${platforms}`,
+    `Reference image available: ${hasReferenceImage ? "yes" : "no"}`,
+    "",
+    hasReferenceImage
+      ? "You are given a visual reference image. Infer color palette, style language, and art direction, then apply it consistently in all generated outputs."
+      : "No visual reference image was provided. Infer the visual identity from client context only.",
     "",
     "Apply the deduced strategy directly in the generated assets.",
     "Do not output reasoning, hidden analysis, or planning notes.",

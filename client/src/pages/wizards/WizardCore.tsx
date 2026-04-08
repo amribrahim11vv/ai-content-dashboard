@@ -7,6 +7,7 @@ import { generateKit, listPromptCatalogIndustries } from "../../api";
 import { BRIEF_LIMITS, briefSchema, initialBriefForm } from "../../briefSchema";
 import PillGroup from "../../components/selection/PillGroup";
 import SelectableCard from "../../components/selection/SelectableCard";
+import ReferenceImageUploader from "../../components/ReferenceImageUploader";
 import {
   decodeMultiSelection,
   decodeSingleSelection,
@@ -74,7 +75,7 @@ const STEP_FIELDS: Record<StepId, (keyof BriefForm)[]> = {
   audience: ["target_audience", "main_goal"],
   channels: ["platforms", "brand_tone", "brand_colors"],
   offer: ["offer", "competitors"],
-  creative: ["visual_notes", "campaign_duration", "budget_level", "best_content_types"],
+  creative: ["visual_notes", "reference_image", "campaign_duration", "budget_level", "best_content_types"],
   volume: [],
 };
 
@@ -712,6 +713,16 @@ export default function WizardCore(props: WizardCoreProps) {
                     <label htmlFor="visual_notes" className={labelCls}>Visual / creative notes</label>
                     <div className={fieldShell}><textarea id="visual_notes" className={textareaCls} {...register("visual_notes")} /></div>
                     {errors.visual_notes && <p className={errCls}>{errors.visual_notes.message}</p>}
+                  </div>
+                )}
+                {showField("creative", "reference_image") && (
+                  <div>
+                    <ReferenceImageUploader
+                      value={watch("reference_image") || ""}
+                      onChange={(nextValue) => setValue("reference_image", nextValue, { shouldDirty: true })}
+                      disabled={loading}
+                    />
+                    {errors.reference_image && <p className={errCls}>{errors.reference_image.message}</p>}
                   </div>
                 )}
                 {(showField("creative", "campaign_duration") || showField("creative", "budget_level")) && (
