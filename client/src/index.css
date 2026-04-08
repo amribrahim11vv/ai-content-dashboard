@@ -122,6 +122,44 @@
     @apply min-h-screen bg-surface text-on-surface font-body;
   }
 
+  input,
+  textarea,
+  select {
+    color: rgb(var(--c-on-surface) / 0.98);
+    caret-color: rgb(var(--c-on-surface) / 0.98);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: rgb(var(--c-on-surface-variant) / 0.88);
+  }
+
+  html.dark input,
+  html.dark textarea,
+  html.dark select {
+    color: rgb(var(--c-on-surface) / 1);
+    caret-color: rgb(var(--c-on-surface) / 1);
+  }
+
+  html.dark input::placeholder,
+  html.dark textarea::placeholder {
+    color: rgb(var(--c-on-surface-variant) / 0.95);
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover,
+  select:-webkit-autofill:focus {
+    -webkit-text-fill-color: rgb(var(--c-on-surface) / 1);
+    box-shadow: 0 0 0px 1000px rgb(var(--c-surface-container-lowest) / 1) inset;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
   h1,
   h2,
   h3,
