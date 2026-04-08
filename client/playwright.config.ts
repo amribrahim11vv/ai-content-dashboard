@@ -27,7 +27,6 @@ export default defineConfig({
       DEMO_MODE: "true",
       API_SECRET: "e2e-test-secret",
       CORS_ORIGIN: "http://localhost:5173",
-      DATABASE_URL: "file:./server/data/e2e.db",
       GEMINI_API_KEY: "",
       GEMINI_MODEL: "gemini-3-flash-preview",
       VITE_API_URL: "http://localhost:8787",

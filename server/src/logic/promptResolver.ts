@@ -93,25 +93,29 @@ export async function resolvePrompt(industryInput: string, snapshot: SubmissionS
     };
   }
 
-  const industry = await db.select().from(industries).where(eq(industries.slug, targetSlug)).get();
-  let selected =
-    industry &&
-    (await db
+  const industryRows = await db.select().from(industries).where(eq(industries.slug, targetSlug)).limit(1);
+  const industry = industryRows[0];
+  let selected: (typeof industryPrompts.$inferSelect) | undefined;
+  if (industry) {
+    const promptRows = await db
       .select()
       .from(industryPrompts)
       .where(and(eq(industryPrompts.industryId, industry.id), eq(industryPrompts.status, "active")))
-      .get());
+      .limit(1);
+    selected = promptRows[0];
+  }
 
   let isFallback = false;
   let usedSlug = targetSlug;
   if (!selected) {
     isFallback = true;
     usedSlug = "fallback";
-    selected = await db
+    const fbRows = await db
       .select()
       .from(industryPrompts)
       .where(and(isNull(industryPrompts.industryId), eq(industryPrompts.status, "active")))
-      .get();
+      .limit(1);
+    selected = fbRows[0];
   }
 
   if (!selected) {

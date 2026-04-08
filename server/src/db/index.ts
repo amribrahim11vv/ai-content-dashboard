@@ -1,28 +1,135 @@
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import { mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { and, eq, isNull } from "drizzle-orm";
+import { Pool } from "pg";
 import { nanoid } from "nanoid";
 import * as schema from "./schema.js";
+import { industries, industryPrompts } from "./schema.js";
 
-const url = process.env.DATABASE_URL ?? "file:./data/app.db";
-const filePath = url.replace(/^file:/, "");
-mkdirSync(dirname(filePath), { recursive: true });
-
-const sqlite = new Database(filePath);
-sqlite.pragma("journal_mode = WAL");
-
-export const db = drizzle(sqlite, { schema });
-
-function ensureColumn(tableName: string, columnName: string, ddl: string) {
-  const cols = sqlite.prepare(`PRAGMA table_info(${tableName})`).all() as Array<{ name: string }>;
-  if (!cols.some((c) => c.name === columnName)) {
-    sqlite.exec(`ALTER TABLE ${tableName} ADD COLUMN ${ddl}`);
+/** pg v8+ treats sslmode=require in the URL like verify-full; Supabase needs rejectUnauthorized:false on the Pool instead. */
+function databaseUrlForPgPool(raw: string): string {
+  try {
+    const u = new URL(raw);
+    u.searchParams.delete("sslmode");
+    return u.toString();
+  } catch {
+    return raw;
   }
 }
 
-function seedPromptCatalog() {
-  const now = Date.now();
+const rawDatabaseUrl = process.env.DATABASE_URL?.trim();
+if (!rawDatabaseUrl || !/^postgres(ql)?:\/\//i.test(rawDatabaseUrl)) {
+  throw new Error(
+    "DATABASE_URL must be a PostgreSQL URL (e.g. Supabase pooler: postgresql://...). " +
+      "SQLite file: URLs are no longer supported for this server."
+  );
+}
+
+const useSsl =
+  !/localhost|127\.0\.0\.1/.test(rawDatabaseUrl) && !rawDatabaseUrl.includes("sslmode=disable");
+
+const pool = new Pool({
+  connectionString: databaseUrlForPgPool(rawDatabaseUrl),
+  max: 10,
+  ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+});
+
+export const db = drizzle(pool, { schema });
+
+const DDL = `
+CREATE SCHEMA IF NOT EXISTS social_geni;
+
+CREATE TABLE IF NOT EXISTS social_geni.kits (
+  id TEXT PRIMARY KEY NOT NULL,
+  brief_json TEXT NOT NULL,
+  result_json TEXT,
+  delivery_status TEXT NOT NULL,
+  model_used TEXT NOT NULL,
+  last_error TEXT NOT NULL DEFAULT '',
+  correlation_id TEXT NOT NULL,
+  prompt_version_id TEXT,
+  is_fallback BOOLEAN NOT NULL DEFAULT FALSE,
+  row_version INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS social_geni.idempotency_keys (
+  key_hash TEXT PRIMARY KEY NOT NULL,
+  brief_hash TEXT NOT NULL,
+  kit_id TEXT NOT NULL,
+  expires_at BIGINT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_kits_created ON social_geni.kits (created_at DESC);
+
+CREATE TABLE IF NOT EXISTS social_geni.notifications (
+  id TEXT PRIMARY KEY NOT NULL,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  kit_id TEXT,
+  read_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_created ON social_geni.notifications (created_at DESC);
+
+CREATE TABLE IF NOT EXISTS social_geni.user_profile (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  display_name TEXT NOT NULL DEFAULT '',
+  email TEXT NOT NULL DEFAULT '',
+  updated_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS social_geni.app_preferences (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  compact_table BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS social_geni.brand_voice (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  pillars_json TEXT NOT NULL,
+  avoid_words_json TEXT NOT NULL,
+  sample_snippet TEXT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS social_geni.extras_waitlist (
+  id TEXT PRIMARY KEY NOT NULL,
+  tool_id TEXT NOT NULL,
+  email TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS social_geni.industries (
+  id TEXT PRIMARY KEY NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_industries_slug ON social_geni.industries (slug);
+
+CREATE TABLE IF NOT EXISTS social_geni.industry_prompts (
+  id TEXT PRIMARY KEY NOT NULL,
+  industry_id TEXT,
+  version INTEGER NOT NULL,
+  status TEXT NOT NULL,
+  prompt_template TEXT NOT NULL,
+  notes TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_industry_prompts_industry ON social_geni.industry_prompts (industry_id);
+CREATE INDEX IF NOT EXISTS idx_industry_prompts_status ON social_geni.industry_prompts (status);
+`;
+
+async function seedPromptCatalog() {
+  const now = new Date();
   const industrySeeds = [
     { slug: "ecommerce", name: "E-commerce" },
     { slug: "real-estate", name: "Real Estate" },
@@ -31,136 +138,75 @@ function seedPromptCatalog() {
     { slug: "education", name: "Education" },
   ];
 
-  const insertIndustry = sqlite.prepare(
-    "INSERT OR IGNORE INTO industries (id, slug, name, is_active, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)"
-  );
   for (const item of industrySeeds) {
-    insertIndustry.run(nanoid(), item.slug, item.name, now, now);
+    await db
+      .insert(industries)
+      .values({
+        id: nanoid(),
+        slug: item.slug,
+        name: item.name,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .onConflictDoNothing({ target: industries.slug });
   }
 
-  const activeFallbackExists = sqlite
-    .prepare("SELECT id FROM industry_prompts WHERE industry_id IS NULL AND status = 'active' LIMIT 1")
-    .get() as { id: string } | undefined;
+  const activeFallback = await db
+    .select({ id: industryPrompts.id })
+    .from(industryPrompts)
+    .where(and(isNull(industryPrompts.industryId), eq(industryPrompts.status, "active")))
+    .limit(1);
 
-  if (!activeFallbackExists) {
-    const fallbackTemplate = [
-      "You are a world-class AI Creative Director and Growth Strategist.",
-      "Return ONLY valid JSON, no markdown, no code fences, no extra text.",
-      "Brand Name: {{brand_name}}",
-      "Industry: {{industry}}",
-      "Target Audience: {{target_audience}}",
-      "Main Goal: {{main_goal}}",
-      "Platforms: {{platforms}}",
-      "Brand Tone: {{brand_tone}}",
-      "Brand Colors: {{brand_colors}}",
-      "Offer: {{offer}}",
-      "Competitors: {{competitors}}",
-      "Visual Notes: {{visual_notes}}",
-      "Campaign Duration: {{campaign_duration}}",
-      "Budget Level: {{budget_level}}",
-      "Best Content Types: {{best_content_types}}",
-      "Counts: posts={{num_posts}}, images={{num_image_designs}}, videos={{num_video_prompts}}",
-      "Now output valid JSON only.",
-    ].join("\n");
+  if (activeFallback.length > 0) return;
 
-    sqlite
-      .prepare(
-        "INSERT INTO industry_prompts (id, industry_id, version, status, prompt_template, notes, created_at, updated_at) VALUES (?, NULL, 1, 'active', ?, ?, ?, ?)"
-      )
-      .run(nanoid(), fallbackTemplate, "Global fallback prompt", now, now);
-  }
+  const fallbackTemplate = [
+    "You are a world-class AI Creative Director and Growth Strategist.",
+    "Return ONLY valid JSON, no markdown, no code fences, no extra text.",
+    "Brand Name: {{brand_name}}",
+    "Industry: {{industry}}",
+    "Target Audience: {{target_audience}}",
+    "Main Goal: {{main_goal}}",
+    "Platforms: {{platforms}}",
+    "Brand Tone: {{brand_tone}}",
+    "Brand Colors: {{brand_colors}}",
+    "Offer: {{offer}}",
+    "Competitors: {{competitors}}",
+    "Visual Notes: {{visual_notes}}",
+    "Campaign Duration: {{campaign_duration}}",
+    "Budget Level: {{budget_level}}",
+    "Best Content Types: {{best_content_types}}",
+    "Counts: posts={{num_posts}}, images={{num_image_designs}}, videos={{num_video_prompts}}",
+    "Now output valid JSON only.",
+  ].join("\n");
+
+  await db.insert(industryPrompts).values({
+    id: nanoid(),
+    industryId: null,
+    version: 1,
+    status: "active",
+    promptTemplate: fallbackTemplate,
+    notes: "Global fallback prompt",
+    createdAt: now,
+    updatedAt: now,
+  });
 }
 
-export function runMigrations() {
-  sqlite.exec(`
-    CREATE TABLE IF NOT EXISTS kits (
-      id TEXT PRIMARY KEY NOT NULL,
-      brief_json TEXT NOT NULL,
-      result_json TEXT,
-      delivery_status TEXT NOT NULL,
-      model_used TEXT NOT NULL,
-      last_error TEXT NOT NULL DEFAULT '',
-      correlation_id TEXT NOT NULL,
-      prompt_version_id TEXT,
-      is_fallback INTEGER NOT NULL DEFAULT 0,
-      row_version INTEGER NOT NULL DEFAULT 0,
-      created_at INTEGER NOT NULL,
-      updated_at INTEGER NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS idempotency_keys (
-      key_hash TEXT PRIMARY KEY NOT NULL,
-      brief_hash TEXT NOT NULL,
-      kit_id TEXT NOT NULL,
-      expires_at INTEGER NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS idx_kits_created ON kits(created_at DESC);
+function splitDdlStatements(sql: string): string[] {
+  return sql
+    .split(";")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
 
-    CREATE TABLE IF NOT EXISTS notifications (
-      id TEXT PRIMARY KEY NOT NULL,
-      title TEXT NOT NULL,
-      body TEXT NOT NULL,
-      kind TEXT NOT NULL,
-      kit_id TEXT,
-      read_at INTEGER,
-      created_at INTEGER NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at DESC);
-
-    CREATE TABLE IF NOT EXISTS user_profile (
-      id INTEGER PRIMARY KEY CHECK (id = 1),
-      display_name TEXT NOT NULL DEFAULT '',
-      email TEXT NOT NULL DEFAULT '',
-      updated_at INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS app_preferences (
-      id INTEGER PRIMARY KEY CHECK (id = 1),
-      compact_table INTEGER NOT NULL DEFAULT 0,
-      updated_at INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS brand_voice (
-      id INTEGER PRIMARY KEY CHECK (id = 1),
-      pillars_json TEXT NOT NULL,
-      avoid_words_json TEXT NOT NULL,
-      sample_snippet TEXT NOT NULL,
-      updated_at INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS extras_waitlist (
-      id TEXT PRIMARY KEY NOT NULL,
-      tool_id TEXT NOT NULL,
-      email TEXT NOT NULL DEFAULT '',
-      created_at INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS industries (
-      id TEXT PRIMARY KEY NOT NULL,
-      slug TEXT NOT NULL UNIQUE,
-      name TEXT NOT NULL,
-      is_active INTEGER NOT NULL DEFAULT 1,
-      created_at INTEGER NOT NULL,
-      updated_at INTEGER NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS idx_industries_slug ON industries(slug);
-
-    CREATE TABLE IF NOT EXISTS industry_prompts (
-      id TEXT PRIMARY KEY NOT NULL,
-      industry_id TEXT,
-      version INTEGER NOT NULL,
-      status TEXT NOT NULL,
-      prompt_template TEXT NOT NULL,
-      notes TEXT NOT NULL DEFAULT '',
-      created_at INTEGER NOT NULL,
-      updated_at INTEGER NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS idx_industry_prompts_industry ON industry_prompts(industry_id);
-    CREATE INDEX IF NOT EXISTS idx_industry_prompts_status ON industry_prompts(status);
-  `);
-
-  // Migration-safe additive changes for older databases.
-  ensureColumn("kits", "prompt_version_id", "prompt_version_id TEXT");
-  ensureColumn("kits", "is_fallback", "is_fallback INTEGER NOT NULL DEFAULT 0");
-
-  seedPromptCatalog();
+export async function runMigrations(): Promise<void> {
+  const client = await pool.connect();
+  try {
+    for (const stmt of splitDdlStatements(DDL)) {
+      await client.query(stmt);
+    }
+  } finally {
+    client.release();
+  }
+  await seedPromptCatalog();
 }

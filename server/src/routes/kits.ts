@@ -173,9 +173,9 @@ export function hashIdempotencyKey(key: string): string {
   return createHash("sha256").update(String(key).trim(), "utf8").digest("hex");
 }
 
-function pruneExpiredIdempotency() {
+async function pruneExpiredIdempotency() {
   const now = Date.now();
-  db.delete(idempotencyKeys).where(lt(idempotencyKeys.expiresAt, now)).run();
+  await db.delete(idempotencyKeys).where(lt(idempotencyKeys.expiresAt, now));
 }
 
 function serializeKit(row: KitRow) {
@@ -227,22 +227,25 @@ async function persistKit(
     submitted_at: snapshot.submitted_at.toISOString(),
   });
 
-  await db.insert(kits).values({
-    id,
-    briefJson,
-    resultJson: aiContent ? JSON.stringify(aiContent) : null,
-    deliveryStatus: meta.deliveryStatus,
-    modelUsed: meta.modelUsed,
-    lastError: meta.lastError,
-    correlationId: meta.correlationId,
-    promptVersionId: meta.promptVersionId ?? null,
-    isFallback: meta.isFallback ?? false,
-    rowVersion: meta.rowVersion ?? 0,
-    createdAt: now,
-    updatedAt: now,
-  });
+  const inserted = await db
+    .insert(kits)
+    .values({
+      id,
+      briefJson,
+      resultJson: aiContent ? JSON.stringify(aiContent) : null,
+      deliveryStatus: meta.deliveryStatus,
+      modelUsed: meta.modelUsed,
+      lastError: meta.lastError,
+      correlationId: meta.correlationId,
+      promptVersionId: meta.promptVersionId ?? null,
+      isFallback: meta.isFallback ?? false,
+      rowVersion: meta.rowVersion ?? 0,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
 
-  const row = await db.select().from(kits).where(eq(kits.id, id)).get();
+  const row = inserted[0];
   if (!row) throw new Error("Failed to read inserted kit");
   return row;
 }
@@ -403,16 +406,22 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
     const fp = briefFingerprint(snapshot);
     const keyHash = hashIdempotencyKey(idemHeader);
 
-    pruneExpiredIdempotency();
+    await pruneExpiredIdempotency();
 
-    const existingKey = await db.select().from(idempotencyKeys).where(eq(idempotencyKeys.keyHash, keyHash)).get();
+    const existingKeyRows = await db
+      .select()
+      .from(idempotencyKeys)
+      .where(eq(idempotencyKeys.keyHash, keyHash))
+      .limit(1);
+    const existingKey = existingKeyRows[0];
     if (existingKey) {
       if (existingKey.briefHash !== fp) {
         return c.json({ error: "Idempotency-Key already used with a different brief." }, 409);
       }
-      const kit = await db.select().from(kits).where(eq(kits.id, existingKey.kitId)).get();
+      const kitRows = await db.select().from(kits).where(eq(kits.id, existingKey.kitId)).limit(1);
+      const kit = kitRows[0];
       if (kit) return c.json(serializeKit(kit));
-      await db.delete(idempotencyKeys).where(eq(idempotencyKeys.keyHash, keyHash)).run();
+      await db.delete(idempotencyKeys).where(eq(idempotencyKeys.keyHash, keyHash));
     }
 
     const demoMode = String(process.env.DEMO_MODE ?? "").toLowerCase() === "true";
@@ -432,11 +441,13 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
         promptVersionId: resolved.promptVersionId,
         isFallback: resolved.isFallback,
       });
-      recordKitNotification(row);
-      await db
-        .insert(idempotencyKeys)
-        .values({ keyHash, briefHash: fp, kitId: row.id, expiresAt: Date.now() + IDEMPOTENCY_TTL_MS })
-        .run();
+      await recordKitNotification(row);
+      await db.insert(idempotencyKeys).values({
+        keyHash,
+        briefHash: fp,
+        kitId: row.id,
+        expiresAt: Date.now() + IDEMPOTENCY_TTL_MS,
+      });
       return c.json(serializeKit(row));
     }
 
@@ -449,11 +460,13 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
         promptVersionId: resolved.promptVersionId,
         isFallback: resolved.isFallback,
       });
-      recordKitNotification(row);
-      await db
-        .insert(idempotencyKeys)
-        .values({ keyHash, briefHash: fp, kitId: row.id, expiresAt: Date.now() + IDEMPOTENCY_TTL_MS })
-        .run();
+      await recordKitNotification(row);
+      await db.insert(idempotencyKeys).values({
+        keyHash,
+        briefHash: fp,
+        kitId: row.id,
+        expiresAt: Date.now() + IDEMPOTENCY_TTL_MS,
+      });
       return c.json(serializeKit(row), 201);
     }
 
@@ -480,11 +493,13 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
         correlationId,
         kitId: row.id,
       });
-      recordKitNotification(row);
-      await db
-        .insert(idempotencyKeys)
-        .values({ keyHash, briefHash: fp, kitId: row.id, expiresAt: Date.now() + IDEMPOTENCY_TTL_MS })
-        .run();
+      await recordKitNotification(row);
+      await db.insert(idempotencyKeys).values({
+        keyHash,
+        briefHash: fp,
+        kitId: row.id,
+        expiresAt: Date.now() + IDEMPOTENCY_TTL_MS,
+      });
       return c.json(serializeKit(row), 201);
     } catch (err) {
       const reason = String(err);
@@ -506,25 +521,28 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
         correlationId,
         kitId: row.id,
       });
-      recordKitNotification(row);
+      await recordKitNotification(row);
       const clientDelay = await sendClientDelayEmail(snapshot, correlationId);
       await sendAdminFailureAlert(snapshot, reason, correlationId, row.id, settings.model, clientDelay);
-      await db
-        .insert(idempotencyKeys)
-        .values({ keyHash, briefHash: fp, kitId: row.id, expiresAt: Date.now() + IDEMPOTENCY_TTL_MS })
-        .run();
+      await db.insert(idempotencyKeys).values({
+        keyHash,
+        briefHash: fp,
+        kitId: row.id,
+        expiresAt: Date.now() + IDEMPOTENCY_TTL_MS,
+      });
       return c.json(serializeKit(row), 201);
     }
   });
 
   app.get("/api/kits", async (c) => {
-    const rows = await db.select().from(kits).orderBy(desc(kits.createdAt)).limit(200).all();
+    const rows = await db.select().from(kits).orderBy(desc(kits.createdAt)).limit(200);
     return c.json(rows.map(serializeKit));
   });
 
   app.get("/api/kits/:id", async (c) => {
     const id = c.req.param("id");
-    const row = await db.select().from(kits).where(eq(kits.id, id)).get();
+    const found = await db.select().from(kits).where(eq(kits.id, id)).limit(1);
+    const row = found[0];
     if (!row) return c.json({ error: "Not found" }, 404);
     return c.json(serializeKit(row));
   });
@@ -538,7 +556,8 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
       return c.json({ error: "Invalid body: brief_json and row_version required." }, 400);
     }
 
-    const row = await db.select().from(kits).where(eq(kits.id, id)).get();
+    const foundRow = await db.select().from(kits).where(eq(kits.id, id)).limit(1);
+    const row = foundRow[0];
     if (!row) return c.json({ error: "Not found" }, 404);
 
     const currentStatus = normalizeDeliveryStatus(row.deliveryStatus);
@@ -607,7 +626,7 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
         .where(eq(kits.id, id))
         .returning();
       const done = finalRow[0]!;
-      recordKitNotification(done);
+      await recordKitNotification(done);
       return c.json(serializeKit(done));
     }
 
@@ -626,7 +645,7 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
         .where(eq(kits.id, id))
         .returning();
       const fr = fail[0]!;
-      recordKitNotification(fr);
+      await recordKitNotification(fr);
       return c.json(serializeKit(fr));
     }
 
@@ -661,7 +680,7 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
         correlationId,
         kitId: ok.id,
       });
-      recordKitNotification(ok);
+      await recordKitNotification(ok);
       return c.json(serializeKit(ok));
     } catch (err) {
       const reason = String(err);
@@ -691,7 +710,7 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
         correlationId,
         kitId: fr.id,
       });
-      recordKitNotification(fr);
+      await recordKitNotification(fr);
       return c.json(serializeKit(fr));
     }
   });
@@ -705,7 +724,8 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
       return c.json({ error: "Invalid body: item_type, index, row_version required." }, 400);
     }
 
-    const row = await db.select().from(kits).where(eq(kits.id, id)).get();
+    const regenRows = await db.select().from(kits).where(eq(kits.id, id)).limit(1);
+    const row = regenRows[0];
     if (!row) return c.json({ error: "Not found" }, 404);
     if (row.rowVersion !== body.row_version) {
       return c.json({ error: "row_version mismatch; refresh and try again." }, 409);
