@@ -10,19 +10,19 @@ export default {
       colors: {
         // Earth/Brand aliases (additive, semantic tokens remain source of truth)
         earth: {
-          bg: "#D7D2C8",
-          alt: "#D6EAE0",
+          bg: "#FAF9F6",
+          alt: "#F5F5DC",
           card: "#FFFFFF",
-          darkBg: "#1A1004",
+          darkBg: "#211815",
           darkCard: "#2A1A07",
         },
         brand: {
-          text: "#362108",
-          muted: "#4B411A",
-          primary: "#004D3D",
-          accent: "#6A2E2A",
-          sand: "#E1BC80",
-          darkText: "#D7D2C8",
+          text: "#3E2723",
+          muted: "#655541",
+          primary: "#2E7D32",
+          accent: "#8D6E63",
+          sand: "#D7A574",
+          darkText: "#FAF9F6",
         },
         // Digital Luxury palette (via CSS variables)
         background: "rgb(var(--c-background) / <alpha-value>)",
