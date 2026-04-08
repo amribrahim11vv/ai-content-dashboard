@@ -224,10 +224,10 @@ export default function AppLayout({
         </button>
         <div className="mb-10 px-4">
           <h1 className="bg-gradient-to-r from-primary to-tertiary bg-clip-text font-headline text-2xl font-bold tracking-tighter text-transparent">
-            Ethereal Engine
+            Social Geni
           </h1>
           <p className="mt-1 font-manrope text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant dark:text-brand-darkText/75">
-            AI Content Studio
+            AI Content Kits in Minutes
           </p>
         </div>
         <nav className="flex flex-grow flex-col gap-2" aria-label="Main">
@@ -453,7 +453,7 @@ export default function AppLayout({
             >
               <div className="hidden sm:block">
                 <p className="font-manrope text-sm font-bold text-on-surface">{profileName}</p>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant dark:text-brand-darkText/75">AI Studio</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant dark:text-brand-darkText/75">Social Geni</p>
               </div>
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary-container/40 font-headline text-sm font-bold text-on-primary-container ring-2 ring-primary/30 dark:from-brand-primary/30 dark:to-brand-accent/30 dark:text-brand-darkText">
                 {(profileName.trim().slice(0, 2) || "AI").toUpperCase()}

@@ -66,7 +66,7 @@ export default function HelpPage() {
           journey?
         </h1>
         <p className="mx-auto mb-8 max-w-2xl text-base text-on-surface-variant dark:text-brand-darkText/80 md:mb-10 md:text-lg">
-          Access the Ethereal Engine knowledge base, technical documentation, and direct support lines to keep your vision
+          Access the Social Geni knowledge base, technical documentation, and direct support lines to keep your vision
           in focus.
         </p>
         <div className="group relative mx-auto max-w-2xl">

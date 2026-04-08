@@ -1,6 +1,6 @@
-# AI Content Dashboard
+# Social Geni
 
-> Generate, review, and manage AI content kits (social + image + video) with a visual dashboard.
+> AI Content Kits in Minutes. Generate, review, and manage social + image + video kits with a visual dashboard.
 
 ---
 
