@@ -50,6 +50,7 @@ export default function App() {
         <Route index element={<Navigate to="/admin/prompt-catalog" replace />} />
         <Route path="prompt-catalog" element={<PromptCatalogPage />} />
         <Route path="analytics" element={<WizardAnalyticsPage />} />
+        <Route path="kits/:id" element={<KitDetail showTechnical />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Route>
 
