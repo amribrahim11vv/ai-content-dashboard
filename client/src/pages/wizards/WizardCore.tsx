@@ -90,6 +90,8 @@ const labelCls = "mb-2 ms-1 block text-xs font-semibold uppercase tracking-wides
 const fieldShell = "glow-focus rounded-xl bg-surface-container-lowest p-0.5";
 const inputCls =
   "w-full rounded-lg border-none bg-transparent px-4 py-3 text-on-surface placeholder:text-on-surface-variant/50 focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/45";
+const selectCls =
+  "w-full rounded-lg border-none bg-surface-container-lowest px-4 py-3 text-on-surface focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/45 dark:bg-surface-container-high/70";
 const textareaCls = cn(inputCls, "min-h-[100px] resize-y");
 const errCls = "mt-1 text-sm text-error";
 const btnPrimary =
@@ -135,6 +137,7 @@ export default function WizardCore(props: WizardCoreProps) {
   const [showDraftBanner, setShowDraftBanner] = useState(initialState.hadDraft);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [isOtherIndustry, setIsOtherIndustry] = useState(false);
   const [tipIndex, setTipIndex] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
   const saveTimer = useRef<number | null>(null);
@@ -432,15 +435,53 @@ export default function WizardCore(props: WizardCoreProps) {
                 <div>
                   <label htmlFor="industry" className={labelCls}>Industry</label>
                   <div className={fieldShell}>
-                    <select id="industry" className={inputCls} {...register("industry")}>
-                      <option value="">Select industry…</option>
-                      {industryOptions.map((i) => (
-                        <option key={i.slug} value={i.slug}>
-                          {i.name}
-                        </option>
-                      ))}
-                    </select>
+                    <Controller
+                      name="industry"
+                      control={control}
+                      render={({ field }) => (
+                        <select
+                          id="industry"
+                          className={selectCls}
+                          value={isOtherIndustry ? "__other__" : (field.value || "")}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            if (v === "__other__") {
+                              setIsOtherIndustry(true);
+                              field.onChange("");
+                              return;
+                            }
+                            setIsOtherIndustry(false);
+                            field.onChange(v);
+                          }}
+                        >
+                          <option value="">Select industry…</option>
+                          {industryOptions.map((i) => (
+                            <option key={i.slug} value={i.slug}>
+                              {i.name}
+                            </option>
+                          ))}
+                          <option value="__other__">Other (write manually)</option>
+                        </select>
+                      )}
+                    />
                   </div>
+                  {isOtherIndustry && (
+                    <div className={fieldShell + " mt-3"}>
+                      <Controller
+                        name="industry"
+                        control={control}
+                        render={({ field }) => (
+                          <input
+                            id="industry_other"
+                            className={inputCls}
+                            value={field.value || ""}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            placeholder="Write your industry..."
+                          />
+                        )}
+                      />
+                    </div>
+                  )}
                   {errors.industry && <p className={errCls}>{errors.industry.message}</p>}
                 </div>
               </div>
