@@ -8,6 +8,7 @@ import { BRIEF_LIMITS, briefSchema, initialBriefForm } from "../../briefSchema";
 import PillGroup from "../../components/selection/PillGroup";
 import SelectableCard from "../../components/selection/SelectableCard";
 import ReferenceImageUploader from "../../components/ReferenceImageUploader";
+import AdditionalNotes from "../../components/AdditionalNotes";
 import {
   decodeMultiSelection,
   decodeSingleSelection,
@@ -709,11 +710,7 @@ export default function WizardCore(props: WizardCoreProps) {
             {currentStep === "creative" && (
               <div className="space-y-6">
                 {showField("creative", "visual_notes") && (
-                  <div>
-                    <label htmlFor="visual_notes" className={labelCls}>Visual / creative notes</label>
-                    <div className={fieldShell}><textarea id="visual_notes" className={textareaCls} {...register("visual_notes")} /></div>
-                    {errors.visual_notes && <p className={errCls}>{errors.visual_notes.message}</p>}
-                  </div>
+                  <AdditionalNotes {...register("visual_notes")} error={errors.visual_notes?.message} />
                 )}
                 {showField("creative", "reference_image") && (
                   <div>
