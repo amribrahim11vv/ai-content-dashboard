@@ -65,7 +65,7 @@ export default function HelpPage() {
           <span className="text-primary">illuminate</span> your
           journey?
         </h1>
-        <p className="mx-auto mb-8 max-w-2xl text-base text-on-surface-variant dark:text-brand-darkText/80 md:mb-10 md:text-lg">
+        <p className="mx-auto mb-8 max-w-2xl text-base text-on-surface-variant dark:text-secondary/80 md:mb-10 md:text-lg">
           Access the Social Geni knowledge base, technical documentation, and direct support lines to keep your vision
           in focus.
         </p>
@@ -79,7 +79,7 @@ export default function HelpPage() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="glow-focus w-full rounded-uniform border-none bg-surface-container-lowest py-4 ps-14 pe-6 text-sm text-on-surface placeholder:text-outline transition-all focus:ring-2 focus:ring-primary/35 md:py-5 md:text-base dark:bg-earth-darkCard dark:text-brand-darkText dark:placeholder:text-brand-darkText/45"
+            className="glow-focus w-full rounded-uniform border-none bg-surface-container-lowest py-4 ps-14 pe-6 text-sm text-on-surface placeholder:text-outline transition-all focus:ring-2 focus:ring-primary/35 md:py-5 md:text-base dark:bg-surface-container-high dark:text-secondary dark:placeholder:text-secondary/45"
             placeholder="Search guides and FAQ (API)…"
             aria-label="Filter help topics"
           />
@@ -90,7 +90,7 @@ export default function HelpPage() {
         {filteredResources.map((r) => (
           <div
             key={r.id}
-            className="glass-panel group rounded-[1.5rem] border-none p-6 sm:p-8 transition-all hover:bg-surface-container-high dark:bg-earth-darkCard/85 dark:hover:bg-earth-darkCard"
+            className="glass-panel group rounded-[1.5rem] border-none p-6 sm:p-8 transition-all hover:bg-surface-container-high dark:bg-surface-container-high/85 dark:hover:bg-surface-container-high"
           >
             <div
               className={
@@ -119,7 +119,7 @@ export default function HelpPage() {
             <span className="material-symbols-outlined text-4xl">support_agent</span>
           </div>
           <h3 className="headline mb-3 text-xl font-bold">Need Direct Help?</h3>
-          <p className="mb-6 text-sm text-on-surface-variant dark:text-brand-darkText/75">Our senior architects are available for high-tier support requests.</p>
+          <p className="mb-6 text-sm text-on-surface-variant dark:text-secondary/75">Our senior architects are available for high-tier support requests.</p>
           <button
             type="button"
             className="w-full rounded-xl bg-primary py-4 font-black tracking-tight text-on-primary transition-all hover:scale-[1.02] active:scale-95"
@@ -142,7 +142,7 @@ export default function HelpPage() {
         </div>
         <div className="space-y-4">
           {filteredFaq.map((item, i) => (
-            <div key={i} className="overflow-hidden rounded-uniform bg-surface-container-low dark:bg-earth-darkCard/85">
+            <div key={i} className="overflow-hidden rounded-uniform bg-surface-container-low dark:bg-surface-container-high/85">
               <button
                 type="button"
                 className="flex w-full items-center justify-between px-4 py-4 text-start transition-colors hover:bg-surface-container sm:px-8 sm:py-6 dark:hover:bg-earth-darkBg/65"
@@ -163,19 +163,19 @@ export default function HelpPage() {
         )}
       </section>
 
-      <section className="relative mx-auto flex max-w-5xl flex-col items-center gap-8 overflow-hidden rounded-[2rem] bg-surface-container-highest p-6 sm:gap-10 sm:p-8 md:flex-row md:gap-12 md:rounded-[2.5rem] md:p-12 dark:bg-earth-darkCard">
+      <section className="relative mx-auto flex max-w-5xl flex-col items-center gap-8 overflow-hidden rounded-[2rem] bg-surface-container-highest p-6 sm:gap-10 sm:p-8 md:flex-row md:gap-12 md:rounded-[2.5rem] md:p-12 dark:bg-surface-container-high">
         <div className="absolute -end-32 -top-32 h-64 w-64 bg-tertiary/10 blur-[100px]" />
         <div className="absolute -bottom-32 -start-32 h-64 w-64 bg-primary/10 blur-[100px]" />
         <div className="relative z-10 flex-1">
           <h2 className="headline mb-4 text-2xl font-bold md:text-3xl">Still seeking answers?</h2>
-          <p className="text-on-surface-variant dark:text-brand-darkText/80">
+          <p className="text-on-surface-variant dark:text-secondary/80">
             Join our Discord community where over 50,000 directors share techniques, workflows, and custom node configurations.
           </p>
         </div>
         <div className="relative z-10 flex w-full shrink-0 gap-4 md:w-auto">
           <button
             type="button"
-            className="flex w-full items-center justify-center gap-3 rounded-xl border border-outline-variant/30 bg-surface-container-low px-5 py-3 font-bold transition-all hover:bg-surface-container-high md:w-auto md:px-8 md:py-4 dark:border-brand-muted/45 dark:bg-earth-darkBg/55 dark:hover:bg-earth-darkBg/75"
+            className="flex w-full items-center justify-center gap-3 rounded-xl border border-outline-variant/30 bg-surface-container-low px-5 py-3 font-bold transition-all hover:bg-surface-container-high md:w-auto md:px-8 md:py-4 dark:border-muted/45 dark:bg-earth-darkBg/55 dark:hover:bg-earth-darkBg/75"
           >
             <span className="material-symbols-outlined">forum</span>
             Discord Community
@@ -185,3 +185,4 @@ export default function HelpPage() {
     </>
   );
 }
+

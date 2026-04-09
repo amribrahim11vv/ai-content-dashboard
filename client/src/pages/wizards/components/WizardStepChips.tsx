@@ -17,8 +17,8 @@ export default function WizardStepChips(props: {
           className={cn(
             "whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold transition",
             i === props.currentStep
-              ? "border-primary/30 bg-primary/20 text-primary dark:border-brand-primary/45 dark:bg-brand-primary/15 dark:text-brand-darkText"
-              : "border-transparent bg-surface-container-lowest text-on-surface-variant dark:bg-earth-darkBg/55 dark:text-brand-darkText/70"
+              ? "border-primary/30 bg-primary/20 text-primary dark:border-primary/45 dark:bg-primary/15 dark:text-secondary"
+              : "border-transparent bg-surface-container-lowest text-on-surface-variant dark:bg-earth-darkBg/55 dark:text-secondary/70"
           )}
         >
           {i + 1}. {props.stepTitles[id]}

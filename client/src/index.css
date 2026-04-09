@@ -59,56 +59,56 @@
 
   html.dark {
     color-scheme: dark;
-    /* Clean modern earthy dark palette */
-    --c-background: 33 24 21; /* #211815 dark brown */
-    --c-on-background: 250 249 246; /* soft cream */
-    --c-surface: 33 24 21;
-    --c-surface-dim: 26 18 15;
-    --c-surface-bright: 58 42 33;
-    --c-surface-container-lowest: 42 30 24;
-    --c-surface-container-low: 52 38 30;
-    --c-surface-container: 62 46 36;
-    --c-surface-container-high: 73 55 44;
-    --c-surface-container-highest: 84 64 52;
-    --c-surface-variant: 77 58 45;
-    --c-surface-tint: 76 175 80; /* lighter green */
-    --c-on-surface: 250 249 246;
-    --c-on-surface-variant: 202 190 170;
-    --c-inverse-surface: 250 249 246;
-    --c-inverse-on-surface: 33 24 21;
-    --c-primary: 76 175 80; /* brighter green for dark */
-    --c-primary-container: 0 77 61;
-    --c-on-primary: 0 56 0;
-    --c-on-primary-container: 129 199 132;
-    --c-secondary: 188 170 164; /* lighter terracotta */
-    --c-secondary-container: 141 110 99;
-    --c-on-secondary: 33 24 21;
-    --c-on-secondary-container: 255 236 233;
-    --c-tertiary: 205 167 108; /* lighter brown */
-    --c-tertiary-container: 121 85 72;
-    --c-on-tertiary: 33 24 21;
-    --c-on-tertiary-container: 245 228 198;
-    --c-tertiary-fixed: 205 167 108;
-    --c-tertiary-fixed-dim: 161 136 127;
-    --c-on-tertiary-fixed: 33 24 21;
-    --c-on-tertiary-fixed-variant: 188 170 164;
-    --c-primary-fixed: 129 199 132;
-    --c-primary-fixed-dim: 76 175 80;
-    --c-on-primary-fixed: 0 56 0;
-    --c-on-primary-fixed-variant: 56 142 60;
-    --c-secondary-fixed: 255 236 233;
-    --c-secondary-fixed-dim: 188 170 164;
-    --c-on-secondary-fixed: 33 24 21;
-    --c-on-secondary-fixed-variant: 77 64 57;
-    --c-error: 244 67 54;
-    --c-error-container: 147 23 23;
+    /* GitHub-inspired dark palette */
+    --c-background: 13 17 23; /* #0d1117 GitHub base */
+    --c-on-background: 201 209 217; /* #c9d1d9 GitHub text */
+    --c-surface: 13 17 23;
+    --c-surface-dim: 10 13 18;
+    --c-surface-bright: 22 27 34;
+    --c-surface-container-lowest: 13 17 23;
+    --c-surface-container-low: 22 27 34; /* #161b22 GitHub secondary */
+    --c-surface-container: 30 36 44;
+    --c-surface-container-high: 48 54 61;
+    --c-surface-container-highest: 56 65 73;
+    --c-surface-variant: 30 36 44;
+    --c-surface-tint: 88 166 255; /* GitHub blue accent */
+    --c-on-surface: 201 209 217;
+    --c-on-surface-variant: 139 148 155; /* #8b949f GitHub muted text */
+    --c-inverse-surface: 201 209 217;
+    --c-inverse-on-surface: 13 17 23;
+    --c-primary: 88 166 255; /* #58a6ff GitHub primary blue */
+    --c-primary-container: 30 101 185;
+    --c-on-primary: 13 17 23;
+    --c-on-primary-container: 201 209 217;
+    --c-secondary: 79 195 247; /* #4fc3f7 GitHub cyan */
+    --c-secondary-container: 30 86 113;
+    --c-on-secondary: 13 17 23;
+    --c-on-secondary-container: 201 209 217;
+    --c-tertiary: 130 170 255; /* GitHub purple accent */
+    --c-tertiary-container: 50 80 140;
+    --c-on-tertiary: 13 17 23;
+    --c-on-tertiary-container: 201 209 217;
+    --c-tertiary-fixed: 130 170 255;
+    --c-tertiary-fixed-dim: 88 166 255;
+    --c-on-tertiary-fixed: 13 17 23;
+    --c-on-tertiary-fixed-variant: 201 209 217;
+    --c-primary-fixed: 88 166 255;
+    --c-primary-fixed-dim: 58 134 215;
+    --c-on-primary-fixed: 13 17 23;
+    --c-on-primary-fixed-variant: 30 101 185;
+    --c-secondary-fixed: 79 195 247;
+    --c-secondary-fixed-dim: 58 166 215;
+    --c-on-secondary-fixed: 13 17 23;
+    --c-on-secondary-fixed-variant: 30 86 113;
+    --c-error: 248 81 73; /* #f85149 GitHub red */
+    --c-error-container: 99 36 32;
     --c-on-error: 255 255 255;
-    --c-on-error-container: 255 205 210;
-    --c-outline: 161 136 127;
-    --c-outline-variant: 121 101 89;
-    --c-inverse-primary: 129 199 132;
-    --c-focus-ring: 76 175 80;
-    --c-focus-ring-glow: 188 170 164;
+    --c-on-error-container: 255 200 195;
+    --c-outline: 48 54 61;
+    --c-outline-variant: 30 36 44;
+    --c-inverse-primary: 88 166 255;
+    --c-focus-ring: 88 166 255;
+    --c-focus-ring-glow: 79 195 247;
   }
 
   html {
@@ -117,6 +117,12 @@
 
   body {
     @apply min-h-screen bg-surface text-on-surface font-body;
+  }
+
+  /* Ensure dark mode body background is correctly applied */
+  html.dark body {
+    background-color: rgb(var(--c-surface) / 1) !important;
+    background-image: none !important;
   }
 
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
@@ -291,6 +297,10 @@
   .wizard-loading-hint {
     @apply max-w-md text-sm text-on-surface-variant;
   }
+}
+
+#industry {
+  margin-bottom: 0 !important;
 }
 
 @keyframes wizard-indeterminate-slide {

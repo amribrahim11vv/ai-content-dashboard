@@ -5,8 +5,8 @@ function navClass(isActive: boolean) {
   return [
     "rounded-lg px-3 py-2 text-sm font-semibold transition",
     isActive
-      ? "bg-primary/15 text-primary dark:bg-brand-primary/25 dark:text-brand-darkText"
-      : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface dark:text-brand-darkText/80 dark:hover:bg-earth-darkBg/60 dark:hover:text-brand-darkText",
+      ? "bg-primary/15 text-primary dark:bg-primary/25 dark:text-secondary"
+      : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface dark:text-secondary/80 dark:hover:bg-earth-darkBg/60 dark:hover:text-secondary",
   ].join(" ");
 }
 
@@ -28,11 +28,11 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface dark:bg-earth-darkBg dark:text-brand-darkText">
-      <header className="sticky top-0 z-30 border-b border-outline/20 bg-surface/80 backdrop-blur dark:border-brand-muted/35 dark:bg-earth-darkBg/80">
+    <div className="min-h-screen bg-surface text-on-surface dark:bg-earth-darkBg dark:text-secondary">
+      <header className="sticky top-0 z-30 border-b border-outline/20 bg-surface/80 backdrop-blur dark:border-muted/35 dark:bg-earth-darkBg/80">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <div>
-            <p className="font-headline text-xl font-extrabold tracking-tight text-primary dark:text-brand-sand">Social Geni</p>
+            <p className="font-headline text-xl font-extrabold tracking-tight text-primary dark:text-secondary">Social Geni</p>
             <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">Admin Console</p>
           </div>
 
@@ -40,7 +40,7 @@ export default function AdminLayout() {
             <button
               type="button"
               onClick={toggleTheme}
-              className="inline-flex items-center gap-2 rounded-lg border border-outline/30 bg-surface-container-high px-3 py-2 text-xs font-bold text-on-surface transition hover:bg-surface-container-highest focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface dark:border-brand-muted/40 dark:bg-earth-darkCard dark:text-brand-darkText"
+              className="inline-flex items-center gap-2 rounded-lg border border-outline/30 bg-surface-container-high px-3 py-2 text-xs font-bold text-on-surface transition hover:bg-surface-container-highest focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface dark:border-muted/40 dark:bg-surface-container-high dark:text-secondary"
               aria-label="Toggle theme"
               title={themeMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             >
@@ -74,4 +74,5 @@ export default function AdminLayout() {
     </div>
   );
 }
+
 

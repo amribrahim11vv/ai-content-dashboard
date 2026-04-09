@@ -13,16 +13,16 @@ export default {
           bg: "#FAF9F6",
           alt: "#F5F5DC",
           card: "#FFFFFF",
-          darkBg: "#211815",
-          darkCard: "#2A1A07",
+          darkBg: "#0d1117", /* GitHub dark base */
+          darkCard: "#161b22", /* GitHub dark secondary */
         },
         brand: {
           text: "#3E2723",
-          muted: "#655541",
-          primary: "#2E7D32",
-          accent: "#8D6E63",
-          sand: "#D7A574",
-          darkText: "#FAF9F6",
+          muted: "#8b949f", /* GitHub muted in dark mode, brown in light */
+          primary: "#2E7D32", /* Keep green for light mode */
+          accent: "#8D6E63", /* Keep terracotta for light mode */
+          sand: "#D7A574", /* Keep sand for light mode */
+          darkText: "#c9d1d9", /* GitHub light text */
         },
         // Digital Luxury palette (via CSS variables)
         background: "rgb(var(--c-background) / <alpha-value>)",

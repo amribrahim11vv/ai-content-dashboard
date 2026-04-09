@@ -100,7 +100,7 @@ export default function ContentWizard() {
                   "mb-8 flex h-16 w-16 items-center justify-center rounded-uniform bg-surface-container-highest transition duration-500 group-hover:scale-110",
                   c.accent === "primary" && "bg-primary/15 text-primary group-hover:bg-primary/20",
                   c.accent === "primary" &&
-                    "bg-brand-sand/70 text-brand-accent group-hover:bg-brand-sand dark:bg-brand-sand/75 dark:text-brand-accent",
+                    "bg-brand-sand/70 text-brand-accent group-hover:bg-brand-sand dark:bg-secondary/75 dark:text-secondary",
                   c.accent === "primary" && "bg-secondary/15 text-secondary group-hover:bg-secondary/20"
                 )}
               >

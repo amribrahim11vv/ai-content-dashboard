@@ -97,13 +97,13 @@ const fieldShell = "glow-focus rounded-xl bg-surface-container-lowest p-0.5";
 const inputCls =
   "w-full rounded-lg border-none bg-transparent px-4 py-3 text-on-surface placeholder:text-on-surface-variant/50 focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/45";
 const selectCls =
-  "w-full rounded-lg border-none bg-surface-container-lowest px-4 py-3 text-on-surface focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/45 dark:bg-surface-container-high/70";
+  "w-full rounded-lg border-none bg-surface-container-lowest px-4 py-3 text-on-surface focus:ring-0 focus-visible:ring-0 dark:bg-surface-container-high/70";
 const textareaCls = cn(inputCls, "min-h-[100px] resize-y");
 const errCls = "mt-1 text-sm text-error";
 const btnPrimary =
   "rounded-xl bg-primary px-5 py-3 font-bold text-on-primary shadow-lg shadow-primary/15 transition active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50";
 const btnSecondary =
-  "rounded-xl border border-outline/30 bg-surface-container-high px-5 py-3 font-semibold text-on-surface transition hover:bg-surface-container-highest focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50 dark:border-brand-muted/40 dark:bg-earth-darkCard dark:text-brand-darkText";
+  "rounded-xl border border-outline/30 bg-surface-container-high px-5 py-3 font-semibold text-on-surface transition hover:bg-surface-container-highest focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50 dark:border-outline/30 dark:bg-surface-container-high dark:text-secondary";
 
 export default function WizardCore(props: WizardCoreProps) {
   const nav = useNavigate();
@@ -330,7 +330,7 @@ export default function WizardCore(props: WizardCoreProps) {
       </div>
 
       {showDraftBanner && (
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-tertiary/25 bg-tertiary/10 px-4 py-3 text-sm text-on-surface dark:border-brand-sand/40 dark:bg-brand-sand/10 dark:text-brand-darkText">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-tertiary/25 bg-tertiary/10 px-4 py-3 text-sm text-on-surface dark:border-secondary/40 dark:bg-secondary/10 dark:text-secondary">
           <span>Restored a saved draft for this path.</span>
           <button type="button" className={btnSecondary + " py-2 text-sm"} onClick={clearDraft}>
             Clear draft
@@ -338,7 +338,7 @@ export default function WizardCore(props: WizardCoreProps) {
         </div>
       )}
 
-      <div className="wizard-root overflow-hidden rounded-uniform border border-outline/30 bg-surface-container-low dark:border-brand-muted/40 dark:bg-earth-darkCard/75" aria-busy={loading}>
+      <div className="wizard-root overflow-hidden rounded-uniform border border-outline/30 bg-surface-container-low dark:border-outline/30 dark:bg-surface-container-high/75" aria-busy={loading}>
         <div className={cn("wizard-body-wrap relative !rounded-uniform", loading && "wizard-body-wrap--loading")}>
           <div className="wizard-body p-4 sm:p-6 md:p-8">
             {canShowValuePreview && (
@@ -735,10 +735,10 @@ export default function WizardCore(props: WizardCoreProps) {
               </div>
             )}
 
-            {err && <p className="mt-4 text-error dark:text-brand-accent">{err}</p>}
+            {err && <p className="mt-4 text-error dark:text-tertiary">{err}</p>}
 
             {isFinalStep && !loading && (
-              <div className="mb-5 rounded-xl border border-primary/30 bg-primary/10 p-4 dark:border-brand-primary/40 dark:bg-brand-primary/15">
+              <div className="mb-5 rounded-xl border border-primary/30 bg-primary/10 p-4 dark:border-primary/40 dark:bg-primary/15">
                 <div className="space-y-2">
                   <p className="text-sm font-semibold text-on-surface">Ready to generate your kit</p>
                   <p className="text-xs text-on-surface-variant">
