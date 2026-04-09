@@ -4,13 +4,8 @@ import { listKits } from "./api";
 import type { KitSummary } from "./types";
 import { useToast } from "./useToast";
 import PrimaryFlowBanner from "./components/PrimaryFlowBanner";
-
-function statusKind(badge: string): "done" | "running" | "failed" {
-  const b = badge.toLowerCase();
-  if (b.includes("fail")) return "failed";
-  if (b.includes("run")) return "running";
-  return "done";
-}
+import { statusKind } from "./kitUiFormatters";
+import { logger } from "./logger";
 
 export default function Dashboard() {
   const [kits, setKits] = useState<KitSummary[] | null>(null);
@@ -20,7 +15,7 @@ export default function Dashboard() {
     listKits()
       .then(setKits)
       .catch((e) => {
-        console.error(e);
+        logger.error(e);
         push("Could not load the list", "error");
       });
   }, [push]);

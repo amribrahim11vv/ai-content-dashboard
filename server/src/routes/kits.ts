@@ -4,11 +4,11 @@ import type { Next } from "hono";
 import {
   generateKitService,
   getKitByIdService,
-  HttpError,
   listKitsService,
   regenerateKitItemService,
   retryKitService,
 } from "../services/kitGenerationService.js";
+import { respondHttpError } from "./httpErrorMapping.js";
 
 const generateBodySchema = z
   .object({
@@ -69,10 +69,7 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
       });
       return c.json(result.body, result.status as 200 | 201);
     } catch (err) {
-      if (err instanceof HttpError) {
-        return c.json({ error: err.message }, err.status as 400 | 401 | 404 | 409 | 422 | 500 | 502);
-      }
-      return c.json({ error: "Unexpected error while generating kit." }, 500);
+      return respondHttpError(c, err, "Unexpected error while generating kit.");
     }
   });
 
@@ -84,8 +81,7 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
     try {
       return c.json(await getKitByIdService(c.req.param("id")));
     } catch (err) {
-      if (err instanceof HttpError) return c.json({ error: err.message }, err.status as 404);
-      return c.json({ error: "Unexpected error while loading kit." }, 500);
+      return respondHttpError(c, err, "Unexpected error while loading kit.");
     }
   });
 
@@ -105,10 +101,7 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
       });
       return c.json(result.body, result.status as 200);
     } catch (err) {
-      if (err instanceof HttpError) {
-        return c.json({ error: err.message }, err.status as 400 | 404 | 409 | 500);
-      }
-      return c.json({ error: "Unexpected error while retrying kit." }, 500);
+      return respondHttpError(c, err, "Unexpected error while retrying kit.");
     }
   });
 
@@ -131,10 +124,7 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
       });
       return c.json(result.body, result.status as 200);
     } catch (err) {
-      if (err instanceof HttpError) {
-        return c.json({ error: err.message }, err.status as 400 | 404 | 409 | 422 | 500 | 502);
-      }
-      return c.json({ error: "Unexpected error while regenerating item." }, 500);
+      return respondHttpError(c, err, "Unexpected error while regenerating item.");
     }
   });
 

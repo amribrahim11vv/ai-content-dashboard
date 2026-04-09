@@ -48,12 +48,13 @@ A deep-dive interface for viewing generated assets:
 - **Framework**: React 19 + Vite.
 - **Styling**: Vanilla CSS + Tailwind for a "Glassmorphic" premium aesthetic.
 - **Icons**: Custom Lucide-React integration.
-- **State Management**: Local component state + `localStorage` for wizard drafts.
+- **State Management**: Local component state + focused hooks (`useWizardOrchestrator`, `useRecentSearches`, `useThemeMode`).
 
 ### **Backend (The BFF)**
 - **Engine**: Hono (Lightweight, ultra-fast, and edge-ready).
 - **Communication**: REST API with Bearer token authentication.
-- **Database**: SQLite with **Drizzle ORM** for type-safe migrations.
+- **Database**: PostgreSQL + **Drizzle ORM**.
+- **Data Layer**: Separated modules for connection/migrations/seeds and standardized route-level HTTP error mapping.
 
 ### **AI Execution**
 - **Model**: Google Gemini Pro.
@@ -61,6 +62,12 @@ A deep-dive interface for viewing generated assets:
     - **Industry Modules**: Specialist rules for Real Estate, Restaurants, Clinics, E-commerce, Fashion, and Education.
     - **Arabic Brand Logic**: Custom logic to maintain correct Arabic spelling and Egyptian-dialect hooks for the MENA market.
     - **Structured Output**: Enforced JSON schema for zero-fail parsing.
+    - **Retry Semantics**: Retries are scoped to transient transport/network failures only.
+
+### **Dependency Baseline (Current)**
+- `drizzle-orm@1.0.0-beta.21`
+- `drizzle-kit@1.0.0-beta.21`
+- Selected to fully resolve security advisories while keeping Drizzle CLI workflows operational.
 
 ---
 
@@ -70,10 +77,12 @@ A deep-dive interface for viewing generated assets:
 - **Idempotency Keys**: Every generation request is locked with a unique key to prevent duplicate costs or database entries during network retries.
 - **Retry Mechanics**: Support for `failed_generation` recovery using `row_version` concurrency control.
 - **Input Validation**: Double-layer validation using **Zod** (Frontend and Backend) ensuring the LLM always receives high-quality context.
+- **Route Error Consistency**: Unified HTTP error response mapping across API routes.
 
 ### **Performance**
-- **Lazy Loading**: Heavy components like the `KitViewer` are code-split.
+- **Lazy Loading**: Heavy components like `KitViewer` are code-split.
 - **Edge-Ready Architecture**: The Hono server is designed to run on Cloudflare Workers or Node.js with minimal changes.
+- **Query Efficiency**: N+1 pattern removed from prompt catalog industry listing endpoint.
 
 ---
 
@@ -89,7 +98,8 @@ The UI follows the **Stitch Design Philosophy**:
 1.  **Clone & Install**: `npm install`
 2.  **Environment**: 
     - `server/.env`: Provide `GEMINI_API_KEY` and `API_SECRET`.
-    - `client/.env.local`: Matching `VITE_API_SECRET`.
+    - `client/.env.local`: Provide `VITE_API_URL` and optional `VITE_DEMO_MODE`.
+    - For local Postgres chains with self-signed certificates: set `DB_SSL_INSECURE=true` in `server/.env`.
 3.  **Development**: `npm run dev`
 4.  **Tests**: `npm run test:e2e` for Playwright validation.
 

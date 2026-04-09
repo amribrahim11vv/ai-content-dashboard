@@ -51,8 +51,8 @@ async function main() {
   app.get("/health", (c) => c.json({ ok: true, db: Boolean(db) }));
 
   async function kitsGuard(c: Context, next: Next) {
-    await rateLimit(c, async () => {
-      await bearerAuth(c, next);
+    return await rateLimit(c, async () => {
+      return await bearerAuth(c, next);
     });
   }
 

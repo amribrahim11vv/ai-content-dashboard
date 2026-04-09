@@ -30,7 +30,6 @@ export default defineConfig({
       GEMINI_API_KEY: "",
       GEMINI_MODEL: "gemini-3-flash-preview",
       VITE_API_URL: "http://localhost:8787",
-      VITE_API_SECRET: "e2e-test-secret",
       VITE_DEMO_MODE: "true",
     },
   },

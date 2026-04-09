@@ -14,6 +14,7 @@ import {
 import type { KitSummary } from "../types";
 import GlobalSearchOverlay from "./GlobalSearchOverlay";
 import { CompactTableProvider } from "./compactTableContext";
+import { useThemeMode } from "./hooks/useThemeMode";
 
 function icon(name: string) {
   return (
@@ -71,9 +72,7 @@ export default function AppLayout({
   const [profileName, setProfileName] = useState("User");
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [apiStatus, setApiStatus] = useState<"checking" | "active" | "offline">("checking");
-  const [themeMode, setThemeMode] = useState<"light" | "dark">(() =>
-    document.documentElement.classList.contains("dark") ? "dark" : "light"
-  );
+  const { themeMode, toggleTheme } = useThemeMode();
 
   const notifWrap = useRef<HTMLDivElement>(null);
   const settingsWrap = useRef<HTMLDivElement>(null);
@@ -175,18 +174,6 @@ export default function AppLayout({
   };
 
   const onNavItemClick = () => setMobileNavOpen(false);
-
-  const toggleTheme = () => {
-    const next = themeMode === "dark" ? "light" : "dark";
-    setThemeMode(next);
-    document.documentElement.classList.toggle("dark", next === "dark");
-    document.documentElement.setAttribute("data-theme", next);
-    try {
-      localStorage.setItem("theme_mode", next);
-    } catch {
-      // ignore
-    }
-  };
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-surface text-on-surface dark:bg-earth-darkBg dark:text-brand-darkText">

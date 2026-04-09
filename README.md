@@ -24,9 +24,19 @@
 |---|---|
 | Frontend | Vite + React + TypeScript |
 | Backend (BFF) | Hono |
-| Database | SQLite + Drizzle |
+| Database | PostgreSQL + Drizzle |
 | AI | Gemini (server-side only) |
 | Testing | Playwright (smoke E2E) |
+
+---
+
+## Dependency Note (Drizzle)
+
+- The project is currently pinned to the **Drizzle beta stack** for security compliance and tooling compatibility:
+  - `drizzle-orm@1.0.0-beta.21`
+  - `drizzle-kit@1.0.0-beta.21`
+- This was adopted to fully resolve dependency advisories while keeping `drizzle-kit` CLI workflows operational.
+- Team guidance: keep these versions aligned, and plan a controlled migration to the first stable `1.x` release when available.
 
 ---
 
@@ -37,7 +47,7 @@ flowchart LR
   U[User] --> W[Content Wizard]
   W -->|brief JSON + Idempotency-Key| API[Hono API]
   API --> LLM[Gemini]
-  API --> DB[(SQLite / Drizzle)]
+  API --> DB[(PostgreSQL / Drizzle)]
   DB --> D[Dashboard + Kit Viewer]
 ```
 
@@ -55,7 +65,7 @@ cp .env.example client/.env.local
 # - API_SECRET
 
 # client/.env.local
-# - VITE_API_SECRET  (same as API_SECRET for single-agency MVP)
+# - VITE_API_URL
 
 # optional demo mode
 # - server/.env: DEMO_MODE=true
@@ -78,6 +88,22 @@ npm run test:e2e
 ```
 
 Runs dev servers in demo mode with a temporary DB.
+
+---
+
+## Pre-Push Quality Gates
+
+Run these commands from the repository root before push/deploy:
+
+```bash
+npx tsc --noEmit -p client/tsconfig.json
+npx tsc --noEmit -p server/tsconfig.json
+npm audit --audit-level=high
+```
+
+Required production env guard:
+- `API_SECRET` must be present and non-empty in production.
+- If missing in production, API auth middleware now fails closed with a server misconfiguration response.
 
 ---
 
@@ -119,6 +145,9 @@ All `/api/*` routes require:
 ```http
 Authorization: Bearer <API_SECRET>
 ```
+
+> The bearer token is added by the server-side flow and local test harnesses where needed.
+> Frontend runtime no longer reads any `VITE_API_SECRET`.
 
 | Method | Route | Purpose |
 |---|---|---|

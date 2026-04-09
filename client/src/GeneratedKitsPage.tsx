@@ -3,37 +3,14 @@ import { Link } from "react-router-dom";
 import { listKits } from "./api";
 import type { KitSummary } from "./types";
 import { useCompactTable } from "./layout/compactTableContext";
-
-function briefBrand(json: string): string {
-  try {
-    const o = JSON.parse(json) as { brand_name?: string };
-    return o.brand_name ?? "";
-  } catch {
-    return "";
-  }
-}
-
-function briefIndustry(json: string): string {
-  try {
-    const o = JSON.parse(json) as { industry?: string };
-    return o.industry ?? "—";
-  } catch {
-    return "—";
-  }
-}
+import { briefBrand, briefIndustry } from "./kitSearchUtils";
+import { statusKind } from "./kitUiFormatters";
 
 function initials(name: string, id: string): string {
   const s = name.trim() || id;
   const parts = s.split(/\s+/).filter(Boolean);
   if (parts.length >= 2) return (parts[0]![0]! + parts[1]![0]!).toUpperCase();
   return s.slice(0, 2).toUpperCase() || "—";
-}
-
-function statusKind(badge: string): "done" | "running" | "failed" {
-  const b = badge.toLowerCase();
-  if (b.includes("fail")) return "failed";
-  if (b.includes("run")) return "running";
-  return "done";
 }
 
 export default function GeneratedKitsPage({ adminMode = false }: { adminMode?: boolean }) {

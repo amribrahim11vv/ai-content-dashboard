@@ -27,6 +27,7 @@ import { getWizardTypeFromDraftKey } from "../../lib/wizardAnalytics";
 import { useWizardTelemetry } from "./hooks/useWizardTelemetry";
 import { useWizardSubmission } from "./hooks/useWizardSubmission";
 import { useWizardDraft } from "./hooks/useWizardDraft";
+import { useWizardOrchestrator } from "./hooks/useWizardOrchestrator";
 import WizardStepChips from "./components/WizardStepChips";
 import WizardValuePreview from "./components/WizardValuePreview";
 
@@ -253,35 +254,37 @@ export default function WizardCore(props: WizardCoreProps) {
     setValue("platforms", serializedPlatforms, { shouldDirty: true });
   }, [selectionState, setValue]);
 
-  const next = async () => {
-    const current = props.stepOrder[step]!;
-    const keys = stepFieldMap[current] ?? [];
-    if (keys.length) {
-      const ok = await trigger([...keys]);
-      if (!ok) {
-        telemetry.emit({
-          name: "wizard_step_validation_failed",
-          wizard_type: wizardType,
-          draft_key: props.draftKey,
-          step_index: step,
-          step_id: current,
-          validation_state: "failed",
-          elapsed_time_ms: telemetry.getElapsedMs(),
-        });
-        return;
-      }
-    }
-    telemetry.emit({
-      name: "wizard_step_next_clicked",
-      wizard_type: wizardType,
-      draft_key: props.draftKey,
-      step_index: step,
-      step_id: current,
-      validation_state: "passed",
-      elapsed_time_ms: telemetry.getElapsedMs(),
-    });
-    setStep((s) => Math.min(maxStep, s + 1));
-  };
+  const { next } = useWizardOrchestrator({
+    step,
+    maxStep,
+    stepOrder: props.stepOrder,
+    stepFieldMap,
+    trigger,
+    setStep,
+    onStepValidationFailed: (current) => {
+      telemetry.emit({
+        name: "wizard_step_validation_failed",
+        wizard_type: wizardType,
+        draft_key: props.draftKey,
+        step_index: step,
+        step_id: current,
+        validation_state: "failed",
+        elapsed_time_ms: telemetry.getElapsedMs(),
+      });
+    },
+    onStepAdvance: () => {
+      const current = props.stepOrder[step]!;
+      telemetry.emit({
+        name: "wizard_step_next_clicked",
+        wizard_type: wizardType,
+        draft_key: props.draftKey,
+        step_index: step,
+        step_id: current,
+        validation_state: "passed",
+        elapsed_time_ms: telemetry.getElapsedMs(),
+      });
+    },
+  });
 
   const submission = useWizardSubmission({
     draftKey: props.draftKey,

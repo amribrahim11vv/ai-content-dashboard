@@ -32,6 +32,18 @@ export const idempotencyKeys = socialGeni.table("idempotency_keys", {
   expiresAt: bigint("expires_at", { mode: "number" }).notNull(),
 });
 
+export const kitFailureLogs = socialGeni.table("kit_failure_logs", {
+  id: text("id").primaryKey(),
+  kitId: text("kit_id"),
+  phase: text("phase").notNull(),
+  errorCode: text("error_code").notNull(),
+  errorMessage: text("error_message").notNull(),
+  correlationId: text("correlation_id").notNull(),
+  modelUsed: text("model_used").notNull(),
+  metaJson: text("meta_json").notNull().default("{}"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+});
+
 export type KitRow = typeof kits.$inferSelect;
 
 export const notifications = socialGeni.table("notifications", {

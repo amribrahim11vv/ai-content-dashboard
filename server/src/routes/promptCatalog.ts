@@ -45,24 +45,28 @@ export function createPromptCatalogRouter(mw: (c: import("hono").Context, next: 
 
   app.get("/prompt-catalog/industries", async (c) => {
     const rows = await db.select().from(industries).orderBy(industries.name);
-    const items = await Promise.all(
-      rows.map(async (r) => {
-        const activeRows = await db
-          .select()
-          .from(industryPrompts)
-          .where(and(eq(industryPrompts.industryId, r.id), eq(industryPrompts.status, "active")))
-          .limit(1);
-        const active = activeRows[0];
-        return {
-          id: r.id,
-          slug: r.slug,
-          name: r.name,
-          is_active: r.isActive,
-          active_prompt_version_id: active?.id ?? null,
-          active_prompt_version: active?.version ?? null,
-        };
+    const activePromptRows = await db
+      .select({
+        id: industryPrompts.id,
+        version: industryPrompts.version,
+        industryId: industryPrompts.industryId,
       })
+      .from(industryPrompts)
+      .where(eq(industryPrompts.status, "active"));
+    const activeByIndustryId = new Map(
+      activePromptRows.filter((row) => row.industryId).map((row) => [row.industryId as string, row])
     );
+    const items = rows.map((r) => {
+      const active = activeByIndustryId.get(r.id);
+      return {
+        id: r.id,
+        slug: r.slug,
+        name: r.name,
+        is_active: r.isActive,
+        active_prompt_version_id: active?.id ?? null,
+        active_prompt_version: active?.version ?? null,
+      };
+    });
     return c.json({ items });
   });
 

@@ -2,32 +2,7 @@ import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import type { KitSummary } from "../types";
 import { briefBrand, briefIndustry, filterKitsByQuery } from "../kitSearchUtils";
-
-const RECENT_KEY = "ethereal_search_recent";
-const MAX_RECENT = 5;
-
-function loadRecent(): string[] {
-  try {
-    const raw = localStorage.getItem(RECENT_KEY);
-    if (!raw) return [];
-    const a = JSON.parse(raw) as unknown;
-    return Array.isArray(a) ? a.filter((x): x is string => typeof x === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
-function pushRecent(q: string) {
-  const t = q.trim();
-  if (!t) return;
-  const prev = loadRecent().filter((x) => x.toLowerCase() !== t.toLowerCase());
-  prev.unshift(t);
-  try {
-    localStorage.setItem(RECENT_KEY, JSON.stringify(prev.slice(0, MAX_RECENT)));
-  } catch {
-    /* ignore */
-  }
-}
+import { useRecentSearches } from "./hooks/useRecentSearches";
 
 export default function GlobalSearchOverlay({
   open,
@@ -44,7 +19,7 @@ export default function GlobalSearchOverlay({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const filtered = kits ? filterKitsByQuery(kits, query) : [];
-  const recent = loadRecent();
+  const { recent, pushRecent } = useRecentSearches();
 
   useEffect(() => {
     if (!open) return;

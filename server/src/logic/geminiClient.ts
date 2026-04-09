@@ -17,6 +17,18 @@ function shouldRetryGemini(statusCode: number): boolean {
   return statusCode === 429 || statusCode >= 500;
 }
 
+function isTransientFetchError(error: unknown): boolean {
+  const text = String(error ?? "").toLowerCase();
+  return (
+    text.includes("fetch failed") ||
+    text.includes("network") ||
+    text.includes("timed out") ||
+    text.includes("timeout") ||
+    text.includes("econnreset") ||
+    text.includes("socket hang up")
+  );
+}
+
 /** Apps Script uses 2–5 min on first retry; HTTP BFF uses shorter delays capped by timeout. */
 function getBackoffMs(attempt: number): number {
   if (attempt === 0) {
@@ -118,7 +130,8 @@ export async function callGeminiAPI(
       await new Promise((r) => setTimeout(r, getBackoffMs(attempt)));
     } catch (error) {
       lastError = String(error);
-      if (attempt >= settings.maxRetries) {
+      // Retry only transient transport failures; parse/validation errors should fail fast.
+      if (!isTransientFetchError(error) || attempt >= settings.maxRetries) {
         throw new Error("Gemini request failed after retries: " + lastError);
       }
       await new Promise((r) => setTimeout(r, getBackoffMs(attempt)));
