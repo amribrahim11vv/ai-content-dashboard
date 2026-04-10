@@ -1,0 +1,463 @@
+import { useState } from "react";
+import { Controller, UseFormReturn } from "react-hook-form";
+import type { BriefForm } from "../../types";
+import PillGroup from "../../components/selection/PillGroup";
+import SelectableCard from "../../components/selection/SelectableCard";
+import {
+  decodeMultiSelection,
+  decodeSingleSelection,
+  encodeMultiSelection,
+  encodeSingleSelection,
+} from "../../lib/selectionFieldCodec";
+import {
+  BRAND_TONE_OPTIONS,
+  MAIN_GOAL_OPTIONS,
+  OTHER_OPTION,
+  PLATFORM_OPTIONS,
+  TARGET_AUDIENCE_OPTIONS,
+} from "./selectionOptions";
+import { BRIEF_LIMITS } from "../../briefSchema";
+
+export const labelCls = "mb-2 ms-1 block text-xs font-semibold uppercase tracking-widest text-on-surface-variant";
+export const fieldShell = "glow-focus rounded-xl bg-surface-container-lowest p-0.5";
+export const inputCls =
+  "w-full rounded-lg border-none bg-transparent px-4 py-3 text-on-surface placeholder:text-on-surface-variant/50 focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/45";
+export const selectCls =
+  "w-full rounded-lg border-none bg-surface-container-lowest px-4 py-3 text-on-surface focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/45 dark:bg-surface-container-high/70";
+export const textareaCls = `${inputCls} min-h-[100px] resize-y`;
+export const errCls = "mt-1 text-sm text-error";
+
+function clamp(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n));
+}
+
+export type StepProps = {
+  form: UseFormReturn<BriefForm>;
+  showField: (step: string, key: keyof BriefForm) => boolean;
+};
+
+// --- Brand Step ---
+export function BrandStep({ form, showField, industryOptions }: StepProps & { industryOptions: {slug: string, name: string}[] }) {
+  const { register, control, formState: { errors } } = form;
+  const [isOtherIndustry, setIsOtherIndustry] = useState(false);
+
+  return (
+    <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
+      {showField("brand", "brand_name") && (
+        <div>
+          <label htmlFor="brand_name" className={labelCls}>Brand name</label>
+          <div className={fieldShell}><input id="brand_name" className={inputCls} {...register("brand_name")} /></div>
+          {errors.brand_name && <p className={errCls}>{errors.brand_name.message}</p>}
+        </div>
+      )}
+      {showField("brand", "industry") && (
+        <div>
+          <label htmlFor="industry" className={labelCls}>Industry</label>
+          <div className={fieldShell}>
+            <Controller
+              name="industry"
+              control={control}
+              render={({ field }) => (
+                <select
+                  id="industry"
+                  className={selectCls}
+                  value={isOtherIndustry ? "__other__" : (field.value || "")}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "__other__") {
+                      setIsOtherIndustry(true);
+                      field.onChange("");
+                      return;
+                    }
+                    setIsOtherIndustry(false);
+                    field.onChange(v);
+                  }}
+                >
+                  <option value="">Select industry…</option>
+                  {industryOptions.map((i) => (
+                    <option key={i.slug} value={i.slug}>
+                      {i.name}
+                    </option>
+                  ))}
+                  <option value="__other__">Other (write manually)</option>
+                </select>
+              )}
+            />
+          </div>
+          {isOtherIndustry && (
+            <div className={fieldShell + " mt-3"}>
+              <Controller
+                name="industry"
+                control={control}
+                render={({ field }) => (
+                  <input
+                    id="industry_other"
+                    className={inputCls}
+                    value={field.value || ""}
+                    onChange={(e) => field.onChange(e.target.value)}
+                    placeholder="Write your industry..."
+                  />
+                )}
+              />
+            </div>
+          )}
+          {errors.industry && <p className={errCls}>{errors.industry.message}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- Audience Step ---
+export function AudienceStep({ form, showField }: StepProps) {
+  const { formState: { errors }, control } = form;
+
+  return (
+    <div className="space-y-6">
+      {showField("audience", "target_audience") && (
+        <Controller
+          name="target_audience"
+          control={control}
+          render={({ field }) => {
+            const { selected, otherText } = decodeMultiSelection(field.value || "", TARGET_AUDIENCE_OPTIONS);
+            const onChange = (newSelected: string[], newOther: string) => {
+              field.onChange(encodeMultiSelection(newSelected, newOther, TARGET_AUDIENCE_OPTIONS));
+            };
+            const toggle = (val: string) => {
+              const next = selected.includes(val) ? selected.filter(v => v !== val) : [...selected, val];
+              onChange(next, otherText);
+            };
+            return (
+              <div>
+                <label className={labelCls}>Target audience</label>
+                <PillGroup
+                  options={TARGET_AUDIENCE_OPTIONS}
+                  selectedValues={selected}
+                  onToggle={toggle}
+                />
+                <button
+                  type="button"
+                  className="mt-3 inline-flex items-center gap-2 rounded-full border border-brand-sand/30 bg-earth-card px-3 py-1.5 text-xs font-semibold text-on-surface transition hover:bg-earth-alt dark:border-outline/30 dark:bg-surface-container-high dark:hover:bg-surface-container-highest"
+                  onClick={() => {
+                     const enabled = !!otherText.trim() || selected.includes(OTHER_OPTION.value);
+                     if (enabled) {
+                       onChange(selected.filter((v) => v !== OTHER_OPTION.value), "");
+                     } else {
+                       onChange([...selected, OTHER_OPTION.value], otherText);
+                     }
+                  }}
+                >
+                  <span>{OTHER_OPTION.icon}</span>
+                  <span>{OTHER_OPTION.labelAr}</span>
+                </button>
+                {selected.includes(OTHER_OPTION.value) && (
+                  <div className={fieldShell + " mt-3"}>
+                    <input
+                      className={inputCls}
+                      value={otherText}
+                      onChange={(e) => onChange(selected, e.target.value)}
+                      placeholder="اكتب جمهورك المستهدف..."
+                    />
+                  </div>
+                )}
+                {errors.target_audience && <p className={errCls}>{errors.target_audience.message}</p>}
+              </div>
+            );
+          }}
+        />
+      )}
+      {showField("audience", "main_goal") && (
+        <Controller
+          name="main_goal"
+          control={control}
+          render={({ field }) => {
+            const { selected, otherText } = decodeSingleSelection(field.value || "", MAIN_GOAL_OPTIONS);
+            const onChange = (newSelected: string, newOther: string) => {
+              field.onChange(encodeSingleSelection(newSelected, newOther, MAIN_GOAL_OPTIONS));
+            };
+            return (
+              <div>
+                <label className={labelCls}>Main campaign goal</label>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {MAIN_GOAL_OPTIONS.map((option) => (
+                    <SelectableCard
+                      key={option.value}
+                      label={option.labelAr}
+                      icon={option.icon}
+                      selected={selected === option.value}
+                      onClick={() => onChange(option.value, "")}
+                    />
+                  ))}
+                  <SelectableCard
+                    label={OTHER_OPTION.labelAr}
+                    icon={OTHER_OPTION.icon}
+                    selected={selected === OTHER_OPTION.value}
+                    onClick={() => onChange(OTHER_OPTION.value, otherText)}
+                  />
+                </div>
+                {selected === OTHER_OPTION.value && (
+                  <div className={fieldShell + " mt-3"}>
+                    <input
+                      className={inputCls}
+                      value={otherText}
+                      onChange={(e) => onChange(OTHER_OPTION.value, e.target.value)}
+                      placeholder="اكتب هدف الحملة..."
+                    />
+                  </div>
+                )}
+                {errors.main_goal && <p className={errCls}>{errors.main_goal.message}</p>}
+              </div>
+            );
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// --- Channels Step ---
+export function ChannelsStep({ form, showField }: StepProps) {
+  const { formState: { errors }, control, register } = form;
+
+  return (
+    <div className="space-y-6">
+      {showField("channels", "platforms") && (
+        <Controller
+          name="platforms"
+          control={control}
+          render={({ field }) => {
+            const { selected, otherText } = decodeMultiSelection(field.value || "", PLATFORM_OPTIONS);
+            const onChange = (newSelected: string[], newOther: string) => {
+              field.onChange(encodeMultiSelection(newSelected, newOther, PLATFORM_OPTIONS));
+            };
+            const toggle = (val: string) => {
+              const next = selected.includes(val) ? selected.filter((v) => v !== val) : [...selected, val];
+              onChange(next, otherText);
+            };
+            return (
+              <div>
+                <label className={labelCls}>Active platforms</label>
+                <PillGroup
+                  options={PLATFORM_OPTIONS}
+                  selectedValues={selected}
+                  onToggle={toggle}
+                />
+                <button
+                  type="button"
+                  className="mt-3 inline-flex items-center gap-2 rounded-full border border-brand-sand/30 bg-earth-card px-3 py-1.5 text-xs font-semibold text-on-surface transition hover:bg-earth-alt dark:border-outline/30 dark:bg-surface-container-high dark:hover:bg-surface-container-highest"
+                  onClick={() => {
+                    const enabled = !!otherText.trim() || selected.includes(OTHER_OPTION.value);
+                    if (enabled) {
+                      onChange(selected.filter((v) => v !== OTHER_OPTION.value), "");
+                    } else {
+                      onChange([...selected, OTHER_OPTION.value], otherText);
+                    }
+                  }}
+                >
+                  <span>{OTHER_OPTION.icon}</span>
+                  <span>{OTHER_OPTION.labelAr}</span>
+                </button>
+                {selected.includes(OTHER_OPTION.value) && (
+                  <div className={fieldShell + " mt-3"}>
+                    <input
+                      className={inputCls}
+                      value={otherText}
+                      onChange={(e) => onChange(selected, e.target.value)}
+                      placeholder="اكتب منصة إضافية..."
+                    />
+                  </div>
+                )}
+                {errors.platforms && <p className={errCls}>{errors.platforms.message}</p>}
+              </div>
+            );
+          }}
+        />
+      )}
+      {(showField("channels", "brand_tone") || showField("channels", "brand_colors")) && (
+        <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
+          {showField("channels", "brand_tone") && (
+            <Controller
+              name="brand_tone"
+              control={control}
+              render={({ field }) => {
+                const { selected, otherText } = decodeSingleSelection(field.value || "", BRAND_TONE_OPTIONS);
+                const onChange = (newSelected: string, newOther: string) => {
+                  field.onChange(encodeSingleSelection(newSelected, newOther, BRAND_TONE_OPTIONS));
+                };
+                return (
+                  <div>
+                    <label className={labelCls}>Brand tone</label>
+                    <div className="space-y-3">
+                      {BRAND_TONE_OPTIONS.map((option) => (
+                        <SelectableCard
+                          key={option.value}
+                          label={option.labelAr}
+                          icon={option.icon}
+                          selected={selected === option.value}
+                          onClick={() => onChange(option.value, "")}
+                        />
+                      ))}
+                      <SelectableCard
+                        label={OTHER_OPTION.labelAr}
+                        icon={OTHER_OPTION.icon}
+                        selected={selected === OTHER_OPTION.value}
+                        onClick={() => onChange(OTHER_OPTION.value, otherText)}
+                      />
+                    </div>
+                    {selected === OTHER_OPTION.value && (
+                      <div className={fieldShell + " mt-3"}>
+                        <input
+                          className={inputCls}
+                          value={otherText}
+                          onChange={(e) => onChange(OTHER_OPTION.value, e.target.value)}
+                          placeholder="اكتب نبرة البراند..."
+                        />
+                      </div>
+                    )}
+                    {errors.brand_tone && <p className={errCls}>{errors.brand_tone.message}</p>}
+                  </div>
+                );
+              }}
+            />
+          )}
+          {showField("channels", "brand_colors") && (
+            <div>
+              <label htmlFor="brand_colors" className={labelCls}>Brand colors</label>
+              <div className={fieldShell}><input id="brand_colors" className={inputCls} {...register("brand_colors")} /></div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- Offer Step ---
+export function OfferStep({ form, showField }: StepProps) {
+  const { register, formState: { errors } } = form;
+
+  return (
+    <div className="space-y-6">
+      {showField("offer", "offer") && (
+        <div>
+          <label htmlFor="offer" className={labelCls}>Offer / core message</label>
+          <div className={fieldShell}><textarea id="offer" className={textareaCls} {...register("offer")} /></div>
+          {errors.offer && <p className={errCls}>{errors.offer.message}</p>}
+        </div>
+      )}
+      {showField("offer", "competitors") && (
+        <div>
+          <label htmlFor="competitors" className={labelCls}>Competitors</label>
+          <div className={fieldShell}><textarea id="competitors" className={textareaCls} {...register("competitors")} /></div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- Creative Step ---
+export function CreativeStep({ form, showField }: StepProps) {
+  const { register, formState: { errors } } = form;
+
+  return (
+    <div className="space-y-6">
+      {showField("creative", "visual_notes") && (
+        <div>
+          <label htmlFor="visual_notes" className={labelCls}>Visual / creative notes</label>
+          <div className={fieldShell}><textarea id="visual_notes" className={textareaCls} {...register("visual_notes")} /></div>
+          {errors.visual_notes && <p className={errCls}>{errors.visual_notes.message}</p>}
+        </div>
+      )}
+      {(showField("creative", "campaign_duration") || showField("creative", "budget_level")) && (
+        <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
+          {showField("creative", "campaign_duration") && (
+            <div>
+              <label htmlFor="campaign_duration" className={labelCls}>Campaign duration</label>
+              <div className={fieldShell}><input id="campaign_duration" className={inputCls} {...register("campaign_duration")} /></div>
+              {errors.campaign_duration && <p className={errCls}>{errors.campaign_duration.message}</p>}
+            </div>
+          )}
+          {showField("creative", "budget_level") && (
+            <div>
+              <label htmlFor="budget_level" className={labelCls}>Budget level (1–7)</label>
+              <div className={fieldShell}><input id="budget_level" className={inputCls} {...register("budget_level")} /></div>
+            </div>
+          )}
+        </div>
+      )}
+      {showField("creative", "best_content_types") && (
+        <div>
+          <label htmlFor="best_content_types" className={labelCls}>Best-performing content types</label>
+          <div className={fieldShell}><textarea id="best_content_types" className={textareaCls} {...register("best_content_types")} /></div>
+          {errors.best_content_types && <p className={errCls}>{errors.best_content_types.message}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- Volume Step ---
+export function VolumeStep({ form, showField }: StepProps) {
+  const { register, control, formState: { errors } } = form;
+
+  return (
+    <div className="space-y-6">
+      {(showField("volume", "num_posts") || showField("volume", "num_image_designs")) && (
+        <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
+          {showField("volume", "num_posts") && (
+            <div>
+              <label htmlFor="num_posts" className={labelCls}>Number of posts ({BRIEF_LIMITS.num_posts.min}–{BRIEF_LIMITS.num_posts.max})</label>
+              <div className={fieldShell}>
+                <Controller
+                  name="num_posts"
+                  control={control}
+                  render={({ field }) => (
+                    <input id="num_posts" type="number" className={inputCls} value={field.value} onChange={(e) => field.onChange(clamp(Number(e.target.value) || 0, BRIEF_LIMITS.num_posts.min, BRIEF_LIMITS.num_posts.max))} />
+                  )}
+                />
+              </div>
+              {errors.num_posts && <p className={errCls}>{errors.num_posts.message}</p>}
+            </div>
+          )}
+          {showField("volume", "num_image_designs") && (
+            <div>
+              <label htmlFor="num_image_designs" className={labelCls}>Image design count ({BRIEF_LIMITS.num_image_designs.min}–{BRIEF_LIMITS.num_image_designs.max})</label>
+              <div className={fieldShell}>
+                <Controller
+                  name="num_image_designs"
+                  control={control}
+                  render={({ field }) => (
+                    <input id="num_image_designs" type="number" className={inputCls} value={field.value} onChange={(e) => field.onChange(clamp(Number(e.target.value) || 0, BRIEF_LIMITS.num_image_designs.min, BRIEF_LIMITS.num_image_designs.max))} />
+                  )}
+                />
+              </div>
+              {errors.num_image_designs && <p className={errCls}>{errors.num_image_designs.message}</p>}
+            </div>
+          )}
+        </div>
+      )}
+      {showField("volume", "num_video_prompts") && (
+        <div>
+          <label htmlFor="num_video_prompts" className={labelCls}>Video count ({BRIEF_LIMITS.num_video_prompts.min}–{BRIEF_LIMITS.num_video_prompts.max})</label>
+          <div className={fieldShell}>
+            <Controller
+              name="num_video_prompts"
+              control={control}
+              render={({ field }) => (
+                <input id="num_video_prompts" type="number" className={inputCls} value={field.value} onChange={(e) => field.onChange(clamp(Number(e.target.value) || 0, BRIEF_LIMITS.num_video_prompts.min, BRIEF_LIMITS.num_video_prompts.max))} />
+              )}
+            />
+          </div>
+          {errors.num_video_prompts && <p className={errCls}>{errors.num_video_prompts.message}</p>}
+        </div>
+      )}
+      {showField("volume", "email") && (
+        <div>
+          <label htmlFor="email" className={labelCls}>Email for kit delivery (optional)</label>
+          <div className={fieldShell}><input id="email" type="email" className={inputCls} {...register("email")} /></div>
+          {errors.email && <p className={errCls}>{errors.email.message}</p>}
+        </div>
+      )}
+    </div>
+  );
+}

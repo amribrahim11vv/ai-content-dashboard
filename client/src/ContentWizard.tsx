@@ -13,40 +13,35 @@ export default function ContentWizard() {
       <div className="pointer-events-none fixed -end-40 top-20 -z-10 h-[500px] w-[500px] rounded-full bg-secondary/5 blur-[120px]" />
 
       <section className="mt-4 w-full md:mt-8">
-        <div className="mb-10 max-w-3xl">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-tertiary/20 bg-tertiary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-tertiary">
-            <span className="material-symbols-outlined text-sm">bolt</span>
-            New content wizard
-          </div>
-          <h2 className="mb-4 font-headline text-4xl font-black leading-tight tracking-tight text-on-surface md:text-5xl">
+        <div className="mb-10 max-w-3xl text-center md:text-start">
+          <h2 className="mb-3 font-headline text-4xl font-black leading-tight tracking-tight text-on-surface md:text-5xl">
             Choose your{" "}
             <span className="bg-gradient-to-r from-primary via-tertiary to-secondary bg-clip-text text-transparent">content path</span>
           </h2>
           <p className="text-lg font-light leading-relaxed text-on-surface-variant md:text-xl">
-            Each card opens a different wizard experience with different field order, copy, and defaults.
+            Select the best flow for your goals and audience.
           </p>
         </div>
 
-        <div className="mb-8 rounded-2xl border border-primary/20 bg-primary/10 p-4 md:p-5">
-          <p className="text-sm font-semibold uppercase tracking-wide text-primary">Quick start</p>
-          <h3 className="mt-1 text-xl font-extrabold text-on-surface md:text-2xl">Start in under 20 seconds</h3>
-          <p className="mt-1 text-sm text-on-surface-variant">
-            Most creators start with the social path, then switch later if needed.
-          </p>
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+        <div className="mb-10 flex flex-col items-center justify-between gap-6 rounded-[2rem] border border-primary/20 bg-primary/5 p-6 md:flex-row md:p-8">
+          <div className="text-center md:text-start">
+            <h3 className="text-xl font-extrabold text-on-surface sm:text-2xl">Quick Start</h3>
+            <p className="mt-1 text-sm text-on-surface-variant">Recommended for most creators. Generates social-first content.</p>
+          </div>
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
             <button
               type="button"
               onClick={() => nav("/wizard/social")}
-              className="rounded-xl bg-gradient-to-r from-primary to-primary-container px-5 py-3 text-sm font-bold text-on-primary-container transition hover:opacity-95"
+              className="rounded-xl bg-gradient-to-r from-primary to-primary-container px-6 py-3.5 text-sm font-bold text-on-primary-container transition hover:scale-[1.02] hover:opacity-95"
             >
-              Start now (recommended)
+              Start Social Path
             </button>
             <button
               type="button"
               onClick={() => nav("/wizard/offer")}
-              className="rounded-xl border border-outline/30 bg-surface-container-high px-5 py-3 text-sm font-semibold text-on-surface transition hover:bg-surface-container-highest"
+              className="rounded-xl border border-outline/30 bg-surface-container-high px-6 py-3.5 text-sm font-semibold text-on-surface transition hover:bg-surface-container-highest"
             >
-              I need offer-focused flow
+              Offer Path Instead
             </button>
           </div>
         </div>
