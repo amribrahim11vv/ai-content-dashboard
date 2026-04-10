@@ -102,11 +102,11 @@ function clamp(n: number, min: number, max: number) {
 }
 
 const labelCls = "mb-2 ms-1 block text-xs font-semibold uppercase tracking-widest text-on-surface-variant";
-const fieldShell = "glow-focus rounded-xl bg-surface-container-lowest p-0.5";
+const fieldShell = "glow-focus overflow-hidden rounded-xl bg-surface-container-lowest p-0.5";
 const inputCls =
-  "w-full rounded-lg border-none bg-transparent px-4 py-3 text-on-surface placeholder:text-on-surface-variant/50 focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/45";
+  "box-border w-full rounded-lg border-none bg-transparent px-4 py-3 text-on-surface placeholder:text-on-surface-variant/50 focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/45";
 const selectCls =
-  "w-full rounded-lg border-none bg-surface-container-lowest px-4 py-3 text-on-surface focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/45 dark:bg-surface-container-high/70";
+  "box-border w-full appearance-none rounded-lg border-none bg-surface-container-lowest px-4 py-3 text-on-surface focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/45 dark:bg-surface-container-high/70";
 const textareaCls = cn(inputCls, "min-h-[100px] resize-y");
 const errCls = "mt-1 text-sm text-error";
 const btnPrimary =
