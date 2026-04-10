@@ -147,6 +147,14 @@ export default function WizardCore(props: WizardCoreProps) {
     defaultValues: mergedDefaults,
     mode: "onTouched",
   });
+  const [wizardData, setWizardData] = useState<BriefForm>(mergedDefaults);
+
+  const updateWizardData = (newData: Partial<BriefForm>) => {
+    setWizardData((prev) => ({ ...prev, ...newData }));
+    for (const [key, value] of Object.entries(newData)) {
+      setValue(key as keyof BriefForm, value as BriefForm[keyof BriefForm], { shouldDirty: true });
+    }
+  };
 
   const {
     initialState,
@@ -196,7 +204,15 @@ export default function WizardCore(props: WizardCoreProps) {
 
   useEffect(() => {
     reset(initialState.form);
+    setWizardData(initialState.form);
   }, [initialState.form, reset]);
+
+  useEffect(() => {
+    const subscription = watch((value) => {
+      setWizardData((prev) => ({ ...prev, ...(value as Partial<BriefForm>) }));
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
 
   const telemetry = useWizardTelemetry({
     wizardType,
@@ -209,6 +225,7 @@ export default function WizardCore(props: WizardCoreProps) {
 
   const clearDraft = () => {
     reset(mergedDefaults);
+    setWizardData(mergedDefaults);
     setSelectionState({
       mainGoalSelected: "",
       mainGoalOther: "",
@@ -344,6 +361,19 @@ export default function WizardCore(props: WizardCoreProps) {
       <div className="wizard-root overflow-hidden rounded-2xl border border-outline/30 bg-surface-container-low sm:rounded-3xl dark:border-brand-muted/40 dark:bg-earth-darkCard/75" aria-busy={loading}>
         <div className={cn("wizard-body-wrap relative !rounded-3xl", loading && "wizard-body-wrap--loading")}>
           <div className="wizard-body p-4 sm:p-6 md:p-8">
+            <div className="mb-5 rounded-xl border border-outline/30 bg-surface-container-lowest/70 p-3 dark:border-brand-muted/40 dark:bg-earth-darkCard/70">
+              <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
+                <span>Step {step + 1} of {maxStep + 1}</span>
+                <span>{props.stepTitles[currentStep]}</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-surface-container-high dark:bg-surface-container-highest">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-primary to-primary-container transition-all duration-300"
+                  style={{ width: `${Math.max(8, Math.round(((step + 1) / (maxStep + 1)) * 100))}%` }}
+                />
+              </div>
+            </div>
+
             {canShowValuePreview && (
               <WizardValuePreview
                 wizardType={wizardType}
@@ -643,8 +673,8 @@ export default function WizardCore(props: WizardCoreProps) {
                 {showField("creative", "reference_image") && (
                   <div>
                     <ReferenceImageUploader
-                      value={watch("reference_image") || ""}
-                      onChange={(nextValue) => setValue("reference_image", nextValue, { shouldDirty: true })}
+                      value={wizardData.reference_image || ""}
+                      onChange={(nextValue) => updateWizardData({ reference_image: nextValue })}
                       disabled={loading}
                     />
                     {errors.reference_image && <p className={errCls}>{errors.reference_image.message}</p>}
