@@ -1,5 +1,4 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import ContentWizard from "./ContentWizard";
 import KitDetail from "./KitDetail";
 import Dashboard from "./Dashboard";
 import GeneratedKitsPage from "./GeneratedKitsPage";
@@ -34,7 +33,7 @@ export default function App() {
       >
         <Route path="/" element={<Dashboard />} />
         <Route path="/generated-kits" element={<GeneratedKitsPage />} />
-        <Route path="/wizard" element={<ContentWizard />} />
+        <Route path="/wizard" element={<Navigate to="/wizard/social" replace />} />
         <Route path="/wizard/social" element={<SocialCampaignWizard />} />
         <Route path="/wizard/offer" element={<OfferProductWizard />} />
         <Route path="/wizard/deep" element={<DeepContentWizard />} />

@@ -322,6 +322,38 @@ export default function KitDetail({ showTechnical = false }: { showTechnical?: b
               <span className="material-symbols-outlined text-lg">inventory_2</span>
               Open generated kits
             </Link>
+            <Link
+              to="/wizard/offer"
+              className={btnSecondary + " w-full justify-center sm:w-auto"}
+              onClick={() =>
+                emitWizardEvent({
+                  name: "wizard_step_next_clicked",
+                  wizard_type: wizardType,
+                  draft_key: `kit:${kit.id}`,
+                  step_id: "kit_handoff_start_offer_campaign",
+                  validation_state: "passed",
+                })
+              }
+            >
+              <span className="material-symbols-outlined text-lg">trending_up</span>
+              Start Offer Campaign
+            </Link>
+            <Link
+              to="/wizard/deep"
+              className={btnSecondary + " w-full justify-center sm:w-auto"}
+              onClick={() =>
+                emitWizardEvent({
+                  name: "wizard_step_next_clicked",
+                  wizard_type: wizardType,
+                  draft_key: `kit:${kit.id}`,
+                  step_id: "kit_handoff_start_deep_content",
+                  validation_state: "passed",
+                })
+              }
+            >
+              <span className="material-symbols-outlined text-lg">article</span>
+              Deep Content
+            </Link>
           </div>
           <div className="mt-4 rounded-xl border border-outline/25 bg-surface-container-low p-4">
             <p className="text-xs font-bold uppercase tracking-wide text-on-surface-variant">Recommended next move</p>
