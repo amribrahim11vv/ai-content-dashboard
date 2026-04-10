@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Link, Outlet } from "react-router-dom";
+import { getHealth } from "../api/misc";
 
 function navClass(isActive: boolean) {
   return [
@@ -14,6 +15,27 @@ export default function AdminLayout() {
   const [themeMode, setThemeMode] = useState<"light" | "dark">(() =>
     document.documentElement.classList.contains("dark") ? "dark" : "light"
   );
+  const [apiStatus, setApiStatus] = useState<"checking" | "active" | "offline">("checking");
+
+  useEffect(() => {
+    let cancelled = false;
+    const checkHealth = async () => {
+      try {
+        const health = await getHealth();
+        if (!cancelled) setApiStatus(health.ok ? "active" : "offline");
+      } catch {
+        if (!cancelled) setApiStatus("offline");
+      }
+    };
+    void checkHealth();
+    const id = window.setInterval(() => {
+      void checkHealth();
+    }, 15000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, []);
 
   const toggleTheme = () => {
     const next = themeMode === "dark" ? "light" : "dark";
@@ -37,6 +59,20 @@ export default function AdminLayout() {
           </div>
 
           <div className="flex items-center gap-2">
+            <div className="hidden items-center gap-2 rounded-lg border border-outline/30 bg-surface-container-high px-3 py-2 text-xs font-bold text-on-surface md:inline-flex dark:border-brand-muted/40 dark:bg-earth-darkCard dark:text-brand-darkText">
+              <span
+                className={[
+                  "material-symbols-outlined text-sm",
+                  apiStatus === "active" ? "text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.55)]" : "",
+                  apiStatus === "offline" ? "text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.55)]" : "",
+                  apiStatus === "checking" ? "text-on-surface-variant" : "",
+                ].join(" ")}
+                aria-hidden
+              >
+                radio_button_checked
+              </span>
+              {apiStatus === "active" ? "API ON" : apiStatus === "offline" ? "API OFF" : "API…"}
+            </div>
             <button
               type="button"
               onClick={toggleTheme}
