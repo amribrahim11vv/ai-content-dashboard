@@ -38,6 +38,9 @@ export function buildKitViewModel(kit: KitSummary) {
     videoSection,
     imageSection,
     hasStrategyBlock,
+    marketingStrategy,
+    salesSystem,
+    offerOptimization,
     painPoints,
     hasStructuredPreview,
   };

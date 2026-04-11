@@ -778,10 +778,27 @@ export default function KitViewer({
 }) {
   const [openMap, setOpenMap] = useState<Record<string, boolean>>({});
   const [lang, setLang] = useState<ViewerLang>("ar");
-  const { data, posts, videoSection, imageSection, hasStrategyBlock, painPoints, hasStructuredPreview } = useMemo(
-    () => buildKitViewModel(kit),
-    [kit]
-  );
+  const {
+    data,
+    posts,
+    videoSection,
+    imageSection,
+    hasStrategyBlock,
+    marketingStrategy,
+    salesSystem,
+    offerOptimization,
+    painPoints,
+    hasStructuredPreview,
+  } = useMemo(() => buildKitViewModel(kit), [kit]);
+
+  const strategyOfferHeadline = useMemo(() => {
+    const rew = offerOptimization?.rewritten_offer;
+    if (typeof rew === "string" && rew.trim()) return rew.trim();
+    const leg = data?.offer_headline;
+    if (typeof leg === "string" && leg.trim()) return leg.trim();
+    return null;
+  }, [offerOptimization, data]);
+
   const {
     regeneratingKey,
     regenError,
@@ -1083,30 +1100,60 @@ export default function KitViewer({
           onToggle={() => toggle("kit-section-strategy")}
           tocLabel="Strategy"
         >
-          {typeof data.offer_headline === "string" ? (
-            <BlockWithCopy
-              copyText={data.offer_headline}
-              copyLabel="Copy headline"
-              className="mb-4"
-            >
+          {strategyOfferHeadline ? (
+            <BlockWithCopy copyText={strategyOfferHeadline} copyLabel="Copy offer line" className="mb-4">
               <blockquote className="border-s-4 border-brand-accent bg-earth-alt/60 p-4 text-lg italic text-on-surface dark:border-secondary dark:bg-surface-container-lowest/50">
-                {data.offer_headline}
+                {strategyOfferHeadline}
               </blockquote>
             </BlockWithCopy>
           ) : null}
-          {isRecord(data.strategy) ? (
-            <BlockWithCopy
-              copyText={JSON.stringify(data.strategy, null, 2)}
-              copyLabel="Copy strategy JSON"
-            >
-              <pre
-                className="max-h-80 overflow-auto rounded-uniform bg-earth-alt p-4 text-xs text-brand-muted dark:bg-surface-container-lowest dark:text-on-surface-variant"
-                dir="ltr"
+          <div className="grid grid-cols-1 gap-4">
+            {marketingStrategy ? (
+              <FieldBlock
+                label="Marketing strategy"
+                copyText={JSON.stringify(marketingStrategy, null, 2)}
+                copyLabel="Copy marketing strategy JSON"
+                bodyClassName="p-0"
               >
-                {JSON.stringify(data.strategy, null, 2)}
-              </pre>
-            </BlockWithCopy>
-          ) : null}
+                <pre
+                  className="max-h-80 overflow-auto rounded-b-xl bg-earth-alt p-4 text-xs text-brand-muted dark:bg-surface-container-lowest dark:text-on-surface-variant"
+                  dir="ltr"
+                >
+                  {JSON.stringify(marketingStrategy, null, 2)}
+                </pre>
+              </FieldBlock>
+            ) : null}
+            {salesSystem ? (
+              <FieldBlock
+                label="Sales system"
+                copyText={JSON.stringify(salesSystem, null, 2)}
+                copyLabel="Copy sales system JSON"
+                bodyClassName="p-0"
+              >
+                <pre
+                  className="max-h-80 overflow-auto rounded-b-xl bg-earth-alt p-4 text-xs text-brand-muted dark:bg-surface-container-lowest dark:text-on-surface-variant"
+                  dir="ltr"
+                >
+                  {JSON.stringify(salesSystem, null, 2)}
+                </pre>
+              </FieldBlock>
+            ) : null}
+            {offerOptimization ? (
+              <FieldBlock
+                label="Offer optimization"
+                copyText={JSON.stringify(offerOptimization, null, 2)}
+                copyLabel="Copy offer optimization JSON"
+                bodyClassName="p-0"
+              >
+                <pre
+                  className="max-h-80 overflow-auto rounded-b-xl bg-earth-alt p-4 text-xs text-brand-muted dark:bg-surface-container-lowest dark:text-on-surface-variant"
+                  dir="ltr"
+                >
+                  {JSON.stringify(offerOptimization, null, 2)}
+                </pre>
+              </FieldBlock>
+            ) : null}
+          </div>
         </CollapsibleSection>
       ) : null}
 
