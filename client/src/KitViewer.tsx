@@ -258,6 +258,226 @@ function getKitMediaPlainBody(rec: Record<string, unknown>, kind: "image" | "vid
   return JSON.stringify(rec, null, 2);
 }
 
+/** Strategy blocks: server schema uses string fields + string[] + objection pairs */
+function stratStr(v: unknown): string {
+  return typeof v === "string" ? v.trim() : "";
+}
+
+function stratStrArr(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((x): x is string => typeof x === "string")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
+function stratObjectionPairs(v: unknown): { objection: string; response: string }[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((x): x is Record<string, unknown> => isRecord(x))
+    .map((o) => ({ objection: stratStr(o.objection), response: stratStr(o.response) }))
+    .filter((p) => p.objection || p.response);
+}
+
+function marketingStrategyPlainText(data: Record<string, unknown>): string {
+  const lines: string[] = [];
+  const pushBlock = (title: string, body: string) => {
+    if (!body) return;
+    lines.push(title, body, "");
+  };
+  pushBlock("Content mix plan", stratStr(data.content_mix_plan));
+  pushBlock("Weekly posting plan", stratStr(data.weekly_posting_plan));
+  pushBlock("Platform strategy", stratStr(data.platform_strategy));
+  const angles = stratStrArr(data.key_messaging_angles);
+  if (angles.length) {
+    lines.push("Key messaging angles");
+    angles.forEach((a) => lines.push(`• ${a}`));
+    lines.push("");
+  }
+  pushBlock("Brand positioning statement", stratStr(data.brand_positioning_statement));
+  return lines.join("\n").trim();
+}
+
+function salesSystemPlainText(data: Record<string, unknown>): string {
+  const lines: string[] = [];
+  const pains = stratStrArr(data.pain_points);
+  if (pains.length) {
+    lines.push("Pain points");
+    pains.forEach((p) => lines.push(`• ${p}`));
+    lines.push("");
+  }
+  const pushBlock = (title: string, body: string) => {
+    if (!body) return;
+    lines.push(title, body, "");
+  };
+  pushBlock("Offer structuring", stratStr(data.offer_structuring));
+  pushBlock("Funnel plan", stratStr(data.funnel_plan));
+  const ads = stratStrArr(data.ad_angles);
+  if (ads.length) {
+    lines.push("Ad angles");
+    ads.forEach((a) => lines.push(`• ${a}`));
+    lines.push("");
+  }
+  stratObjectionPairs(data.objection_handling).forEach((pair, i) => {
+    lines.push(`Objection ${i + 1}`, pair.objection, "Response", pair.response, "");
+  });
+  pushBlock("CTA strategy", stratStr(data.cta_strategy));
+  return lines.join("\n").trim();
+}
+
+function offerOptimizationPlainText(data: Record<string, unknown>): string {
+  const lines: string[] = [];
+  const pushBlock = (title: string, body: string) => {
+    if (!body) return;
+    lines.push(title, body, "");
+  };
+  pushBlock("Rewritten offer", stratStr(data.rewritten_offer));
+  pushBlock("Urgency / scarcity", stratStr(data.urgency_or_scarcity));
+  const alts = stratStrArr(data.alternative_offers);
+  if (alts.length) {
+    lines.push("Alternative offers");
+    alts.forEach((a) => lines.push(`• ${a}`));
+    lines.push("");
+  }
+  return lines.join("\n").trim();
+}
+
+function StrategySubfield({ label, value }: { label: string; value: string }) {
+  if (!value) return null;
+  return (
+    <div className="min-w-0">
+      <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">{label}</p>
+      <p className="whitespace-pre-wrap text-sm leading-relaxed text-on-surface" dir="auto">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function StrategyBulletList({ label, items }: { label: string; items: string[] }) {
+  if (!items.length) return null;
+  return (
+    <div className="min-w-0">
+      <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">{label}</p>
+      <ul className="list-disc space-y-1.5 ps-5 text-sm leading-relaxed text-on-surface">
+        {items.map((t, i) => (
+          <li key={i} dir="auto">
+            {t}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function MarketingStrategyBody({ data }: { data: Record<string, unknown> }) {
+  const angles = stratStrArr(data.key_messaging_angles);
+  const structured =
+    stratStr(data.content_mix_plan) ||
+    stratStr(data.weekly_posting_plan) ||
+    stratStr(data.platform_strategy) ||
+    angles.length > 0 ||
+    stratStr(data.brand_positioning_statement);
+  if (!structured) {
+    return (
+      <pre
+        className="max-h-80 overflow-auto rounded-b-xl bg-earth-alt p-4 text-xs text-brand-muted dark:bg-surface-container-lowest dark:text-on-surface-variant"
+        dir="ltr"
+      >
+        {JSON.stringify(data, null, 2)}
+      </pre>
+    );
+  }
+  return (
+    <div className="space-y-4">
+      <StrategySubfield label="Content mix plan" value={stratStr(data.content_mix_plan)} />
+      <StrategySubfield label="Weekly posting plan" value={stratStr(data.weekly_posting_plan)} />
+      <StrategySubfield label="Platform strategy" value={stratStr(data.platform_strategy)} />
+      <StrategyBulletList label="Key messaging angles" items={angles} />
+      <StrategySubfield label="Brand positioning statement" value={stratStr(data.brand_positioning_statement)} />
+    </div>
+  );
+}
+
+function SalesSystemBody({ data }: { data: Record<string, unknown> }) {
+  const pains = stratStrArr(data.pain_points);
+  const ads = stratStrArr(data.ad_angles);
+  const objections = stratObjectionPairs(data.objection_handling);
+  const structured =
+    pains.length > 0 ||
+    stratStr(data.offer_structuring) ||
+    stratStr(data.funnel_plan) ||
+    ads.length > 0 ||
+    objections.length > 0 ||
+    stratStr(data.cta_strategy);
+  if (!structured) {
+    return (
+      <pre
+        className="max-h-80 overflow-auto rounded-b-xl bg-earth-alt p-4 text-xs text-brand-muted dark:bg-surface-container-lowest dark:text-on-surface-variant"
+        dir="ltr"
+      >
+        {JSON.stringify(data, null, 2)}
+      </pre>
+    );
+  }
+  return (
+    <div className="space-y-4">
+      <StrategyBulletList label="Pain points" items={pains} />
+      <StrategySubfield label="Offer structuring" value={stratStr(data.offer_structuring)} />
+      <StrategySubfield label="Funnel plan" value={stratStr(data.funnel_plan)} />
+      <StrategyBulletList label="Ad angles" items={ads} />
+      {objections.length > 0 ? (
+        <div className="min-w-0 space-y-3">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">Objection handling</p>
+          <div className="space-y-3">
+            {objections.map((pair, i) => (
+              <div
+                key={i}
+                className="rounded-lg border border-brand-sand/20 bg-earth-alt/40 p-3 dark:border-outline/15 dark:bg-surface-container-high/25"
+              >
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">Objection</p>
+                <p className="whitespace-pre-wrap text-sm text-on-surface" dir="auto">
+                  {pair.objection}
+                </p>
+                <p className="mb-1 mt-3 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">
+                  Response
+                </p>
+                <p className="whitespace-pre-wrap text-sm text-on-surface" dir="auto">
+                  {pair.response}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      <StrategySubfield label="CTA strategy" value={stratStr(data.cta_strategy)} />
+    </div>
+  );
+}
+
+function OfferOptimizationBody({ data }: { data: Record<string, unknown> }) {
+  const alts = stratStrArr(data.alternative_offers);
+  const structured =
+    stratStr(data.rewritten_offer) || stratStr(data.urgency_or_scarcity) || alts.length > 0;
+  if (!structured) {
+    return (
+      <pre
+        className="max-h-80 overflow-auto rounded-b-xl bg-earth-alt p-4 text-xs text-brand-muted dark:bg-surface-container-lowest dark:text-on-surface-variant"
+        dir="ltr"
+      >
+        {JSON.stringify(data, null, 2)}
+      </pre>
+    );
+  }
+  return (
+    <div className="space-y-4">
+      <StrategySubfield label="Rewritten offer" value={stratStr(data.rewritten_offer)} />
+      <StrategySubfield label="Urgency / scarcity" value={stratStr(data.urgency_or_scarcity)} />
+      <StrategyBulletList label="Alternative offers" items={alts} />
+    </div>
+  );
+}
+
 function kitArticleShellClass(expanded: boolean): string {
   return (
     "relative isolate min-h-0 min-w-0 max-w-full overflow-x-clip overflow-y-visible rounded-uniform border border-brand-sand/30 bg-earth-card/90 p-3 sm:p-4 dark:border-outline/25 dark:bg-surface-container-lowest/60 " +
@@ -1279,7 +1499,7 @@ export default function KitViewer({
         <CollapsibleSection
           id="kit-section-strategy"
           title="Strategy & additional fields"
-          subtitle="Offer line & strategy object"
+          subtitle="Offer line, positioning, sales flow, and offer copy"
           icon="auto_awesome"
           iconBg="bg-brand-accent/15 text-brand-accent dark:bg-secondary/15 dark:text-secondary"
           open={!!openMap["kit-section-strategy"]}
@@ -1297,46 +1517,37 @@ export default function KitViewer({
             {marketingStrategy ? (
               <FieldBlock
                 label="Marketing strategy"
-                copyText={JSON.stringify(marketingStrategy, null, 2)}
-                copyLabel="Copy marketing strategy JSON"
-                bodyClassName="p-0"
+                copyText={
+                  marketingStrategyPlainText(marketingStrategy) ||
+                  JSON.stringify(marketingStrategy, null, 2)
+                }
+                copyLabel="Copy marketing strategy"
+                bodyClassName="p-3"
               >
-                <pre
-                  className="max-h-80 overflow-auto rounded-b-xl bg-earth-alt p-4 text-xs text-brand-muted dark:bg-surface-container-lowest dark:text-on-surface-variant"
-                  dir="ltr"
-                >
-                  {JSON.stringify(marketingStrategy, null, 2)}
-                </pre>
+                <MarketingStrategyBody data={marketingStrategy} />
               </FieldBlock>
             ) : null}
             {salesSystem ? (
               <FieldBlock
                 label="Sales system"
-                copyText={JSON.stringify(salesSystem, null, 2)}
-                copyLabel="Copy sales system JSON"
-                bodyClassName="p-0"
+                copyText={salesSystemPlainText(salesSystem) || JSON.stringify(salesSystem, null, 2)}
+                copyLabel="Copy sales system"
+                bodyClassName="p-3"
               >
-                <pre
-                  className="max-h-80 overflow-auto rounded-b-xl bg-earth-alt p-4 text-xs text-brand-muted dark:bg-surface-container-lowest dark:text-on-surface-variant"
-                  dir="ltr"
-                >
-                  {JSON.stringify(salesSystem, null, 2)}
-                </pre>
+                <SalesSystemBody data={salesSystem} />
               </FieldBlock>
             ) : null}
             {offerOptimization ? (
               <FieldBlock
                 label="Offer optimization"
-                copyText={JSON.stringify(offerOptimization, null, 2)}
-                copyLabel="Copy offer optimization JSON"
-                bodyClassName="p-0"
+                copyText={
+                  offerOptimizationPlainText(offerOptimization) ||
+                  JSON.stringify(offerOptimization, null, 2)
+                }
+                copyLabel="Copy offer optimization"
+                bodyClassName="p-3"
               >
-                <pre
-                  className="max-h-80 overflow-auto rounded-b-xl bg-earth-alt p-4 text-xs text-brand-muted dark:bg-surface-container-lowest dark:text-on-surface-variant"
-                  dir="ltr"
-                >
-                  {JSON.stringify(offerOptimization, null, 2)}
-                </pre>
+                <OfferOptimizationBody data={offerOptimization} />
               </FieldBlock>
             ) : null}
           </div>
