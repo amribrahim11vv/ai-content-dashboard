@@ -93,9 +93,10 @@ export default function ContentWizard() {
               <div
                 className={cn(
                   "mb-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-container-highest transition duration-500 group-hover:scale-110",
-                  c.accent === "primary" && "text-primary group-hover:bg-primary/10",
-                  c.accent === "tertiary" && "text-tertiary group-hover:bg-tertiary/10",
-                  c.accent === "secondary" && "text-secondary group-hover:bg-secondary/10"
+                  c.accent === "primary" && "bg-primary/15 text-primary group-hover:bg-primary/20",
+                  c.accent === "tertiary" &&
+                    "bg-brand-sand/70 text-brand-accent group-hover:bg-brand-sand dark:bg-brand-sand/75 dark:text-brand-accent",
+                  c.accent === "secondary" && "bg-secondary/15 text-secondary group-hover:bg-secondary/20"
                 )}
               >
                 <span className="material-symbols-outlined text-4xl">{c.icon}</span>

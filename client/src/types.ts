@@ -37,6 +37,7 @@ export type BriefForm = {
   offer: string;
   competitors: string;
   visual_notes: string;
+  reference_image?: string;
   campaign_duration: string;
   budget_level: string;
   best_content_types: string;

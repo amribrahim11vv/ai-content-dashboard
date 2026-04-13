@@ -21,7 +21,7 @@ export default function IntegrationsPage() {
         <div>
           <h1 className="headline text-4xl font-black tracking-tight text-on-surface md:text-5xl">Integrations Hub</h1>
           <p className="mt-2 max-w-xl text-on-surface-variant">
-            Connect Ethereal Engine to the tools your team already uses. OAuth-ready placeholders — wire backend when ready.
+            Connect Social Geni to the tools your team already uses. OAuth-ready placeholders — wire backend when ready.
           </p>
         </div>
         <button

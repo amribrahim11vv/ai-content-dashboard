@@ -1,6 +1,6 @@
-# AI Content Dashboard
+# Social Geni
 
-> Generate, review, and manage AI content kits (social + image + video) with a visual dashboard.
+> AI Content Kits in Minutes. Generate, review, and manage social + image + video kits with a visual dashboard.
 
 ---
 
@@ -8,13 +8,13 @@
 
 ### Main screens
 
-| Dashboard | Wizard |
+| Dashboard (Live) | Wizard (Live) |
 |---|---|
-| ![Dashboard](stitch/dashboard_overview/screen.png) | ![Wizard](stitch/new_content_wizard/screen.png) |
+| ![Dashboard](docs/screenshots/dashboard-real.png) | ![Wizard](docs/screenshots/wizard-real.png) |
 
-| Generated Kit (Social) | Generated Kit (Video/AI Assets) |
+| Generated Kits (Live) | Admin Kits Review (Live) |
 |---|---|
-| ![Social Strategy](stitch/generated_kit_social_strategy/screen.png) | ![Video Assets](stitch/generated_kit_video_ai_assets/screen.png) |
+| ![Generated Kits](docs/screenshots/generated-kits-real.png) | ![Admin Kits Review](docs/screenshots/admin-kits-review-real.png) |
 
 ---
 

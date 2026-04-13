@@ -31,6 +31,7 @@ export const briefSchema = z.object({
   offer: z.string(),
   competitors: z.string(),
   visual_notes: z.string(),
+  reference_image: z.string().max(3_000_000).optional(),
   campaign_duration: z.string(),
   budget_level: z.string(),
   best_content_types: z.string(),
@@ -89,7 +90,7 @@ export const STEP_FIELD_KEYS: readonly (readonly (keyof BriefForm)[])[] = [
   ["target_audience", "main_goal"],
   ["platforms", "brand_tone", "brand_colors"],
   ["offer", "competitors"],
-  ["visual_notes", "campaign_duration", "budget_level", "best_content_types"],
+  ["visual_notes", "reference_image", "campaign_duration", "budget_level", "best_content_types"],
   [],
 ] as const;
 
@@ -106,6 +107,7 @@ export function initialBriefForm(): BriefForm {
     offer: "",
     competitors: "",
     visual_notes: "",
+    reference_image: "",
     campaign_duration: "",
     budget_level: "",
     best_content_types: "",

@@ -36,7 +36,7 @@ function statusKind(badge: string): "done" | "running" | "failed" {
   return "done";
 }
 
-export default function GeneratedKitsPage() {
+export default function GeneratedKitsPage({ adminMode = false }: { adminMode?: boolean }) {
   const compactTable = useCompactTable();
   const [kits, setKits] = useState<KitSummary[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -51,6 +51,7 @@ export default function GeneratedKitsPage() {
   }, []);
 
   const latestKits = useMemo(() => (kits?.length ? kits.slice(0, 5) : []), [kits]);
+  const kitDetailsBase = adminMode ? "/admin/kits/" : "/kits/";
 
   return (
     <>
@@ -86,7 +87,7 @@ export default function GeneratedKitsPage() {
               return (
                 <li key={k.id}>
                   <Link
-                    to={"/kits/" + k.id}
+                    to={kitDetailsBase + k.id}
                     className="flex h-full flex-col rounded-2xl border border-brand-sand/30 bg-earth-card p-4 transition hover:border-brand-primary/35 hover:bg-earth-alt dark:border-outline/30 dark:bg-surface-container-low dark:hover:bg-surface-container-high"
                   >
                     <div className="mb-3 flex items-center gap-3">
@@ -194,7 +195,7 @@ export default function GeneratedKitsPage() {
                       </td>
                       <td className={tdPad + " text-end"}>
                         <Link
-                          to={"/kits/" + k.id}
+                          to={kitDetailsBase + k.id}
                           className={
                             "rounded-lg bg-brand-primary/10 font-bold uppercase tracking-widest text-brand-primary transition-all hover:bg-brand-primary hover:text-white dark:bg-primary/10 dark:text-primary dark:hover:bg-primary dark:hover:text-on-primary " +
                             (compactTable ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm")

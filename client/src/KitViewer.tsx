@@ -276,12 +276,14 @@ function VideoBlueprintCard({
   lang,
   onRegenerate,
   regenerating,
+  showTechnical,
 }: {
   item: Record<string, unknown>;
   index: number;
   lang: ViewerLang;
   onRegenerate: (index: number) => void;
   regenerating: boolean;
+  showTechnical: boolean;
 }) {
   const uid = useId();
   const toggleId = `${uid}-toggle`;
@@ -353,9 +355,11 @@ function VideoBlueprintCard({
               {brief}
             </div>
           </FieldBlock>
-          <FieldBlock label="Full JSON" copyText={jsonFull} copyLabel="Copy raw JSON">
-            <p className="text-xs text-on-surface-variant">For tools, APIs, or archiving.</p>
-          </FieldBlock>
+          {showTechnical ? (
+            <FieldBlock label="Full JSON" copyText={jsonFull} copyLabel="Copy raw JSON">
+              <p className="text-xs text-on-surface-variant">For tools, APIs, or archiving.</p>
+            </FieldBlock>
+          ) : null}
         </div>
       ) : null}
     </article>
@@ -369,12 +373,14 @@ function ImageDesignCard({
   lang,
   onRegenerate,
   regenerating,
+  showTechnical,
 }: {
   item: Record<string, unknown>;
   index: number;
   lang: ViewerLang;
   onRegenerate: (index: number) => void;
   regenerating: boolean;
+  showTechnical: boolean;
 }) {
   const uid = useId();
   const toggleId = `${uid}-toggle`;
@@ -449,9 +455,11 @@ function ImageDesignCard({
               {brief}
             </div>
           </FieldBlock>
-          <FieldBlock label="Full JSON" copyText={jsonFull} copyLabel="Copy raw JSON">
-            <p className="text-xs text-on-surface-variant">For tools, APIs, or archiving.</p>
-          </FieldBlock>
+          {showTechnical ? (
+            <FieldBlock label="Full JSON" copyText={jsonFull} copyLabel="Copy raw JSON">
+              <p className="text-xs text-on-surface-variant">For tools, APIs, or archiving.</p>
+            </FieldBlock>
+          ) : null}
         </div>
       ) : null}
     </article>
@@ -763,7 +771,15 @@ function CollapsibleSection({
   );
 }
 
-export default function KitViewer({ kit, onKitUpdate }: { kit: KitSummary; onKitUpdate?: (next: KitSummary) => void }) {
+export default function KitViewer({
+  kit,
+  onKitUpdate,
+  showTechnical = false,
+}: {
+  kit: KitSummary;
+  onKitUpdate?: (next: KitSummary) => void;
+  showTechnical?: boolean;
+}) {
   const data = kit.result_json as Record<string, unknown> | null;
   const [openMap, setOpenMap] = useState<Record<string, boolean>>({});
   const [lang, setLang] = useState<ViewerLang>("ar");
@@ -816,9 +832,9 @@ export default function KitViewer({ kit, onKitUpdate }: { kit: KitSummary; onKit
     if (!hasStructuredPreview) items.push({ id: "kit-section-summary", label: "Summary" });
     if (hasStrategyBlock) items.push({ id: "kit-section-strategy", label: "Strategy & extras" });
     if (painPoints.length) items.push({ id: "kit-section-pain", label: "Pain points" });
-    items.push({ id: "kit-section-json", label: "Full JSON" });
+    if (showTechnical) items.push({ id: "kit-section-json", label: "Full JSON" });
     return items;
-  }, [posts.length, imageSection, videoSection, hasStructuredPreview, hasStrategyBlock, painPoints.length]);
+  }, [posts.length, imageSection, videoSection, hasStructuredPreview, hasStrategyBlock, painPoints.length, showTechnical]);
 
   const toggle = useCallback((id: string) => {
     setOpenMap((m) => ({ ...m, [id]: !m[id] }));
@@ -1037,6 +1053,7 @@ export default function KitViewer({ kit, onKitUpdate }: { kit: KitSummary; onKit
                     lang={lang}
                     onRegenerate={(idx) => openFeedbackModal("image", idx)}
                     regenerating={regeneratingKey === `image-${i}`}
+                    showTechnical={showTechnical}
                   />
                 );
               }
@@ -1049,6 +1066,7 @@ export default function KitViewer({ kit, onKitUpdate }: { kit: KitSummary; onKit
                     lang={lang}
                     onRegenerate={(idx) => openFeedbackModal("image", idx)}
                     regenerating={regeneratingKey === `image-${i}`}
+                    showTechnical={showTechnical}
                   />
                 );
               }
@@ -1094,6 +1112,7 @@ export default function KitViewer({ kit, onKitUpdate }: { kit: KitSummary; onKit
                     lang={lang}
                     onRegenerate={(idx) => openFeedbackModal("video", idx)}
                     regenerating={regeneratingKey === `video-${i}`}
+                    showTechnical={showTechnical}
                   />
                 );
               }
@@ -1128,7 +1147,7 @@ export default function KitViewer({ kit, onKitUpdate }: { kit: KitSummary; onKit
           tocLabel="Output summary"
         >
           <p className="text-on-surface-variant">
-            No structured post, image, or video blocks detected. Open <strong>Full JSON</strong> below to inspect the payload.
+            No structured post, image, or video blocks were detected for this kit.
           </p>
         </CollapsibleSection>
       )}
@@ -1206,28 +1225,30 @@ export default function KitViewer({ kit, onKitUpdate }: { kit: KitSummary; onKit
         </CollapsibleSection>
       ) : null}
 
-      <CollapsibleSection
-        id="kit-section-json"
-        title="Full JSON"
-        subtitle="Raw payload"
-        icon="code"
-        iconBg="bg-brand-sand/20 text-brand-muted dark:bg-surface-container-highest dark:text-on-surface-variant"
-        open={!!openMap["kit-section-json"]}
-        onToggle={() => toggle("kit-section-json")}
-        tocLabel="Full JSON"
-      >
-        <p className="mb-3 text-sm text-on-surface-variant">
-          Technical view of the full response. Use <strong>Copy</strong> on the block or the kit header action to copy the whole JSON payload.
-        </p>
-        <BlockWithCopy copyText={JSON.stringify(data, null, 2)} copyLabel="Copy full JSON">
-          <pre
-            className="max-h-[min(70vh,520px)] overflow-auto rounded-2xl bg-earth-alt p-4 text-[0.75rem] leading-relaxed text-brand-muted dark:bg-surface-container-lowest dark:text-on-surface-variant"
-            dir="ltr"
-          >
-            {JSON.stringify(data, null, 2)}
-          </pre>
-        </BlockWithCopy>
-      </CollapsibleSection>
+      {showTechnical ? (
+        <CollapsibleSection
+          id="kit-section-json"
+          title="Full JSON"
+          subtitle="Raw payload"
+          icon="code"
+          iconBg="bg-brand-sand/20 text-brand-muted dark:bg-surface-container-highest dark:text-on-surface-variant"
+          open={!!openMap["kit-section-json"]}
+          onToggle={() => toggle("kit-section-json")}
+          tocLabel="Full JSON"
+        >
+          <p className="mb-3 text-sm text-on-surface-variant">
+            Technical view of the full response. Use <strong>Copy</strong> on the block or the kit header action to copy the whole JSON payload.
+          </p>
+          <BlockWithCopy copyText={JSON.stringify(data, null, 2)} copyLabel="Copy full JSON">
+            <pre
+              className="max-h-[min(70vh,520px)] overflow-auto rounded-2xl bg-earth-alt p-4 text-[0.75rem] leading-relaxed text-brand-muted dark:bg-surface-container-lowest dark:text-on-surface-variant"
+              dir="ltr"
+            >
+              {JSON.stringify(data, null, 2)}
+            </pre>
+          </BlockWithCopy>
+        </CollapsibleSection>
+      ) : null}
 
       {showBackTop ? (
         <button

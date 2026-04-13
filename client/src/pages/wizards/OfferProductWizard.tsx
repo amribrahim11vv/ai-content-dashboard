@@ -21,6 +21,7 @@ export default function OfferProductWizard() {
       stepFields={{
         offer: ["offer", "competitors"],
         audience: ["target_audience", "main_goal"],
+        creative: ["visual_notes", "reference_image", "best_content_types"],
       }}
       defaults={{
         campaign_mode: "offer",
