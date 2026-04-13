@@ -1,4 +1,5 @@
 import { getDeviceId } from "../lib/deviceId";
+import { getAccessToken } from "../lib/authToken";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -12,9 +13,11 @@ export class ApiError extends Error {
 const base = import.meta.env.VITE_API_URL ?? "";
 
 export function buildHeaders(extra?: Record<string, string>): HeadersInit {
+  const token = getAccessToken();
   return {
     "Content-Type": "application/json",
     "X-Device-ID": getDeviceId(),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...extra,
   };
 }

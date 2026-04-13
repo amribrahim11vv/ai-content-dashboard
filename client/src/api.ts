@@ -24,4 +24,8 @@ export {
 export type { PromptCatalogIndustry, PromptCatalogPrompt } from "./api/promptCatalog";
 export { getHelpTopics, postExtrasWaitlist, getHealth } from "./api/misc";
 export type { HelpTopicsResponse } from "./api/misc";
+export { getEntitlements, syncAuthDevice } from "./api/auth";
+export type { EntitlementsResponse } from "./api/auth";
+export { getAdminUserPlans, updateAdminUserPlan } from "./api/adminPlans";
+export type { AdminPlanSnapshot, AdminPlanSubscription } from "./api/adminPlans";
 
