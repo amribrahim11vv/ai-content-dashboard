@@ -90,6 +90,9 @@ export default function AdminLayout() {
               <NavLink to="/admin/analytics" className={({ isActive }) => navClass(isActive)}>
                 Analytics
               </NavLink>
+              <NavLink to="/admin/plans" className={({ isActive }) => navClass(isActive)}>
+                Plans
+              </NavLink>
               <NavLink to="/admin/generated-kits" className={({ isActive }) => navClass(isActive)}>
                 Kits Review
               </NavLink>
