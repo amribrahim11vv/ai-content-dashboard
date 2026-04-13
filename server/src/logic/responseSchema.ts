@@ -2,7 +2,16 @@
 export function getGeminiResponseSchema(): Record<string, unknown> {
   return {
     type: "OBJECT",
-    required: ["posts", "image_designs", "video_prompts", "marketing_strategy", "sales_system", "offer_optimization"],
+    required: [
+      "posts",
+      "image_designs",
+      "video_prompts",
+      "marketing_strategy",
+      "sales_system",
+      "offer_optimization",
+      "diagnosis_plan",
+      "narrative_summary",
+    ],
     properties: {
       posts: {
         type: "ARRAY",
@@ -130,6 +139,19 @@ export function getGeminiResponseSchema(): Record<string, unknown> {
           urgency_or_scarcity: { type: "STRING" },
           alternative_offers: { type: "ARRAY", items: { type: "STRING" } },
         },
+      },
+      diagnosis_plan: {
+        type: "OBJECT",
+        required: ["quickWin24h", "focus7d", "priority", "rationale"],
+        properties: {
+          quickWin24h: { type: "STRING" },
+          focus7d: { type: "STRING" },
+          priority: { type: "STRING" },
+          rationale: { type: "STRING" },
+        },
+      },
+      narrative_summary: {
+        type: "STRING",
       },
       kpi_tracking: {
         type: "OBJECT",

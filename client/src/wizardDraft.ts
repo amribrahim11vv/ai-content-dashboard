@@ -8,6 +8,11 @@ const BRIEF_KEYS: (keyof BriefForm)[] = [
   "brand_name",
   "industry",
   "target_audience",
+  "diagnostic_role",
+  "diagnostic_account_stage",
+  "diagnostic_followers_band",
+  "diagnostic_primary_blocker",
+  "diagnostic_revenue_goal",
   "main_goal",
   "platforms",
   "brand_tone",
@@ -22,12 +27,15 @@ const BRIEF_KEYS: (keyof BriefForm)[] = [
   "num_posts",
   "num_image_designs",
   "num_video_prompts",
+  "include_content_package",
+  "content_package_idea_count",
 ];
 
 export type WizardLimits = {
   num_posts: { min: number; max: number; fallback: number };
   num_image_designs: { min: number; max: number; fallback: number };
   num_video_prompts: { min: number; max: number; fallback: number };
+  content_package_idea_count: { min: number; max: number; fallback: number };
 };
 
 export function isWizardDirty(form: BriefForm, step: number, limits: WizardLimits): boolean {
@@ -37,6 +45,11 @@ export function isWizardDirty(form: BriefForm, step: number, limits: WizardLimit
     form.industry.trim() ||
     form.email.trim() ||
     form.target_audience.trim() ||
+    form.diagnostic_role.trim() ||
+    form.diagnostic_account_stage.trim() ||
+    form.diagnostic_followers_band.trim() ||
+    form.diagnostic_primary_blocker.trim() ||
+    form.diagnostic_revenue_goal.trim() ||
     form.main_goal.trim() ||
     form.platforms.trim() ||
     form.brand_tone.trim() ||
@@ -53,10 +66,12 @@ export function isWizardDirty(form: BriefForm, step: number, limits: WizardLimit
   if (
     form.num_posts !== limits.num_posts.fallback ||
     form.num_image_designs !== limits.num_image_designs.fallback ||
-    form.num_video_prompts !== limits.num_video_prompts.fallback
+    form.num_video_prompts !== limits.num_video_prompts.fallback ||
+    form.content_package_idea_count !== limits.content_package_idea_count.fallback
   ) {
     return true;
   }
+  if (form.include_content_package) return true;
   return false;
 }
 
@@ -69,6 +84,8 @@ export function parseWizardDraft(raw: string, limits: WizardLimits, maxStep: num
     for (const k of BRIEF_KEYS) {
       if (!(k in f)) {
         if (k === "campaign_mode") continue;
+        if (k === "include_content_package") continue;
+        if (k === "content_package_idea_count") continue;
         return null;
       }
     }
@@ -83,6 +100,11 @@ export function parseWizardDraft(raw: string, limits: WizardLimits, maxStep: num
       brand_name: str(f.brand_name),
       industry: str(f.industry),
       target_audience: str(f.target_audience),
+      diagnostic_role: str(f.diagnostic_role),
+      diagnostic_account_stage: str(f.diagnostic_account_stage),
+      diagnostic_followers_band: str(f.diagnostic_followers_band),
+      diagnostic_primary_blocker: str(f.diagnostic_primary_blocker),
+      diagnostic_revenue_goal: str(f.diagnostic_revenue_goal),
       main_goal: str(f.main_goal),
       platforms: str(f.platforms),
       brand_tone: str(f.brand_tone),
@@ -106,6 +128,13 @@ export function parseWizardDraft(raw: string, limits: WizardLimits, maxStep: num
         limits.num_video_prompts.max,
         limits.num_video_prompts.fallback
       ),
+      content_package_idea_count: num(
+        f.content_package_idea_count,
+        limits.content_package_idea_count.min,
+        limits.content_package_idea_count.max,
+        limits.content_package_idea_count.fallback
+      ),
+      include_content_package: typeof f.include_content_package === "boolean" ? f.include_content_package : false,
       campaign_mode: normalizeCampaignMode("campaign_mode" in f ? f.campaign_mode : "social"),
     };
     return { step: o.step, form };

@@ -55,40 +55,43 @@ const waitlistPostSchema = z.object({
 });
 
 async function getOrCreateProfile() {
-  let row = await db.select().from(userProfile).where(eq(userProfile.id, 1)).get();
+  let rows = await db.select().from(userProfile).where(eq(userProfile.id, 1)).limit(1);
+  let row = rows[0];
   if (!row) {
     const now = new Date();
-    await db.insert(userProfile).values({ id: 1, displayName: "User", email: "", updatedAt: now }).run();
-    row = await db.select().from(userProfile).where(eq(userProfile.id, 1)).get();
+    await db.insert(userProfile).values({ id: 1, displayName: "User", email: "", updatedAt: now });
+    rows = await db.select().from(userProfile).where(eq(userProfile.id, 1)).limit(1);
+    row = rows[0];
   }
   return row!;
 }
 
 async function getOrCreatePreferences() {
-  let row = await db.select().from(appPreferences).where(eq(appPreferences.id, 1)).get();
+  let rows = await db.select().from(appPreferences).where(eq(appPreferences.id, 1)).limit(1);
+  let row = rows[0];
   if (!row) {
     const now = new Date();
-    await db.insert(appPreferences).values({ id: 1, compactTable: false, updatedAt: now }).run();
-    row = await db.select().from(appPreferences).where(eq(appPreferences.id, 1)).get();
+    await db.insert(appPreferences).values({ id: 1, compactTable: false, updatedAt: now });
+    rows = await db.select().from(appPreferences).where(eq(appPreferences.id, 1)).limit(1);
+    row = rows[0];
   }
   return row!;
 }
 
 async function getOrCreateBrandVoice() {
-  let row = await db.select().from(brandVoice).where(eq(brandVoice.id, 1)).get();
+  let rows = await db.select().from(brandVoice).where(eq(brandVoice.id, 1)).limit(1);
+  let row = rows[0];
   if (!row) {
     const now = new Date();
-    await db
-      .insert(brandVoice)
-      .values({
-        id: 1,
-        pillarsJson: JSON.stringify(DEFAULT_PILLARS),
-        avoidWordsJson: JSON.stringify(DEFAULT_AVOID),
-        sampleSnippet: DEFAULT_SAMPLE,
-        updatedAt: now,
-      })
-      .run();
-    row = await db.select().from(brandVoice).where(eq(brandVoice.id, 1)).get();
+    await db.insert(brandVoice).values({
+      id: 1,
+      pillarsJson: JSON.stringify(DEFAULT_PILLARS),
+      avoidWordsJson: JSON.stringify(DEFAULT_AVOID),
+      sampleSnippet: DEFAULT_SAMPLE,
+      updatedAt: now,
+    });
+    rows = await db.select().from(brandVoice).where(eq(brandVoice.id, 1)).limit(1);
+    row = rows[0];
   }
   return row!;
 }
@@ -99,7 +102,7 @@ export function createFeaturesRouter(mw: (c: import("hono").Context, next: Next)
   app.use("*", mw);
 
   app.get("/notifications", async (c) => {
-    const rows = await db.select().from(notifications).orderBy(desc(notifications.createdAt)).limit(100).all();
+    const rows = await db.select().from(notifications).orderBy(desc(notifications.createdAt)).limit(100);
     return c.json({
       items: rows.map((r) => ({
         id: r.id,
@@ -115,7 +118,7 @@ export function createFeaturesRouter(mw: (c: import("hono").Context, next: Next)
 
   app.patch("/notifications/read-all", async (c) => {
     const now = new Date();
-    await db.update(notifications).set({ readAt: now }).where(isNull(notifications.readAt)).run();
+    await db.update(notifications).set({ readAt: now }).where(isNull(notifications.readAt));
     return c.json({ ok: true });
   });
 
@@ -152,8 +155,7 @@ export function createFeaturesRouter(mw: (c: import("hono").Context, next: Next)
         email: body.email !== undefined ? body.email : row.email,
         updatedAt: now,
       })
-      .where(eq(userProfile.id, 1))
-      .run();
+      .where(eq(userProfile.id, 1));
     const next = await getOrCreateProfile();
     return c.json({
       display_name: next.displayName,
@@ -182,8 +184,7 @@ export function createFeaturesRouter(mw: (c: import("hono").Context, next: Next)
     await db
       .update(appPreferences)
       .set({ compactTable: body.compact_table, updatedAt: now })
-      .where(eq(appPreferences.id, 1))
-      .run();
+      .where(eq(appPreferences.id, 1));
     const row = await getOrCreatePreferences();
     return c.json({
       compact_table: row.compactTable,
@@ -230,8 +231,7 @@ export function createFeaturesRouter(mw: (c: import("hono").Context, next: Next)
         sampleSnippet: body.sample_snippet,
         updatedAt: now,
       })
-      .where(eq(brandVoice.id, 1))
-      .run();
+      .where(eq(brandVoice.id, 1));
     const row = await getOrCreateBrandVoice();
     return c.json({
       pillars: JSON.parse(row.pillarsJson),
@@ -260,15 +260,12 @@ export function createFeaturesRouter(mw: (c: import("hono").Context, next: Next)
     }
     const id = nanoid();
     const now = new Date();
-    await db
-      .insert(extrasWaitlist)
-      .values({
-        id,
-        toolId: body.tool_id,
-        email: body.email ?? "",
-        createdAt: now,
-      })
-      .run();
+    await db.insert(extrasWaitlist).values({
+      id,
+      toolId: body.tool_id,
+      email: body.email ?? "",
+      createdAt: now,
+    });
     return c.json({ ok: true, id });
   });
 

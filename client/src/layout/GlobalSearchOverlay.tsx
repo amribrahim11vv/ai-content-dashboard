@@ -2,32 +2,7 @@ import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import type { KitSummary } from "../types";
 import { briefBrand, briefIndustry, filterKitsByQuery } from "../kitSearchUtils";
-
-const RECENT_KEY = "ethereal_search_recent";
-const MAX_RECENT = 5;
-
-function loadRecent(): string[] {
-  try {
-    const raw = localStorage.getItem(RECENT_KEY);
-    if (!raw) return [];
-    const a = JSON.parse(raw) as unknown;
-    return Array.isArray(a) ? a.filter((x): x is string => typeof x === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
-function pushRecent(q: string) {
-  const t = q.trim();
-  if (!t) return;
-  const prev = loadRecent().filter((x) => x.toLowerCase() !== t.toLowerCase());
-  prev.unshift(t);
-  try {
-    localStorage.setItem(RECENT_KEY, JSON.stringify(prev.slice(0, MAX_RECENT)));
-  } catch {
-    /* ignore */
-  }
-}
+import { useRecentSearches } from "./hooks/useRecentSearches";
 
 export default function GlobalSearchOverlay({
   open,
@@ -44,7 +19,7 @@ export default function GlobalSearchOverlay({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const filtered = kits ? filterKitsByQuery(kits, query) : [];
-  const recent = loadRecent();
+  const { recent, pushRecent } = useRecentSearches();
 
   useEffect(() => {
     if (!open) return;
@@ -74,7 +49,7 @@ export default function GlobalSearchOverlay({
       }}
     >
       <div className="flex w-full max-w-4xl flex-col gap-4" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="glass-panel glow-focus rounded-2xl border border-outline-variant/30 p-2 shadow-2xl dark:border-brand-muted/45 dark:bg-earth-darkCard/90">
+        <div className="glass-panel glow-focus rounded-2xl border border-outline-variant/30 p-2 shadow-2xl dark:border-muted/45 dark:bg-surface-container-high/90">
           <div className="flex h-14 items-center gap-4 px-4">
             <span className="material-symbols-outlined text-tertiary">search</span>
             <input
@@ -82,17 +57,17 @@ export default function GlobalSearchOverlay({
               type="search"
               value={query}
               onChange={(e) => onQueryChange(e.target.value)}
-              className="font-headline w-full rounded-lg border-none bg-transparent text-xl font-medium text-on-surface placeholder:text-on-surface-variant/40 focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/45"
+              className="font-headline w-full rounded-uniform border-none bg-transparent text-xl font-medium text-on-surface placeholder:text-on-surface-variant/40 focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/45"
               placeholder="Search kits, brands, or status…"
               aria-label="Search query"
             />
-            <kbd className="hidden items-center justify-center rounded-md border border-outline-variant/20 bg-surface-container-highest px-2 py-1 text-[10px] font-bold tracking-widest text-on-surface-variant md:flex dark:border-brand-muted/45 dark:bg-earth-darkBg/80">
+            <kbd className="hidden items-center justify-center rounded-md border border-outline-variant/20 bg-surface-container-highest px-2 py-1 text-[10px] font-bold tracking-widest text-on-surface-variant md:flex dark:border-muted/45 dark:bg-earth-darkBg/80">
               ESC
             </kbd>
           </div>
         </div>
 
-        <div className="glass-panel mb-12 overflow-hidden rounded-3xl border border-outline-variant/30 shadow-2xl dark:border-brand-muted/45 dark:bg-earth-darkCard/90">
+        <div className="glass-panel mb-12 overflow-hidden rounded-uniform border border-outline-variant/30 shadow-2xl dark:border-muted/45 dark:bg-surface-container-high/90">
           <div className="grid grid-cols-1 lg:grid-cols-12">
             <div className="space-y-8 border-outline-variant/25 p-8 lg:col-span-4 lg:border-e">
               <section>
@@ -179,15 +154,15 @@ export default function GlobalSearchOverlay({
                           pushRecent(query || brand);
                           onClose();
                         }}
-                        className="group relative flex cursor-pointer items-center gap-4 rounded-2xl border border-transparent bg-surface-container-high/40 p-4 transition-all hover:border-primary/20 hover:bg-surface-container-highest focus-visible:ring-2 focus-visible:ring-primary/40 dark:bg-earth-darkCard/70 dark:hover:bg-earth-darkCard"
+                        className="group relative flex cursor-pointer items-center gap-4 rounded-2xl border border-transparent bg-surface-container-high/40 p-4 transition-all hover:border-primary/20 hover:bg-surface-container-highest focus-visible:ring-2 focus-visible:ring-primary/40 dark:bg-surface-container-high/70 dark:hover:bg-surface-container-high"
                       >
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-container dark:from-brand-primary dark:to-brand-accent">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
                           <span className="material-symbols-outlined text-2xl text-on-primary">auto_fix_high</span>
                         </div>
                         <div className="flex-1">
                           <div className="mb-0.5 flex items-center justify-between">
                             <span className="font-headline font-bold text-on-surface">{brand}</span>
-                            <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary dark:bg-brand-primary/20 dark:text-brand-darkText">
+                            <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary dark:bg-primary/20 dark:text-secondary">
                               {k.status_badge}
                             </span>
                           </div>
@@ -220,7 +195,7 @@ export default function GlobalSearchOverlay({
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-6 border-t border-outline-variant/10 bg-surface-container-highest/50 px-8 py-3 dark:border-brand-muted/30 dark:bg-earth-darkBg/55">
+          <div className="flex items-center justify-center gap-6 border-t border-outline-variant/10 bg-surface-container-highest/50 px-8 py-3 dark:border-muted/30 dark:bg-earth-darkBg/55">
             <div className="flex items-center gap-2 text-[10px] font-medium text-on-surface-variant">
               <kbd className="rounded border border-outline-variant/20 bg-surface-container px-1.5 py-0.5">esc</kbd>
               <span>to close</span>
@@ -231,3 +206,4 @@ export default function GlobalSearchOverlay({
     </div>
   );
 }
+

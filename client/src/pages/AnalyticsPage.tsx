@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { listKits } from "../api";
 import type { KitSummary } from "../types";
-import PrimaryFlowBanner from "../components/PrimaryFlowBanner";
 
 function statusKind(badge: string): "done" | "running" | "failed" {
   const b = badge.toLowerCase();
@@ -36,7 +35,6 @@ export default function AnalyticsPage() {
 
   return (
     <>
-      <PrimaryFlowBanner />
       <div className="mb-10">
         <h1 className="headline text-4xl font-black tracking-tight text-on-surface md:text-5xl">Neural Analytics</h1>
         <p className="mt-2 max-w-2xl text-on-surface-variant">
@@ -66,16 +64,16 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="glass-panel lg:col-span-2 rounded-3xl border border-outline-variant/25 p-8">
+        <div className="glass-panel lg:col-span-2 rounded-uniform border border-outline-variant/25 p-8">
           <h2 className="headline mb-6 text-xl font-bold">Engagement pulse</h2>
           <div className="flex h-48 items-end gap-2">
             {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
-              <div key={i} className="flex-1 rounded-t-lg bg-gradient-to-t from-primary/40 to-primary/10" style={{ height: `${h}%` }} />
+              <div key={i} className="flex-1 rounded-t-lg bg-primary/40" style={{ height: `${h}%` }} />
             ))}
           </div>
           <p className="mt-4 text-sm text-on-surface-variant">Decorative chart — connect metrics when available.</p>
         </div>
-        <div className="glass-panel rounded-3xl border border-outline-variant/25 p-8">
+        <div className="glass-panel rounded-uniform border border-outline-variant/25 p-8">
           <h2 className="headline mb-4 text-xl font-bold">Model mix</h2>
           <p className="text-sm text-on-surface-variant">
             Distinct <code className="text-primary">model_used</code> values:{" "}
@@ -87,7 +85,7 @@ export default function AnalyticsPage() {
               <span className="font-bold text-primary">Stable</span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-surface-container-highest">
-              <div className="h-full w-3/4 rounded-full bg-gradient-to-r from-tertiary to-primary" />
+              <div className="h-full w-3/4 rounded-full bg-primary" />
             </div>
           </div>
         </div>

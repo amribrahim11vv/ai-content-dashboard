@@ -7,9 +7,17 @@ import { validatePromptTemplateContract } from "./promptTemplateValidation.js";
 import { isStrictPromptTemplates } from "./promptStrictEnv.js";
 import { isUseMetaPrompt } from "./promptModeEnv.js";
 import { campaignModeInstructionBlock } from "./campaignMode.js";
-import { buildClientContextBlock, buildMetaPromptBlock, buildOutputPolicyBlock, composePrompt } from "./promptComposer.js";
+import {
+  buildClientContextBlock,
+  buildDiagnosticRulesBlock,
+  buildFewShotGuidanceBlock,
+  buildMetaPromptBlock,
+  buildOutputPolicyBlock,
+  composePrompt,
+} from "./promptComposer.js";
 import { getGeminiResponseSchema } from "./responseSchema.js";
-import { getRegenerateItemSchema, getSectionArray } from "../routes/kits.js";
+import { getRegenerateItemSchema, getSectionArray } from "../services/kitGenerationService.js";
+import { parseJsonFromModelText } from "./geminiClient.js";
 
 describe("parse", () => {
   it("sanitizes counts", () => {
@@ -99,6 +107,8 @@ describe("promptComposer", () => {
       num_posts: 6,
       num_image_designs: 4,
       num_video_prompts: 2,
+      diagnostic_followers_band: "1200-3000",
+      diagnostic_primary_blocker: "inconsistent-execution",
     });
     const composed = composePrompt({
       campaignPrefix: campaignModeInstructionBlock("offer"),
@@ -117,6 +127,10 @@ describe("promptComposer", () => {
     const block = buildOutputPolicyBlock("social");
     expect(block).toContain("caption_ar");
     expect(block).toContain("caption_en");
+    expect(block).toContain("diagnosis_plan");
+    expect(block).toContain("narrative_summary");
+    expect(block).toContain("marketing_strategy");
+    expect(block).toContain("Arabic for strategy");
   });
 
   it("client context block includes requested counts", () => {
@@ -129,6 +143,32 @@ describe("promptComposer", () => {
     expect(block).toContain("Requested posts count: 9");
     expect(block).toContain("Requested image designs count: 5");
     expect(block).toContain("Requested video prompts count: 3");
+    expect(block).toContain("Diagnostic context (JSON):");
+  });
+
+  it("diagnostic rules branch by followers and blocker", () => {
+    const lowFollowers = buildSubmissionSnapshot({
+      diagnostic_followers_band: "200-800",
+      diagnostic_primary_blocker: "inconsistent-execution",
+    });
+    const highFollowers = buildSubmissionSnapshot({
+      diagnostic_followers_band: "10k+",
+      diagnostic_primary_blocker: "no-conversion",
+    });
+    const lowBlock = buildDiagnosticRulesBlock(lowFollowers);
+    const highBlock = buildDiagnosticRulesBlock(highFollowers);
+
+    expect(lowBlock).toContain("Prioritize reach and trust building");
+    expect(lowBlock).toContain("batch creation");
+    expect(highBlock).toContain("Prioritize conversion");
+    expect(highBlock).toContain("offer clarity");
+  });
+
+  it("few-shot guidance includes blocker mapping examples", () => {
+    const block = buildFewShotGuidanceBlock();
+    expect(block).toContain("no-conversion");
+    expect(block).toContain("inconsistent-execution");
+    expect(block).toContain("low-reach");
   });
 
   it("meta prompt block includes deduction instructions", () => {
@@ -159,6 +199,23 @@ describe("responseSchema", () => {
     const videoReq = props.video_prompts.items.required as string[];
     expect(videoReq).toContain("caption_ar");
     expect(videoReq).toContain("caption_en");
+
+    const diagnosisReq = props.diagnosis_plan.required as string[];
+    expect(diagnosisReq).toContain("quickWin24h");
+    expect(diagnosisReq).toContain("focus7d");
+    expect((schema.required as string[])).toContain("narrative_summary");
+  });
+});
+
+describe("geminiClient parseJsonFromModelText", () => {
+  it("parses raw JSON", () => {
+    const parsed = parseJsonFromModelText('{"ok":true}');
+    expect(parsed).toEqual({ ok: true });
+  });
+
+  it("parses mixed text with embedded JSON", () => {
+    const parsed = parseJsonFromModelText("Here is your payload:\\n{\"ok\":true,\"n\":2}\\nThanks.");
+    expect(parsed).toEqual({ ok: true, n: 2 });
   });
 });
 
@@ -247,6 +304,13 @@ describe("validate", () => {
         urgency_or_scarcity: "u",
         alternative_offers: ["a"],
       },
+      diagnosis_plan: {
+        quickWin24h: "Ship one proof post today.",
+        focus7d: "Publish 3 posts and 1 reel this week.",
+        priority: "consistency",
+        rationale: "Current bottleneck is execution cadence.",
+      },
+      narrative_summary: "Your profile needs consistent execution before heavy conversion pushes.",
     };
     expect(validateGeminiResponse(bad, data).some((e) => e.includes("kpi_tracking"))).toBe(true);
   });

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getProfile, updateProfile } from "../api";
-import PrimaryFlowBanner from "../components/PrimaryFlowBanner";
 
 export default function ProfilePage() {
   const [displayName, setDisplayName] = useState("");
@@ -23,10 +22,9 @@ export default function ProfilePage() {
 
   return (
     <>
-      <PrimaryFlowBanner />
       <div className="mb-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/40 to-primary-container/50 font-headline text-xl font-bold text-on-primary-container ring-2 ring-primary/30">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/40 font-headline text-xl font-bold text-on-primary ring-2 ring-primary/30">
             {(displayName.trim().slice(0, 2) || "AI").toUpperCase()}
           </div>
           <div>
@@ -49,7 +47,7 @@ export default function ProfilePage() {
       )}
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <section className="glass-panel lg:col-span-2 rounded-3xl border border-outline-variant/25 p-8">
+        <section className="glass-panel lg:col-span-2 rounded-uniform border border-outline-variant/25 p-8">
           <h2 className="headline mb-6 text-lg font-bold">Profile details</h2>
           <div className="space-y-4">
             <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
@@ -85,7 +83,7 @@ export default function ProfilePage() {
                     setEmail(p.email);
                     setMessage("Saved.");
                   })
-                  .catch(() => setMessage("Save failed — check API and VITE_API_SECRET."))
+                  .catch(() => setMessage("Save failed. Please verify API availability."))
                   .finally(() => setSaving(false));
               }}
             >
@@ -93,7 +91,7 @@ export default function ProfilePage() {
             </button>
           </div>
         </section>
-        <section className="glass-panel rounded-3xl border border-outline-variant/25 p-8">
+        <section className="glass-panel rounded-uniform border border-outline-variant/25 p-8">
           <h2 className="headline mb-4 text-lg font-bold">Shortcuts</h2>
           <ul className="space-y-2 text-sm">
             <li>

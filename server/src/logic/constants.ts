@@ -4,6 +4,8 @@ export const G_LIMITS = {
   num_posts: { min: 1, max: 25, fallback: 5 },
   num_image_designs: { min: 1, max: 10, fallback: 5 },
   num_video_prompts: { min: 1, max: 10, fallback: 3 },
+  /** Ideas count for chained `content_ideas_package` (client-chosen; clamped server-side). */
+  content_package_ideas: { min: 1, max: 25, fallback: 10 },
 } as const;
 
 export const G_DEFAULT_MODEL = "gemini-3-flash-preview";
@@ -32,4 +34,13 @@ export type SubmissionSnapshot = {
   num_posts: number;
   num_image_designs: number;
   num_video_prompts: number;
+  diagnostic_role: string;
+  diagnostic_account_stage: string;
+  diagnostic_followers_band: string;
+  diagnostic_primary_blocker: string;
+  diagnostic_revenue_goal: string;
+  /** When true and CONTENT_PACKAGE_CHAIN_ENABLED is set, kit generation runs the chained ideas/hooks/templates pipeline and merges `content_ideas_package` into result_json. */
+  include_content_package: boolean;
+  /** Count of strategic ideas (and matching templates); hooks total = this × PACKAGE_HOOKS_PER_IDEA on server. */
+  content_package_idea_count: number;
 };

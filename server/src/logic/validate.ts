@@ -30,6 +30,16 @@ export function validateGeminiResponse(aiContent: unknown, data: SubmissionSnaps
   );
 
   validateObjectKeys(aiContent.offer_optimization, ["rewritten_offer", "urgency_or_scarcity", "alternative_offers"], "offer_optimization", errors);
+  validateObjectKeys(
+    aiContent.diagnosis_plan,
+    ["quickWin24h", "focus7d", "priority", "rationale"],
+    "diagnosis_plan",
+    errors
+  );
+
+  if (typeof aiContent.narrative_summary !== "string" || !aiContent.narrative_summary.trim()) {
+    errors.push("narrative_summary must be a non-empty string.");
+  }
 
   if (highBudgetMode && !isPlainObject(aiContent.kpi_tracking)) {
     errors.push("kpi_tracking is required for high budget mode.");

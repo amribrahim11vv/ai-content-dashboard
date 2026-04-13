@@ -3,6 +3,7 @@ import { Controller, UseFormReturn } from "react-hook-form";
 import type { BriefForm } from "../../types";
 import PillGroup from "../../components/selection/PillGroup";
 import SelectableCard from "../../components/selection/SelectableCard";
+import ReferenceImageUploader from "../../components/ReferenceImageUploader";
 import {
   decodeMultiSelection,
   decodeSingleSelection,
@@ -19,11 +20,11 @@ import {
 import { BRIEF_LIMITS } from "../../briefSchema";
 
 export const labelCls = "mb-2 ms-1 block text-xs font-semibold uppercase tracking-widest text-on-surface-variant";
-export const fieldShell = "glow-focus rounded-xl bg-surface-container-lowest p-0.5";
+export const fieldShell = "glow-focus overflow-hidden rounded-xl bg-surface-container-lowest p-0.5";
 export const inputCls =
-  "w-full rounded-lg border-none bg-transparent px-4 py-3 text-on-surface placeholder:text-on-surface-variant/50 focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/45";
+  "block box-border w-full rounded-lg border-none bg-transparent px-4 py-3 text-on-surface placeholder:text-on-surface-variant/50 focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/45";
 export const selectCls =
-  "w-full rounded-lg border-none bg-surface-container-lowest px-4 py-3 text-on-surface focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/45 dark:bg-surface-container-high/70";
+  "block box-border w-full appearance-none rounded-lg border-none bg-surface-container-lowest px-4 py-3 text-on-surface focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/45 dark:bg-surface-container-high/70";
 export const textareaCls = `${inputCls} min-h-[100px] resize-y`;
 export const errCls = "mt-1 text-sm text-error";
 
@@ -35,6 +36,88 @@ export type StepProps = {
   form: UseFormReturn<BriefForm>;
   showField: (step: string, key: keyof BriefForm) => boolean;
 };
+
+// --- Diagnosis Step ---
+export function DiagnosisStep({ form }: Pick<StepProps, "form">) {
+  const {
+    register,
+    formState: { errors },
+  } = form;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <label htmlFor="diagnostic_role" className={labelCls}>Who are you?</label>
+        <div className={fieldShell}>
+          <select id="diagnostic_role" className={selectCls} {...register("diagnostic_role")}>
+            <option value="">Select role…</option>
+            <option value="entrepreneur-founder">Entrepreneur / Founder</option>
+            <option value="coach-consultant">Coach or Consultant</option>
+            <option value="doctor-expert-professional">Doctor / Expert / Professional</option>
+            <option value="freelancer-creative">Freelancer or Creative</option>
+          </select>
+        </div>
+        {errors.diagnostic_role && <p className={errCls}>{errors.diagnostic_role.message}</p>}
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="diagnostic_account_stage" className={labelCls}>Account Stage</label>
+          <div className={fieldShell}>
+            <select id="diagnostic_account_stage" className={selectCls} {...register("diagnostic_account_stage")}>
+              <option value="">Select stage…</option>
+              <option value="under-6-months">Just starting — under 6 months</option>
+              <option value="6-12-months">6 months to 1 year</option>
+              <option value="1-3-years">1–3 years, inconsistent results</option>
+              <option value="3-plus-years">3+ years, want to scale</option>
+            </select>
+          </div>
+          {errors.diagnostic_account_stage && <p className={errCls}>{errors.diagnostic_account_stage.message}</p>}
+        </div>
+        <div>
+          <label htmlFor="diagnostic_followers_band" className={labelCls}>Follower Range</label>
+          <div className={fieldShell}>
+            <select id="diagnostic_followers_band" className={selectCls} {...register("diagnostic_followers_band")}>
+              <option value="">Select range…</option>
+              <option value="under-1k">Under 1,000</option>
+              <option value="1k-5k">1,000 – 5,000</option>
+              <option value="5k-20k">5,000 – 20,000</option>
+              <option value="20k-plus">20,000+</option>
+            </select>
+          </div>
+          {errors.diagnostic_followers_band && <p className={errCls}>{errors.diagnostic_followers_band.message}</p>}
+        </div>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="diagnostic_primary_blocker" className={labelCls}>Primary Blocker</label>
+          <div className={fieldShell}>
+            <select id="diagnostic_primary_blocker" className={selectCls} {...register("diagnostic_primary_blocker")}>
+              <option value="">Select blocker…</option>
+              <option value="low-reach">I post but nobody sees my content</option>
+              <option value="no-content-system">I don't know what to post consistently</option>
+              <option value="no-conversion">Followers exist but no sales or clients</option>
+              <option value="inconsistent-execution">No time — totally inconsistent</option>
+            </select>
+          </div>
+          {errors.diagnostic_primary_blocker && <p className={errCls}>{errors.diagnostic_primary_blocker.message}</p>}
+        </div>
+        <div>
+          <label htmlFor="diagnostic_revenue_goal" className={labelCls}>Target monthly revenue</label>
+          <div className={fieldShell}>
+            <select id="diagnostic_revenue_goal" className={selectCls} {...register("diagnostic_revenue_goal")}>
+              <option value="">Select target…</option>
+              <option value="500-1000">$500 – $1,000/month</option>
+              <option value="1000-3000">$1,000 – $3,000/month</option>
+              <option value="3000-10000">$3,000 – $10,000/month</option>
+              <option value="10000-plus">$10,000+/month</option>
+            </select>
+          </div>
+          {errors.diagnostic_revenue_goal && <p className={errCls}>{errors.diagnostic_revenue_goal.message}</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // --- Brand Step ---
 export function BrandStep({ form, showField, industryOptions }: StepProps & { industryOptions: {slug: string, name: string}[] }) {
@@ -357,7 +440,12 @@ export function OfferStep({ form, showField }: StepProps) {
 
 // --- Creative Step ---
 export function CreativeStep({ form, showField }: StepProps) {
-  const { register, formState: { errors } } = form;
+  const {
+    register,
+    watch,
+    setValue,
+    formState: { errors },
+  } = form;
 
   return (
     <div className="space-y-6">
@@ -366,6 +454,15 @@ export function CreativeStep({ form, showField }: StepProps) {
           <label htmlFor="visual_notes" className={labelCls}>Visual / creative notes</label>
           <div className={fieldShell}><textarea id="visual_notes" className={textareaCls} {...register("visual_notes")} /></div>
           {errors.visual_notes && <p className={errCls}>{errors.visual_notes.message}</p>}
+        </div>
+      )}
+      {showField("creative", "reference_image") && (
+        <div>
+          <ReferenceImageUploader
+            value={watch("reference_image") || ""}
+            onChange={(nextValue) => setValue("reference_image", nextValue, { shouldDirty: true })}
+          />
+          {errors.reference_image && <p className={errCls}>{errors.reference_image.message}</p>}
         </div>
       )}
       {(showField("creative", "campaign_duration") || showField("creative", "budget_level")) && (

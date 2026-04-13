@@ -5,113 +5,110 @@
 @layer base {
   :root {
     color-scheme: light;
-    /* Earth palette map:
-       background=#D7D2C8, alt=#D6EAE0, card=#FFFFFF
-       text=#362108, muted=#4B411A, primary=#004D3D, accent=#6A2E2A, sand=#E1BC80 */
-    --c-background: 215 210 200; /* earth.bg */
-    --c-on-background: 54 33 8; /* brand.text */
-    --c-surface: 215 210 200;
-    --c-surface-dim: 202 196 185;
-    --c-surface-bright: 239 235 227;
-    --c-surface-container-lowest: 255 255 255; /* earth.card */
-    --c-surface-container-low: 249 246 240;
-    --c-surface-container: 255 255 255; /* earth.card */
-    --c-surface-container-high: 214 234 224; /* earth.alt */
-    --c-surface-container-highest: 225 188 128; /* brand.sand */
-    --c-surface-variant: 228 220 205;
-    --c-surface-tint: 0 77 61; /* brand.primary */
-    --c-on-surface: 54 33 8; /* brand.text */
-    --c-on-surface-variant: 75 65 26; /* brand.muted */
-    --c-inverse-surface: 54 33 8;
+    /* Clean modern earthy palette */
+    --c-background: 250 249 246; /* #FAF9F6 soft cream */
+    --c-on-background: 62 39 35; /* #3E2723 rich brown */
+    --c-surface: 250 249 246;
+    --c-surface-dim: 240 237 230;
+    --c-surface-bright: 255 255 250;
+    --c-surface-container-lowest: 255 255 255;
+    --c-surface-container-low: 252 250 245;
+    --c-surface-container: 255 255 255;
+    --c-surface-container-high: 245 243 238;
+    --c-surface-container-highest: 238 235 228;
+    --c-surface-variant: 245 240 230;
+    --c-surface-tint: 46 125 50; /* #2E7D32 forest green */
+    --c-on-surface: 62 39 35;
+    --c-on-surface-variant: 101 85 65; /* #655541 muted brown */
+    --c-inverse-surface: 62 39 35;
     --c-inverse-on-surface: 255 255 255;
-    --c-primary: 0 77 61; /* brand.primary */
-    --c-primary-container: 17 96 78;
+    --c-primary: 46 125 50; /* forest green */
+    --c-primary-container: 165 214 167;
     --c-on-primary: 255 255 255;
-    --c-on-primary-container: 235 252 247;
-    --c-secondary: 106 46 42; /* brand.accent */
-    --c-secondary-container: 132 65 60;
-    --c-on-secondary: 255 247 246;
-    --c-on-secondary-container: 255 236 233;
-    --c-tertiary: 225 188 128; /* brand.sand */
-    --c-tertiary-container: 247 232 203;
-    --c-on-tertiary: 54 33 8;
-    --c-on-tertiary-container: 75 65 26;
-    --c-tertiary-fixed: 225 188 128;
-    --c-tertiary-fixed-dim: 205 167 108;
-    --c-on-tertiary-fixed: 54 33 8;
-    --c-on-tertiary-fixed-variant: 75 65 26;
-    --c-primary-fixed: 17 96 78;
-    --c-primary-fixed-dim: 0 77 61;
-    --c-on-primary-fixed: 235 252 247;
-    --c-on-primary-fixed-variant: 213 241 232;
-    --c-secondary-fixed: 132 65 60;
-    --c-secondary-fixed-dim: 106 46 42;
-    --c-on-secondary-fixed: 255 247 246;
-    --c-on-secondary-fixed-variant: 255 230 226;
-    --c-error: 176 35 47;
-    --c-error-container: 248 225 227;
+    --c-on-primary-container: 0 56 0;
+    --c-secondary: 141 110 99; /* #8D6E63 terracotta */
+    --c-secondary-container: 188 170 164;
+    --c-on-secondary: 255 255 255;
+    --c-on-secondary-container: 33 24 21;
+    --c-tertiary: 121 85 72; /* #795548 brown */
+    --c-tertiary-container: 188 170 164;
+    --c-on-tertiary: 255 255 255;
+    --c-on-tertiary-container: 33 24 21;
+    --c-tertiary-fixed: 121 85 72;
+    --c-tertiary-fixed-dim: 101 67 54;
+    --c-on-tertiary-fixed: 255 255 255;
+    --c-on-tertiary-fixed-variant: 188 170 164;
+    --c-primary-fixed: 165 214 167;
+    --c-primary-fixed-dim: 129 199 132;
+    --c-on-primary-fixed: 0 56 0;
+    --c-on-primary-fixed-variant: 56 142 60;
+    --c-secondary-fixed: 188 170 164;
+    --c-secondary-fixed-dim: 161 136 127;
+    --c-on-secondary-fixed: 33 24 21;
+    --c-on-secondary-fixed-variant: 77 64 57;
+    --c-error: 211 47 47;
+    --c-error-container: 255 235 238;
     --c-on-error: 255 255 255;
-    --c-on-error-container: 92 15 24;
-    --c-outline: 225 188 128; /* brand.sand */
-    --c-outline-variant: 238 217 177;
-    --c-inverse-primary: 225 188 128;
-    --c-focus-ring: 0 77 61;
-    --c-focus-ring-glow: 106 46 42;
+    --c-on-error-container: 95 33 32;
+    --c-outline: 141 110 99;
+    --c-outline-variant: 161 136 127;
+    --c-inverse-primary: 165 214 167;
+    --c-focus-ring: 46 125 50;
+    --c-focus-ring-glow: 141 110 99;
   }
 
   html.dark {
     color-scheme: dark;
-    /* Earthy dark mode:
-       darkBg=#1A1004, darkCard=#2A1A07, darkText=#D7D2C8 */
-    --c-background: 26 16 4; /* earth.darkBg */
-    --c-on-background: 215 210 200; /* brand.darkText */
-    --c-surface: 26 16 4;
-    --c-surface-dim: 20 12 3;
-    --c-surface-bright: 63 43 20;
-    --c-surface-container-lowest: 34 22 8;
-    --c-surface-container-low: 42 26 7; /* earth.darkCard */
-    --c-surface-container: 52 34 14;
-    --c-surface-container-high: 63 43 20;
-    --c-surface-container-highest: 78 54 29;
-    --c-surface-variant: 71 49 24;
-    --c-surface-tint: 12 104 84;
-    --c-on-surface: 215 210 200; /* brand.darkText */
-    --c-on-surface-variant: 205 192 168;
-    --c-inverse-surface: 215 210 200;
-    --c-inverse-on-surface: 26 16 4;
-    --c-primary: 12 104 84; /* brighter brand primary for dark */
-    --c-primary-container: 0 77 61;
-    --c-on-primary: 236 252 247;
-    --c-on-primary-container: 215 245 236;
-    --c-secondary: 140 73 67; /* lifted brand accent */
-    --c-secondary-container: 106 46 42;
-    --c-on-secondary: 255 240 238;
-    --c-on-secondary-container: 255 224 220;
-    --c-tertiary: 225 188 128; /* brand.sand */
-    --c-tertiary-container: 95 70 35;
-    --c-on-tertiary: 35 20 4;
-    --c-on-tertiary-container: 245 228 198;
-    --c-tertiary-fixed: 225 188 128;
-    --c-tertiary-fixed-dim: 205 167 108;
-    --c-on-tertiary-fixed: 35 20 4;
-    --c-on-tertiary-fixed-variant: 75 55 25;
-    --c-primary-fixed: 32 126 106;
-    --c-primary-fixed-dim: 12 104 84;
-    --c-on-primary-fixed: 236 252 247;
-    --c-on-primary-fixed-variant: 194 233 222;
-    --c-secondary-fixed: 165 92 84;
-    --c-secondary-fixed-dim: 140 73 67;
-    --c-on-secondary-fixed: 255 240 238;
-    --c-on-secondary-fixed-variant: 255 214 210;
-    --c-error: 251 113 133;
-    --c-error-container: 136 19 55;
-    --c-on-error: 76 5 25;
-    --c-on-error-container: 255 228 230;
-    --c-outline: 128 101 58;
-    --c-outline-variant: 99 75 42;
-    --c-inverse-primary: 225 188 128;
-    --c-focus-ring: 225 188 128;
-    --c-focus-ring-glow: 12 104 84;
+    /* GitHub-inspired dark palette */
+    --c-background: 13 17 23; /* #0d1117 GitHub base */
+    --c-on-background: 201 209 217; /* #c9d1d9 GitHub text */
+    --c-surface: 13 17 23;
+    --c-surface-dim: 10 13 18;
+    --c-surface-bright: 22 27 34;
+    --c-surface-container-lowest: 13 17 23;
+    --c-surface-container-low: 22 27 34; /* #161b22 GitHub secondary */
+    --c-surface-container: 30 36 44;
+    --c-surface-container-high: 48 54 61;
+    --c-surface-container-highest: 56 65 73;
+    --c-surface-variant: 30 36 44;
+    --c-surface-tint: 88 166 255; /* GitHub blue accent */
+    --c-on-surface: 201 209 217;
+    --c-on-surface-variant: 139 148 155; /* #8b949f GitHub muted text */
+    --c-inverse-surface: 201 209 217;
+    --c-inverse-on-surface: 13 17 23;
+    --c-primary: 88 166 255; /* #58a6ff GitHub primary blue */
+    --c-primary-container: 30 101 185;
+    --c-on-primary: 13 17 23;
+    --c-on-primary-container: 201 209 217;
+    --c-secondary: 79 195 247; /* #4fc3f7 GitHub cyan */
+    --c-secondary-container: 30 86 113;
+    --c-on-secondary: 13 17 23;
+    --c-on-secondary-container: 201 209 217;
+    --c-tertiary: 130 170 255; /* GitHub purple accent */
+    --c-tertiary-container: 50 80 140;
+    --c-on-tertiary: 13 17 23;
+    --c-on-tertiary-container: 201 209 217;
+    --c-tertiary-fixed: 130 170 255;
+    --c-tertiary-fixed-dim: 88 166 255;
+    --c-on-tertiary-fixed: 13 17 23;
+    --c-on-tertiary-fixed-variant: 201 209 217;
+    --c-primary-fixed: 88 166 255;
+    --c-primary-fixed-dim: 58 134 215;
+    --c-on-primary-fixed: 13 17 23;
+    --c-on-primary-fixed-variant: 30 101 185;
+    --c-secondary-fixed: 79 195 247;
+    --c-secondary-fixed-dim: 58 166 215;
+    --c-on-secondary-fixed: 13 17 23;
+    --c-on-secondary-fixed-variant: 30 86 113;
+    --c-error: 248 81 73; /* #f85149 GitHub red */
+    --c-error-container: 99 36 32;
+    --c-on-error: 255 255 255;
+    --c-on-error-container: 255 200 195;
+    --c-outline: 48 54 61;
+    --c-outline-variant: 30 36 44;
+    --c-inverse-primary: 88 166 255;
+    --c-focus-ring: 88 166 255;
+    --c-focus-ring-glow: 79 195 247;
   }
 
   html {
@@ -120,6 +117,12 @@
 
   body {
     @apply min-h-screen bg-surface text-on-surface font-body;
+  }
+
+  /* Ensure dark mode body background is correctly applied */
+  html.dark body {
+    background-color: rgb(var(--c-surface) / 1) !important;
+    background-image: none !important;
   }
 
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
@@ -294,6 +297,14 @@
   .wizard-loading-hint {
     @apply max-w-md text-sm text-on-surface-variant;
   }
+}
+
+#industry {
+  margin-bottom: 0 !important;
+}
+
+#visual_notes {
+  margin-bottom: 0 !important;
 }
 
 @keyframes wizard-indeterminate-slide {

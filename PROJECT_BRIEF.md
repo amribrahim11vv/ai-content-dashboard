@@ -1,97 +1,131 @@
-# Project Brief: AI Content Dashboard 🚀
+# Project Brief: Social Geni (AI Content Dashboard)
 
-A premium, full-stack AI-powered content strategy and asset generation platform. This dashboard empowers brands to generate high-fidelity marketing kits—including social media plans, AI image prompts, and video strategies—tailored to their specific industry and budget.
+This document explains **what the product is for**, **why it exists**, and **how users are meant to experience it**. Package name in the repo is `social-geni`; the product narrative is **AI Content Kits**—turning a brand brief into a **single, reviewable bundle** of copy, creative direction, and strategy you can actually ship.
 
----
-
-## 1. Product Vision 👁️
-The **AI Content Dashboard** is designed to be the "Creative Director in a Box" for small to medium-sized agencies and brands. It bridges the gap between raw AI potential and practical marketing execution by applying industry-specific visual psychology and Egyptian-market-aware brand logic.
-
-### Core Value Propositions:
-- **Instant High-Fidelity Strategy**: Move from a brief to a full monthly content plan in under 60 seconds.
-- **Visual Excellence**: Professional-grade AI prompts (for Midjourney/DALL-E) that include camera angles, lighting, and aspect ratios.
-- **Budget-Aware Action**: Generation logic that adapts the content mix based on the client's spending level (Organic vs. High-Paid).
+For API details, env vars, and commands, see [`README.md`](README.md).
 
 ---
 
-## 2. Key Features 🛠️
+## 1. The idea in one sentence
 
-### 🔮 The Content Wizard
-A guided 6-step experience that extracts the "Brand Essence":
-1.  **Identity**: Brand name and industry.
-2.  **Context**: Target audience and competitors.
-3.  **Ambition**: Main goal and active platforms.
-4.  **Style**: Brand tone and colors.
-5.  **Focus**: Current offer/message and visual notes.
-6.  **Configuration**: Campaign duration, budget, and content counts.
+**Social Geni helps a brand or marketer go from a structured interview (the wizard) to a complete “marketing kit”—posts, image prompts, video plans, and supporting strategy—in one synchronous generation, then review, copy, and refine individual pieces without starting over.**
 
-> [!NOTE]
-> **Draft Persistence**: The wizard features automatic `localStorage` saving. Users can close the tab mid-wizard and resume exactly where they left off.
-
-### 📊 Tactical Dashboard
-A central hub for tracking all generated marketing kits.
-- **Status Badges**: Real-time tracking (`Generating`, `Completed`, `Failed`).
-- **History**: Quick access to all past strategies for brand consistency.
-
-### 🖼️ The Kit Viewer
-A deep-dive interface for viewing generated assets:
-- **Social Posts**: Hook-first captions (Arabic/Egyptian Dialect) with hashtag strategies.
-- **Visual Design**: Technical prompts for high-end AI image generation.
-- **Video Strategy**: Scene-by-scene scripts and camera move instructions for short-form video (TikTok/Reels).
-- **Growth System**: Actionable marketing tasks and objection handling for sales teams.
+The site is not “another chat with AI.” It is a **pipeline**: capture context once, enforce a **fixed output shape**, store the result as a **first-class artifact** (a kit), and present it in a UI built for **execution** (copy buttons, sections, retries), not open-ended conversation.
 
 ---
 
-## 3. Technical Architecture 🏗️
+## 2. The problem it tries to solve
 
-### **Frontend (The Client)**
-- **Framework**: React 19 + Vite.
-- **Styling**: Vanilla CSS + Tailwind for a "Glassmorphic" premium aesthetic.
-- **Icons**: Custom Lucide-React integration.
-- **State Management**: Local component state + `localStorage` for wizard drafts.
+Small teams, freelancers, and regional brands often hit the same wall:
 
-### **Backend (The BFF)**
-- **Engine**: Hono (Lightweight, ultra-fast, and edge-ready).
-- **Communication**: REST API with Bearer token authentication.
-- **Database**: SQLite with **Drizzle ORM** for type-safe migrations.
+- They know their offer and audience but **lack time** to produce a coherent month of content.
+- Generic AI chat gives **fragments**—a caption here, a vague image idea there—with no **single document** that matches their brief, tone, and constraints.
+- **Bilingual** markets (e.g. Arabic and English for social captions and metadata) multiply the work: two languages, one brand voice, easy to drift.
+- **Creative tools** (image/video generators) need **technical prompts**; marketing people do not always know how to write scene-level instructions that survive real tools.
 
-### **AI Execution**
-- **Model**: Google Gemini Pro.
-- **Prompt Engineering**: 
-    - **Industry Modules**: Specialist rules for Real Estate, Restaurants, Clinics, E-commerce, Fashion, and Education.
-    - **Arabic Brand Logic**: Custom logic to maintain correct Arabic spelling and Egyptian-dialect hooks for the MENA market.
-    - **Structured Output**: Enforced JSON schema for zero-fail parsing.
+Social Geni compresses that work: one submission, one stored **kit** that bundles **executable assets** (copy + prompts) with **reasoning layers** (strategy, offer framing, objections) so the output is useful for both **content** and **sales** conversations.
 
 ---
 
-## 4. Engineering Excellence 🛡️
+## 3. What a “kit” means in this product
 
-### **Idempotency & Reliability**
-- **Idempotency Keys**: Every generation request is locked with a unique key to prevent duplicate costs or database entries during network retries.
-- **Retry Mechanics**: Support for `failed_generation` recovery using `row_version` concurrency control.
-- **Input Validation**: Double-layer validation using **Zod** (Frontend and Backend) ensuring the LLM always receives high-quality context.
+A **kit** is the persisted result of one generation run. Conceptually it contains:
 
-### **Performance**
-- **Lazy Loading**: Heavy components like the `KitViewer` are code-split.
-- **Edge-Ready Architecture**: The Hono server is designed to run on Cloudflare Workers or Node.js with minimal changes.
+- **Social layer**: Platform-aware posts with goals, bilingual long-form body copy where the schema requires it, hashtags, and CTAs—ready to adapt and paste.
+- **Visual layer**: Image-oriented blocks with scene descriptions, overlay guidance, full AI image prompts, captions, and conversion-oriented notes—so design or AI tooling has a **spec**, not a whim.
+- **Video layer**: Short-form oriented plans—structure, scenes, tool-oriented instructions, and “why this converts” style rationale.
+- **Strategy layer**: Not fluff—**marketing strategy** (mix, cadence, platforms, angles, positioning), **sales system** (pains, funnel thinking, ad angles, objection handling), **offer optimization** (sharpened offer line, urgency framing, alternatives), plus **diagnosis** and a **narrative summary** so the user sees *why* the assets fit together.
 
----
-
-## 5. Design System 🎨
-The UI follows the **Stitch Design Philosophy**:
-- **Palette**: Sleek Dark Mode with harmonious accents (Indigo/Cyan).
-- **Typography**: Inter/Outfit for modern, readable hierarchies.
-- **Micro-animations**: Smooth hover effects and loading transitions to enhance the "Premium AI" feel.
+The UI (**Kit Viewer**) is organized around these layers so a user can **jump to the section they need** (e.g. only video prompts for an editor, only posts for a community manager) instead of scrolling an unstructured wall of text.
 
 ---
 
-## 6. Getting Started 🏁
-1.  **Clone & Install**: `npm install`
-2.  **Environment**: 
-    - `server/.env`: Provide `GEMINI_API_KEY` and `API_SECRET`.
-    - `client/.env.local`: Matching `VITE_API_SECRET`.
-3.  **Development**: `npm run dev`
-4.  **Tests**: `npm run test:e2e` for Playwright validation.
+## 4. Who it is for (and how they use it)
+
+| Persona | What they get from the product |
+|--------|--------------------------------|
+| **Brand owner / marketing lead** | A fast **baseline plan** aligned to budget, duration, and platforms they selected in the wizard; a **summary** they can share internally. |
+| **Social manager** | **Copy-paste-ready posts** and hashtag/CTA structure; language toggle where the kit exposes Arabic and English fields. |
+| **Designer or AI operator** | **Image and video prompt blocks** detailed enough to feed Midjourney, DALL·E, Runway-class tools, etc. |
+| **Sales or growth** | **Pain points, objections, funnel and CTA angles** from the sales-system portion of the kit—useful for landing pages, ads, or call scripts. |
+| **Internal admin / strategist** | **Prompt catalog** and industry templates so the *voice of the machine* stays on-brand across many kits; **analytics** on wizard usage; ability to **see all kits** for QA or support. |
+
+The public flow assumes **no full user accounts** for kit listing: kits created from a browser are **scoped to a stable device identity** so the same visitor sees **their** history when they return. Admins use separate routes to see **everything**. That trade-off favors **speed to value** for anonymous or lightweight use while still allowing operational oversight.
 
 ---
-*Created by Antigravity AI Engineering & Design.*
+
+## 5. The user journey (purpose of each major surface)
+
+### 5.1 Dashboard and “Generated kits”
+
+Purpose: **Orientation and history**. Users see whether generation succeeded or failed, open past kits, and avoid losing work. Status and list views answer: *“Do I have something to work with, and where is it?”*
+
+### 5.2 The wizard (three campaign modes)
+
+Purpose: **Turn implicit knowledge into explicit constraints** the model cannot guess—brand, industry, audience, goals, platforms, tone, offer, budget band, counts of posts/images/videos, and mode of campaign (`social`, `offer`, `deep`).  
+
+**Draft saving** exists so the journey respects real life: users abandon tabs and return. The product goal is to **reduce abandonment** and **increase completion quality** (fuller briefs → better kits).
+
+### 5.3 Generation moment
+
+Purpose: **One authoritative run** per logical request. **Idempotency** exists so double-clicks and network retries do not create duplicate kits or double cost—this is a product promise of **predictability**, not just an engineering detail.
+
+### 5.4 Kit detail (viewer)
+
+Purpose: **Make the kit actionable**. Collapsible sections, copy actions, optional technical JSON, and **partial regeneration** (one post, one image block, one video item) support the real workflow: *“Everything else is fine—redo item 3 with this feedback.”*
+
+### 5.5 Admin: Prompt catalog
+
+Purpose: **Separate “how we want the AI to think” from “what this client typed.”** Authors maintain **industry creative direction** (hooks, angles, tone rules). The server still injects **client context from the wizard** so each kit stays anchored to that submission. That separation is core to scaling quality across many brands without editing code for every tweak.
+
+### 5.6 Admin: Analytics and full kit review
+
+Purpose: **Improve prompts and spot failures**. Seeing all kits and how people move through the wizard informs product and content strategy—not just debugging.
+
+---
+
+## 6. Why structured JSON (and strict validation) matters to the *idea*
+
+If the model returned free-form prose, the app could not reliably show **“Video prompt #2”** or **merge a regenerated post back into the kit**. The product promise of a **kit** depends on a **contract**: known keys for posts, designs, videos, strategy objects, etc.
+
+That is why the backend uses a **response schema** and validation: the **UX is designed around predictable blocks**. The user should feel they received a **designed deliverable**, not a lucky paste from a chat window.
+
+Creative-policy rules (e.g. constraints around **Arabic text inside image/video visual frames** vs. captions and scripts) exist so outputs stay **usable** in real creative pipelines and regional contexts.
+
+---
+
+## 7. Reliability and iteration as product features
+
+- **Failed generation**: The user should be able to **retry** with a clear path (full retry from stored brief), not lose the brief or start from zero manually.
+- **Row versioning**: Prevents two tabs from silently overwriting each other’s updates—again, about **trust** in the artifact.
+- **Regenerate one item**: Matches how people work—“fix this asset only.”
+
+These are not secondary; they reinforce that a **kit is an object you own and refine**, not a disposable chat transcript.
+
+---
+
+## 8. Positioning summary
+
+| Dimension | Intent |
+|-----------|--------|
+| **Vs. generic ChatGPT** | Fixed structure, stored kits, wizard-driven context, bilingual fields where defined, copy-oriented UI. |
+| **Vs. a static template shop** | Every kit is **generated** from the user’s brief and industry prompts, not a dead PDF. |
+| **Vs. a pure scheduling tool** | Strong on **creation** (copy + prompts + strategy); scheduling is out of scope unless added later. |
+
+---
+
+## 9. Under the hood (short pointer)
+
+- **Stack**: React (Vite) + Hono API + PostgreSQL (Drizzle), Gemini for generation. See README for diagrams and versions.
+- **Auth model**: Browser calls from allowed origins or Bearer `API_SECRET` for tools; kits list/detail for normal users tied to **`X-Device-ID`**; admin uses broader list scope.
+- **Key code**: `server/src/logic/responseSchema.ts` (output shape), `server/src/services/kitGenerationService.ts` (orchestration), `client/src/KitViewer.tsx` (presentation), `client/src/features/kits/kitViewModel.ts` (mapping `result_json` to UI).
+
+---
+
+## 10. Future direction (product-level)
+
+Ideas already noted in the repo include field-level repair endpoints, richer validation errors for power users, and shared typing between client and server—each would further strengthen the **“kit as a reliable artifact”** story.
+
+---
+
+*This brief prioritizes purpose and experience. Operational and API specifics live in `README.md` and the codebase.*

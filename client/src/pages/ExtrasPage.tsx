@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { postExtrasWaitlist } from "../api";
-import PrimaryFlowBanner from "../components/PrimaryFlowBanner";
 
 const tools = [
   {
@@ -38,7 +37,6 @@ export default function ExtrasPage() {
 
   return (
     <>
-      <PrimaryFlowBanner />
       <div className="mb-10">
         <h1 className="headline text-4xl font-black tracking-tight text-on-surface md:text-5xl">Future tools</h1>
         <p className="mt-2 max-w-2xl text-on-surface-variant">
@@ -54,7 +52,7 @@ export default function ExtrasPage() {
         {tools.map((t) => (
           <div
             key={t.id}
-            className="group relative overflow-hidden rounded-3xl border border-outline-variant/25 bg-surface-container-low p-8 transition-all hover:border-primary/25"
+            className="group relative overflow-hidden rounded-uniform border border-outline-variant/25 bg-surface-container-low p-8 transition-all hover:border-primary/25"
           >
             <div className="absolute -end-8 -top-8 h-24 w-24 rounded-full bg-primary/10 blur-2xl transition-opacity group-hover:opacity-100" />
             <div className="mb-4 flex items-start justify-between">
@@ -71,7 +69,7 @@ export default function ExtrasPage() {
               onClick={() => {
                 postExtrasWaitlist(t.id)
                   .then(() => setStatus(`You're on the waitlist for “${t.title}”.`))
-                  .catch(() => setStatus("Could not save — check API and VITE_API_SECRET."));
+                  .catch(() => setStatus("Could not save. Please verify API availability."));
               }}
             >
               Notify me →

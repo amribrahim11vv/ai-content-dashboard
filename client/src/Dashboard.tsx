@@ -3,14 +3,8 @@ import { Link } from "react-router-dom";
 import { listKits } from "./api";
 import type { KitSummary } from "./types";
 import { useToast } from "./useToast";
-import PrimaryFlowBanner from "./components/PrimaryFlowBanner";
-
-function statusKind(badge: string): "done" | "running" | "failed" {
-  const b = badge.toLowerCase();
-  if (b.includes("fail")) return "failed";
-  if (b.includes("run")) return "running";
-  return "done";
-}
+import { statusKind } from "./kitUiFormatters";
+import { logger } from "./logger";
 
 export default function Dashboard() {
   const [kits, setKits] = useState<KitSummary[] | null>(null);
@@ -20,7 +14,7 @@ export default function Dashboard() {
     listKits()
       .then(setKits)
       .catch((e) => {
-        console.error(e);
+        logger.error(e);
         push("Could not load the list", "error");
       });
   }, [push]);
@@ -30,19 +24,16 @@ export default function Dashboard() {
       return {
         total: 0,
         successRate: 0,
-        modelCount: 0,
         done: 0,
         barPct: 0,
       };
     }
     const done = kits.filter((k) => statusKind(k.status_badge) === "done").length;
     const rate = Math.round((done / kits.length) * 1000) / 10;
-    const models = new Set(kits.map((k) => k.model_used).filter(Boolean)).size;
     const barPct = Math.min(100, Math.max(8, (kits.length % 17) + 35));
     return {
       total: kits.length,
       successRate: rate,
-      modelCount: models,
       done,
       barPct,
     };
@@ -75,7 +66,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <section className="mb-10 overflow-hidden rounded-3xl border border-brand-sand/30 bg-earth-alt p-5 sm:p-6 md:p-10 dark:border-outline/30 dark:bg-surface-container-low">
+      <section className="mb-10 overflow-hidden rounded-uniform border border-brand-sand/30 bg-earth-alt p-5 sm:p-6 md:p-10 dark:border-outline/30 dark:bg-surface-container-low">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-xl">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Start here</p>
@@ -107,7 +98,7 @@ export default function Dashboard() {
           <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
             <Link
               to="/wizard"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-primary px-6 py-3 font-headline text-xs font-bold uppercase tracking-widest text-white shadow-sm transition hover:bg-brand-primary/90 hover:scale-[1.02] sm:w-auto sm:px-8 sm:py-4 sm:text-sm dark:bg-primary dark:text-on-primary focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-uniform bg-brand-primary px-6 py-3 font-headline text-xs font-bold uppercase tracking-widest text-white shadow-sm transition hover:bg-brand-primary/90 hover:scale-[1.02] sm:w-auto sm:px-8 sm:py-4 sm:text-sm dark:bg-primary dark:text-on-primary focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
                 rocket_launch
@@ -118,14 +109,12 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <PrimaryFlowBanner className="mb-8" />
-
-      <section className="mb-12 grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-3">
-        <div className="group relative overflow-hidden rounded-3xl border border-brand-sand/30 bg-earth-card p-8 transition-transform duration-500 hover:scale-[1.01] dark:border-outline/30 dark:bg-surface-container-low">
+      <section className="mb-12 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+        <div className="group relative overflow-hidden rounded-uniform border border-brand-sand/30 bg-earth-card p-8 transition-transform duration-500 hover:scale-[1.01] dark:border-outline/30 dark:bg-surface-container-low">
           <div className="absolute -end-16 -top-16 h-32 w-32 rounded-full bg-primary/5 blur-3xl" />
           <div className="relative z-10">
             <div className="mb-4 flex items-start justify-between">
-              <div className="rounded-2xl bg-primary/10 p-3">
+              <div className="rounded-uniform bg-primary/10 p-3">
                 <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
                   inventory_2
                 </span>
@@ -145,11 +134,11 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="group relative overflow-hidden rounded-3xl border border-brand-sand/30 bg-earth-card p-8 transition-transform duration-500 hover:scale-[1.01] dark:border-outline/30 dark:bg-surface-container-low">
+        <div className="group relative overflow-hidden rounded-uniform border border-brand-sand/30 bg-earth-card p-8 transition-transform duration-500 hover:scale-[1.01] dark:border-outline/30 dark:bg-surface-container-low">
           <div className="absolute -end-16 -top-16 h-32 w-32 rounded-full bg-tertiary/5 blur-3xl" />
           <div className="relative z-10">
             <div className="mb-4 flex items-start justify-between">
-              <div className="rounded-2xl bg-tertiary/10 p-3">
+              <div className="rounded-uniform bg-tertiary/10 p-3">
                 <span className="material-symbols-outlined text-tertiary" style={{ fontVariationSettings: "'FILL' 1" }}>
                   verified
                 </span>
@@ -165,27 +154,10 @@ export default function Dashboard() {
             </p>
           </div>
         </div>
-
-        <div className="group relative overflow-hidden rounded-3xl border border-brand-sand/30 bg-earth-card p-8 transition-transform duration-500 hover:scale-[1.01] dark:border-outline/30 dark:bg-surface-container-low">
-          <div className="absolute -end-16 -top-16 h-32 w-32 rounded-full bg-secondary/5 blur-3xl" />
-          <div className="relative z-10">
-            <div className="mb-4 flex items-start justify-between">
-              <div className="rounded-2xl bg-secondary/10 p-3">
-                <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  bolt
-                </span>
-              </div>
-              <span className="text-xs font-bold uppercase tracking-widest text-secondary">Models</span>
-            </div>
-            <p className="mb-1 text-sm font-semibold uppercase tracking-wide text-on-surface-variant">Model diversity</p>
-            <h3 className="headline text-5xl font-extrabold tracking-tighter text-on-surface">{stats.modelCount || "—"}</h3>
-            <p className="mt-4 text-xs text-on-surface-variant">Distinct `model_used` values in your records</p>
-          </div>
-        </div>
       </section>
 
       <section className="mt-12 grid grid-cols-1 gap-8">
-        <div className="group relative rounded-3xl border border-brand-sand/30 bg-earth-card p-6 md:p-10 dark:border-outline/30 dark:bg-surface-container-low">
+        <div className="group relative rounded-uniform border border-brand-sand/30 bg-earth-card p-6 md:p-10 dark:border-outline/30 dark:bg-surface-container-low">
           <div className="absolute end-10 top-10 opacity-10 transition-opacity group-hover:opacity-20">
             <span className="material-symbols-outlined text-8xl" style={{ fontVariationSettings: "'FILL' 1" }}>
               auto_fix_high

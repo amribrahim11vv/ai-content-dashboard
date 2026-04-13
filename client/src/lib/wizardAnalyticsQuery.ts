@@ -34,12 +34,16 @@ type StepStat = {
 export type WizardAnalyticsSummary = {
   totalEvents: number;
   started: number;
+  diagnosisCompleted: number;
   generateClicks: number;
   success: number;
   failed: number;
   startToGenerateRate: number;
   generateSuccessRate: number;
+  diagnosisToGenerateRate: number;
+  avgTimeToFirstPerceivedValueMs: number;
   byWizardType: Record<WizardType, number>;
+  byVariant: Record<"A" | "B" | "unknown", number>;
   byStep: StepStat[];
 };
 
@@ -51,18 +55,30 @@ export function summarizeWizardEvents(events: WizardEventPayload[]): WizardAnaly
     unknown: 0,
   };
   const stepMap = new Map<string, { stepViews: number; nextClicks: number; validationFails: number }>();
+  const byVariant: Record<"A" | "B" | "unknown", number> = { A: 0, B: 0, unknown: 0 };
 
   let started = 0;
+  let diagnosisCompleted = 0;
   let generateClicks = 0;
   let success = 0;
   let failed = 0;
+  let ttfpvSamples = 0;
+  let ttfpvTotal = 0;
 
   for (const e of events) {
     byWizardType[e.wizard_type] += 1;
+    const v = e.experiment_variant;
+    if (v === "A" || v === "B") byVariant[v] += 1;
+    else byVariant.unknown += 1;
     if (e.name === "wizard_started") started += 1;
     if (e.name === "wizard_generate_clicked") generateClicks += 1;
     if (e.name === "kit_created_success") success += 1;
     if (e.name === "kit_created_failed") failed += 1;
+    if (e.name === "wizard_step_next_clicked" && e.step_id === "diagnosis") diagnosisCompleted += 1;
+    if (e.name === "wizard_step_viewed" && e.step_id === "brand" && typeof e.elapsed_time_ms === "number") {
+      ttfpvSamples += 1;
+      ttfpvTotal += e.elapsed_time_ms;
+    }
 
     const stepId = e.step_id || "unknown";
     if (!stepMap.has(stepId)) {
@@ -87,12 +103,16 @@ export function summarizeWizardEvents(events: WizardEventPayload[]): WizardAnaly
   return {
     totalEvents: events.length,
     started,
+    diagnosisCompleted,
     generateClicks,
     success,
     failed,
     startToGenerateRate: pct(generateClicks, started),
     generateSuccessRate: pct(success, generateClicks),
+    diagnosisToGenerateRate: pct(generateClicks, diagnosisCompleted),
+    avgTimeToFirstPerceivedValueMs: ttfpvSamples ? ttfpvTotal / ttfpvSamples : 0,
     byWizardType,
+    byVariant,
     byStep,
   };
 }

@@ -1,16 +1,19 @@
-import { socialBriefSchema } from "../../briefSchema";
+import { socialBriefSchema, socialBriefSchemaWithDiagnosis } from "../../briefSchema";
 import WizardCore from "./WizardCore";
+import { isWizardVariantB } from "../../lib/wizardExperiment";
 
 export default function SocialCampaignWizard() {
+  const variantB = isWizardVariantB();
   return (
     <WizardCore
-      formSchema={socialBriefSchema}
+      formSchema={variantB ? socialBriefSchemaWithDiagnosis : socialBriefSchema}
       draftKey="ai-content-dashboard:wizard-draft:social:v1"
       title="Social Campaign Wizard"
-      subtitle="Built for social-first campaigns: audience, channels, tone, and posting output."
+      subtitle="Designed for social-first execution: clear audience intent, sharp channel mix, and strong posting output."
       routeHint="/kits/:id"
-      stepOrder={["brand", "audience", "channels", "creative", "volume"]}
+      stepOrder={variantB ? ["diagnosis", "brand", "audience", "channels", "creative", "volume"] : ["brand", "audience", "channels", "creative", "volume"]}
       stepTitles={{
+        diagnosis: "Quick diagnosis",
         brand: "Brand & industry",
         audience: "Audience & goals",
         channels: "Channels & tone",

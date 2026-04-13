@@ -83,6 +83,18 @@ export function buildSubmissionSnapshot(source: Record<string, unknown> | null |
       G_LIMITS.num_video_prompts.max,
       G_LIMITS.num_video_prompts.fallback
     ),
+    content_package_idea_count: sanitizeCount(
+      s.content_package_idea_count,
+      G_LIMITS.content_package_ideas.min,
+      G_LIMITS.content_package_ideas.max,
+      G_LIMITS.content_package_ideas.fallback
+    ),
+    diagnostic_role: String(s.diagnostic_role ?? "").trim(),
+    diagnostic_account_stage: String(s.diagnostic_account_stage ?? "").trim(),
+    diagnostic_followers_band: String(s.diagnostic_followers_band ?? "").trim(),
+    diagnostic_primary_blocker: String(s.diagnostic_primary_blocker ?? "").trim(),
+    diagnostic_revenue_goal: String(s.diagnostic_revenue_goal ?? "").trim(),
+    include_content_package: s.include_content_package === true,
   };
 }
 

@@ -13,7 +13,7 @@ function brandFromBrief(briefJson: string): string {
 }
 
 /** Inserts a notification when a kit reaches a terminal delivery state (not retry_in_progress). */
-export function recordKitNotification(row: KitRow): void {
+export async function recordKitNotification(row: KitRow): Promise<void> {
   const s = normalizeDeliveryStatus(row.deliveryStatus);
   if (s === "retry_in_progress") return;
 
@@ -24,14 +24,12 @@ export function recordKitNotification(row: KitRow): void {
     ? `${brand}: generation failed — open the kit to retry.`
     : `${brand}: your content kit finished processing.`;
 
-  db.insert(notifications)
-    .values({
-      id: nanoid(),
-      title,
-      body,
-      kind: isFail ? "kit_failed" : "kit_success",
-      kitId: row.id,
-      createdAt: new Date(),
-    })
-    .run();
+  await db.insert(notifications).values({
+    id: nanoid(),
+    title,
+    body,
+    kind: isFail ? "kit_failed" : "kit_success",
+    kitId: row.id,
+    createdAt: new Date(),
+  });
 }

@@ -48,6 +48,11 @@ function snapshotMap(s: SubmissionSnapshot): Record<string, string> {
     campaign_duration: s.campaign_duration,
     budget_level: s.budget_level,
     best_content_types: s.best_content_types,
+    diagnostic_role: s.diagnostic_role,
+    diagnostic_account_stage: s.diagnostic_account_stage,
+    diagnostic_followers_band: s.diagnostic_followers_band,
+    diagnostic_primary_blocker: s.diagnostic_primary_blocker,
+    diagnostic_revenue_goal: s.diagnostic_revenue_goal,
     num_posts: String(s.num_posts),
     num_image_designs: String(s.num_image_designs),
     num_video_prompts: String(s.num_video_prompts),
@@ -93,29 +98,51 @@ export async function resolvePrompt(industryInput: string, snapshot: SubmissionS
     };
   }
 
-  const industry = await db.select().from(industries).where(eq(industries.slug, targetSlug)).get();
-  let selected =
-    industry &&
-    (await db
+  const industryRows = await db.select().from(industries).where(eq(industries.slug, targetSlug)).limit(1);
+  const industry = industryRows[0];
+  let selected: (typeof industryPrompts.$inferSelect) | undefined;
+  if (industry) {
+    const promptRows = await db
       .select()
       .from(industryPrompts)
       .where(and(eq(industryPrompts.industryId, industry.id), eq(industryPrompts.status, "active")))
-      .get());
+      .limit(1);
+    selected = promptRows[0];
+  }
 
   let isFallback = false;
   let usedSlug = targetSlug;
   if (!selected) {
     isFallback = true;
     usedSlug = "fallback";
-    selected = await db
+    const fbRows = await db
       .select()
       .from(industryPrompts)
       .where(and(isNull(industryPrompts.industryId), eq(industryPrompts.status, "active")))
-      .get();
+      .limit(1);
+    selected = fbRows[0];
   }
 
   if (!selected) {
-    throw new Error("No active prompt found. Please configure a global fallback prompt.");
+    const prefix = campaignModeInstructionBlock(snapshot.campaign_mode);
+    const composed = composePrompt({
+      campaignPrefix: prefix,
+      creativeDirection:
+        "Use the client context to produce high-conversion assets with platform-native execution and strict bilingual parity.",
+      snapshot,
+      mode: snapshot.campaign_mode,
+      useMetaPrompt: true,
+    });
+    return {
+      industrySlugUsed: targetSlug,
+      promptVersionId: "meta-fallback:v1",
+      promptVersionUsed: 1,
+      isFallback: true,
+      renderedPrompt: composed,
+      rawTemplate: "meta-fallback:v1",
+      promptMode: "meta",
+      industrySource: "fallback",
+    };
   }
 
   const contract = validatePromptTemplateContract(selected.promptTemplate);

@@ -1,22 +1,25 @@
-import { deepBriefSchema } from "../../briefSchema";
+import { deepBriefSchema, deepBriefSchemaWithDiagnosis } from "../../briefSchema";
 import WizardCore from "./WizardCore";
+import { isWizardVariantB } from "../../lib/wizardExperiment";
 
 export default function DeepContentWizard() {
+  const variantB = isWizardVariantB();
   return (
     <WizardCore
-      formSchema={deepBriefSchema}
+      formSchema={variantB ? deepBriefSchemaWithDiagnosis : deepBriefSchema}
       draftKey="ai-content-dashboard:wizard-draft:deep:v1"
-      title="Deep Content Wizard"
-      subtitle="For long-form and depth-driven output: strong creative brief, content structure, and production detail."
+      title="Deep Campaign Wizard"
+      subtitle="Designed for depth-first execution: stronger narrative structure, richer creative briefs, and production-ready detail."
       routeHint="/kits/:id"
-      stepOrder={["brand", "audience", "creative", "volume"]}
+      stepOrder={variantB ? ["diagnosis", "brand", "audience", "creative", "volume"] : ["brand", "audience", "creative", "volume"]}
       stepTitles={{
+        diagnosis: "Quick diagnosis",
         brand: "Brand & industry",
-        audience: "Audience intent",
-        creative: "Creative framework",
+        audience: "Audience & goals",
+        creative: "Creative direction",
         volume: "Output volumes",
-        offer: "Offer narrative",
-        channels: "Distribution channels",
+        offer: "Offer & positioning",
+        channels: "Channels & tone",
       }}
       stepFields={{
         audience: ["target_audience", "main_goal"],

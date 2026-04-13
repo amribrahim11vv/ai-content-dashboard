@@ -14,10 +14,10 @@ export default function SelectableCard({ label, icon, selected, onClick, disable
       onClick={onClick}
       aria-pressed={selected}
       className={[
-        "group w-full rounded-2xl border px-4 py-3 text-start transition",
+        "group w-full rounded-uniform border px-4 py-3 text-start transition",
         "focus-visible:ring-2 focus-visible:ring-primary/45",
         selected
-          ? "border-primary bg-primary/10 text-on-surface shadow-[0_0_0_1px_rgb(var(--c-primary)/0.35)] dark:border-brand-primary dark:bg-brand-primary/15"
+          ? "border-primary bg-primary/10 text-on-surface shadow-[0_0_0_1px_rgb(var(--c-primary)/0.35)] dark:border-primary dark:bg-primary/15"
           : "border-brand-sand/30 bg-earth-card text-on-surface hover:border-brand-primary/35 hover:bg-earth-alt dark:border-outline/30 dark:bg-surface-container-high dark:hover:border-primary/35 dark:hover:bg-surface-container-highest",
         disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
       ].join(" ")}

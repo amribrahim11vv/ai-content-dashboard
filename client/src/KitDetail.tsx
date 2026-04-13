@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { getKit, retryKit, ApiError } from "./api";
 import type { KitSummary } from "./types";
 import { useToast } from "./useToast";
+import { emitWizardEvent } from "./lib/wizardAnalytics";
 
 const LazyViewer = lazy(() => import("./KitViewer"));
 
@@ -13,6 +14,19 @@ function briefBrand(json: string): string {
   } catch {
     return "";
   }
+}
+
+function parseBriefJson(json: string): Record<string, unknown> {
+  try {
+    return JSON.parse(json) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
+function parseResultJson(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
 }
 
 const btnPrimary =
@@ -34,10 +48,10 @@ export default function KitDetail({ showTechnical = false }: { showTechnical?: b
     if (!id) return;
     setConflict(false);
     setErr(null);
-    getKit(id)
+    getKit(id, showTechnical)
       .then(setKit)
       .catch(() => setErr("Not found"));
-  }, [id]);
+  }, [id, showTechnical]);
 
   useEffect(() => {
     refreshKit();
@@ -87,7 +101,7 @@ export default function KitDetail({ showTechnical = false }: { showTechnical?: b
     return (
       <div className="glass-panel rounded-3xl border border-outline/30 p-8 text-on-surface">
         <p className="mb-4">{err ?? "—"}</p>
-        <Link to="/generated-kits" className={btnGhost + " inline-flex items-center gap-1"}>
+        <Link to={showTechnical ? "/admin/generated-kits" : "/generated-kits"} className={btnGhost + " inline-flex items-center gap-1"}>
           <span className="material-symbols-outlined text-lg">arrow_back</span>
           Back to generated kits
         </Link>
@@ -110,6 +124,38 @@ export default function KitDetail({ showTechnical = false }: { showTechnical?: b
   const failed = statusLower.includes("failed_generation");
   const retryInProgress = statusLower.includes("retry_in_progress");
   const title = briefBrand(kit.brief_json) || kit.id;
+  const brief = parseBriefJson(kit.brief_json);
+  const result = parseResultJson(kit.result_json);
+  const diagnosisPlan =
+    result.diagnosis_plan && typeof result.diagnosis_plan === "object" && !Array.isArray(result.diagnosis_plan)
+      ? (result.diagnosis_plan as Record<string, unknown>)
+      : null;
+  const narrativeSummary =
+    typeof result.narrative_summary === "string" ? String(result.narrative_summary).trim() : "";
+  const wizardType =
+    brief.campaign_mode === "social" || brief.campaign_mode === "offer" || brief.campaign_mode === "deep"
+      ? brief.campaign_mode
+      : "unknown";
+  const blocker = String(brief.diagnostic_primary_blocker ?? "").trim();
+  const target = String(brief.diagnostic_revenue_goal ?? "").trim();
+  const recommendation =
+    blocker === "inconsistent-execution"
+      ? "Start with Quick win and publish one output today to rebuild momentum."
+      : blocker === "no-conversion"
+      ? "Start with Optimization and regenerate conversion-focused outputs first."
+      : blocker === "low-reach"
+      ? "Start with Optimization and test new hooks/angles this week."
+      : "Start with Scale and produce a second kit for another audience segment.";
+  const twentyFourHourPlan =
+    typeof diagnosisPlan?.quickWin24h === "string" && diagnosisPlan.quickWin24h.trim()
+      ? diagnosisPlan.quickWin24h.trim()
+      : target && target.includes("10000")
+      ? "Next 24h: publish one hero piece and one authority support post."
+      : "Next 24h: publish one quick-win item from this kit and collect response signals.";
+  const sevenDayPlan =
+    typeof diagnosisPlan?.focus7d === "string" && diagnosisPlan.focus7d.trim()
+      ? diagnosisPlan.focus7d.trim()
+      : "Next 7d: run 2-3 outputs, capture performance, then regenerate weak items using targeted feedback.";
 
   return (
     <>
@@ -128,7 +174,7 @@ export default function KitDetail({ showTechnical = false }: { showTechnical?: b
       <div className="mb-8 flex flex-col gap-5 md:mb-10 md:gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <nav className="mb-3 flex flex-wrap items-center gap-2 text-xs text-on-surface-variant dark:text-brand-darkText/75">
-            <Link to="/generated-kits" className="hover:text-on-surface">
+            <Link to={showTechnical ? "/admin/generated-kits" : "/generated-kits"} className="hover:text-on-surface">
               Generated kits
             </Link>
             <span className="material-symbols-outlined text-[14px]">chevron_right</span>
@@ -149,7 +195,7 @@ export default function KitDetail({ showTechnical = false }: { showTechnical?: b
             >
               {kit.status_badge}
             </span>
-            {kit.model_used ? (
+            {showTechnical && kit.model_used ? (
               <span className="text-sm text-on-surface-variant">Model: {kit.model_used}</span>
             ) : null}
           </div>
@@ -184,7 +230,7 @@ export default function KitDetail({ showTechnical = false }: { showTechnical?: b
           </p>
         )}
 
-        {kit.correlation_id && (
+        {showTechnical && kit.correlation_id ? (
           <p className="text-sm text-on-surface-variant">
             <span className="font-semibold text-on-surface">Correlation ID:</span>{" "}
             <code dir="ltr" className="rounded bg-surface-container-lowest px-2 py-0.5 text-xs text-tertiary">
@@ -194,7 +240,7 @@ export default function KitDetail({ showTechnical = false }: { showTechnical?: b
               Copy
             </button>
           </p>
-        )}
+        ) : null}
 
         {kit.last_error && (
           <div className="rounded-2xl border border-error/30 bg-error/10 p-4">
@@ -218,7 +264,19 @@ export default function KitDetail({ showTechnical = false }: { showTechnical?: b
       </div>
 
       {kit.result_json && (
-        <section className="mb-8 rounded-3xl border border-secondary/25 bg-secondary/10 p-4 sm:p-6">
+        <Suspense
+          fallback={
+            <div className="glass-panel flex min-h-[200px] items-center justify-center rounded-3xl border border-outline/30 p-8 text-on-surface-variant">
+              Loading viewer…
+            </div>
+          }
+        >
+          <LazyViewer kit={kit} onKitUpdate={setKit} showTechnical={showTechnical} />
+        </Suspense>
+      )}
+
+      {kit.result_json && (
+        <section className="mt-8 rounded-3xl border border-secondary/25 bg-secondary/10 p-4 sm:p-6">
           <p className="text-xs font-bold uppercase tracking-wide text-secondary">Next best action</p>
           <h2 className="mt-1 font-headline text-xl font-extrabold text-on-surface sm:text-2xl">Choose your next move</h2>
           <p className="mt-2 text-sm text-on-surface-variant">
@@ -244,31 +302,90 @@ export default function KitDetail({ showTechnical = false }: { showTechnical?: b
           </div>
 
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <Link to="/wizard" className={btnPrimary + " w-full justify-center sm:w-auto"}>
+            <Link
+              to="/wizard"
+              className={btnPrimary + " w-full justify-center sm:w-auto"}
+              onClick={() =>
+                emitWizardEvent({
+                  name: "wizard_step_next_clicked",
+                  wizard_type: wizardType,
+                  draft_key: `kit:${kit.id}`,
+                  step_id: "kit_handoff_create_another_kit",
+                  validation_state: "passed",
+                })
+              }
+            >
               <span className="material-symbols-outlined text-lg">auto_awesome</span>
               Create another kit
             </Link>
-            <Link to="/generated-kits" className={btnSecondary + " w-full justify-center sm:w-auto"}>
+            <Link
+              to="/generated-kits"
+              className={btnSecondary + " w-full justify-center sm:w-auto"}
+              onClick={() =>
+                emitWizardEvent({
+                  name: "wizard_step_next_clicked",
+                  wizard_type: wizardType,
+                  draft_key: `kit:${kit.id}`,
+                  step_id: "kit_handoff_open_generated_kits",
+                  validation_state: "passed",
+                })
+              }
+            >
               <span className="material-symbols-outlined text-lg">inventory_2</span>
               Open generated kits
             </Link>
+            <Link
+              to="/wizard/offer"
+              className={btnSecondary + " w-full justify-center sm:w-auto"}
+              onClick={() =>
+                emitWizardEvent({
+                  name: "wizard_step_next_clicked",
+                  wizard_type: wizardType,
+                  draft_key: `kit:${kit.id}`,
+                  step_id: "kit_handoff_start_offer_campaign",
+                  validation_state: "passed",
+                })
+              }
+            >
+              <span className="material-symbols-outlined text-lg">trending_up</span>
+              Start Offer Campaign
+            </Link>
+            <Link
+              to="/wizard/deep"
+              className={btnSecondary + " w-full justify-center sm:w-auto"}
+              onClick={() =>
+                emitWizardEvent({
+                  name: "wizard_step_next_clicked",
+                  wizard_type: wizardType,
+                  draft_key: `kit:${kit.id}`,
+                  step_id: "kit_handoff_start_deep_content",
+                  validation_state: "passed",
+                })
+              }
+            >
+              <span className="material-symbols-outlined text-lg">article</span>
+              Deep Content
+            </Link>
+          </div>
+          <div className="mt-4 rounded-xl border border-outline/25 bg-surface-container-low p-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-on-surface-variant">Recommended next move</p>
+            <p className="mt-1 text-sm font-semibold text-on-surface">{recommendation}</p>
+            {narrativeSummary ? <p className="mt-2 text-xs text-on-surface-variant">{narrativeSummary}</p> : null}
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border border-outline/25 bg-surface-container-low p-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-on-surface-variant">24-hour plan</p>
+              <p className="mt-1 text-xs text-on-surface-variant">{twentyFourHourPlan}</p>
+            </div>
+            <div className="rounded-xl border border-outline/25 bg-surface-container-low p-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-on-surface-variant">7-day plan</p>
+              <p className="mt-1 text-xs text-on-surface-variant">{sevenDayPlan}</p>
+            </div>
           </div>
           <p className="mt-3 text-xs text-on-surface-variant">
             Trust cue: Your current kit is saved and can be revisited anytime from Generated kits.
           </p>
         </section>
-      )}
-
-      {kit.result_json && (
-        <Suspense
-          fallback={
-            <div className="glass-panel flex min-h-[200px] items-center justify-center rounded-3xl border border-outline/30 p-8 text-on-surface-variant">
-              Loading viewer…
-            </div>
-          }
-        >
-          <LazyViewer kit={kit} onKitUpdate={setKit} showTechnical={showTechnical} />
-        </Suspense>
       )}
     </>
   );

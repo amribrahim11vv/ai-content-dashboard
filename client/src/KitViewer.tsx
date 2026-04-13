@@ -3,24 +3,20 @@ import {
   useEffect,
   useId,
   useMemo,
-  useRef,
   useState,
   type MouseEvent,
   type ReactNode,
 } from "react";
-import { ApiError, regenerateKitItem } from "./api";
 import type { KitPostItem, KitSummary } from "./types";
+import { buildKitViewModel, type KitContentIdeasPackageView } from "./features/kits/kitViewModel";
+import { useKitRegenerate } from "./features/kits/useKitRegenerate";
+import RegenerateFeedbackDialog from "./features/kits/RegenerateFeedbackDialog";
 
 const TOC_ID = "kit-plan-toc";
 const SCROLL_MARGIN = "6rem";
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
-}
-
-function asStringArray(v: unknown): string[] {
-  if (!Array.isArray(v)) return [];
-  return v.filter((x): x is string => typeof x === "string");
 }
 
 /** Copy with brief success state on the control itself */
@@ -262,9 +258,229 @@ function getKitMediaPlainBody(rec: Record<string, unknown>, kind: "image" | "vid
   return JSON.stringify(rec, null, 2);
 }
 
+/** Strategy blocks: server schema uses string fields + string[] + objection pairs */
+function stratStr(v: unknown): string {
+  return typeof v === "string" ? v.trim() : "";
+}
+
+function stratStrArr(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((x): x is string => typeof x === "string")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
+function stratObjectionPairs(v: unknown): { objection: string; response: string }[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((x): x is Record<string, unknown> => isRecord(x))
+    .map((o) => ({ objection: stratStr(o.objection), response: stratStr(o.response) }))
+    .filter((p) => p.objection || p.response);
+}
+
+function marketingStrategyPlainText(data: Record<string, unknown>): string {
+  const lines: string[] = [];
+  const pushBlock = (title: string, body: string) => {
+    if (!body) return;
+    lines.push(title, body, "");
+  };
+  pushBlock("Content mix plan", stratStr(data.content_mix_plan));
+  pushBlock("Weekly posting plan", stratStr(data.weekly_posting_plan));
+  pushBlock("Platform strategy", stratStr(data.platform_strategy));
+  const angles = stratStrArr(data.key_messaging_angles);
+  if (angles.length) {
+    lines.push("Key messaging angles");
+    angles.forEach((a) => lines.push(`• ${a}`));
+    lines.push("");
+  }
+  pushBlock("Brand positioning statement", stratStr(data.brand_positioning_statement));
+  return lines.join("\n").trim();
+}
+
+function salesSystemPlainText(data: Record<string, unknown>): string {
+  const lines: string[] = [];
+  const pains = stratStrArr(data.pain_points);
+  if (pains.length) {
+    lines.push("Pain points");
+    pains.forEach((p) => lines.push(`• ${p}`));
+    lines.push("");
+  }
+  const pushBlock = (title: string, body: string) => {
+    if (!body) return;
+    lines.push(title, body, "");
+  };
+  pushBlock("Offer structuring", stratStr(data.offer_structuring));
+  pushBlock("Funnel plan", stratStr(data.funnel_plan));
+  const ads = stratStrArr(data.ad_angles);
+  if (ads.length) {
+    lines.push("Ad angles");
+    ads.forEach((a) => lines.push(`• ${a}`));
+    lines.push("");
+  }
+  stratObjectionPairs(data.objection_handling).forEach((pair, i) => {
+    lines.push(`Objection ${i + 1}`, pair.objection, "Response", pair.response, "");
+  });
+  pushBlock("CTA strategy", stratStr(data.cta_strategy));
+  return lines.join("\n").trim();
+}
+
+function offerOptimizationPlainText(data: Record<string, unknown>): string {
+  const lines: string[] = [];
+  const pushBlock = (title: string, body: string) => {
+    if (!body) return;
+    lines.push(title, body, "");
+  };
+  pushBlock("Rewritten offer", stratStr(data.rewritten_offer));
+  pushBlock("Urgency / scarcity", stratStr(data.urgency_or_scarcity));
+  const alts = stratStrArr(data.alternative_offers);
+  if (alts.length) {
+    lines.push("Alternative offers");
+    alts.forEach((a) => lines.push(`• ${a}`));
+    lines.push("");
+  }
+  return lines.join("\n").trim();
+}
+
+function StrategySubfield({ label, value }: { label: string; value: string }) {
+  if (!value) return null;
+  return (
+    <div className="min-w-0">
+      <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">{label}</p>
+      <p className="whitespace-pre-wrap text-sm leading-relaxed text-on-surface" dir="auto">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function StrategyBulletList({ label, items }: { label: string; items: string[] }) {
+  if (!items.length) return null;
+  return (
+    <div className="min-w-0">
+      <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">{label}</p>
+      <ul className="list-disc space-y-1.5 ps-5 text-sm leading-relaxed text-on-surface">
+        {items.map((t, i) => (
+          <li key={i} dir="auto">
+            {t}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function MarketingStrategyBody({ data }: { data: Record<string, unknown> }) {
+  const angles = stratStrArr(data.key_messaging_angles);
+  const structured =
+    stratStr(data.content_mix_plan) ||
+    stratStr(data.weekly_posting_plan) ||
+    stratStr(data.platform_strategy) ||
+    angles.length > 0 ||
+    stratStr(data.brand_positioning_statement);
+  if (!structured) {
+    return (
+      <pre
+        className="max-h-80 overflow-auto rounded-b-xl bg-earth-alt p-4 text-xs text-brand-muted dark:bg-surface-container-lowest dark:text-on-surface-variant"
+        dir="ltr"
+      >
+        {JSON.stringify(data, null, 2)}
+      </pre>
+    );
+  }
+  return (
+    <div className="space-y-4">
+      <StrategySubfield label="Content mix plan" value={stratStr(data.content_mix_plan)} />
+      <StrategySubfield label="Weekly posting plan" value={stratStr(data.weekly_posting_plan)} />
+      <StrategySubfield label="Platform strategy" value={stratStr(data.platform_strategy)} />
+      <StrategyBulletList label="Key messaging angles" items={angles} />
+      <StrategySubfield label="Brand positioning statement" value={stratStr(data.brand_positioning_statement)} />
+    </div>
+  );
+}
+
+function SalesSystemBody({ data }: { data: Record<string, unknown> }) {
+  const pains = stratStrArr(data.pain_points);
+  const ads = stratStrArr(data.ad_angles);
+  const objections = stratObjectionPairs(data.objection_handling);
+  const structured =
+    pains.length > 0 ||
+    stratStr(data.offer_structuring) ||
+    stratStr(data.funnel_plan) ||
+    ads.length > 0 ||
+    objections.length > 0 ||
+    stratStr(data.cta_strategy);
+  if (!structured) {
+    return (
+      <pre
+        className="max-h-80 overflow-auto rounded-b-xl bg-earth-alt p-4 text-xs text-brand-muted dark:bg-surface-container-lowest dark:text-on-surface-variant"
+        dir="ltr"
+      >
+        {JSON.stringify(data, null, 2)}
+      </pre>
+    );
+  }
+  return (
+    <div className="space-y-4">
+      <StrategyBulletList label="Pain points" items={pains} />
+      <StrategySubfield label="Offer structuring" value={stratStr(data.offer_structuring)} />
+      <StrategySubfield label="Funnel plan" value={stratStr(data.funnel_plan)} />
+      <StrategyBulletList label="Ad angles" items={ads} />
+      {objections.length > 0 ? (
+        <div className="min-w-0 space-y-3">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">Objection handling</p>
+          <div className="space-y-3">
+            {objections.map((pair, i) => (
+              <div
+                key={i}
+                className="rounded-lg border border-brand-sand/20 bg-earth-alt/40 p-3 dark:border-outline/15 dark:bg-surface-container-high/25"
+              >
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">Objection</p>
+                <p className="whitespace-pre-wrap text-sm text-on-surface" dir="auto">
+                  {pair.objection}
+                </p>
+                <p className="mb-1 mt-3 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">
+                  Response
+                </p>
+                <p className="whitespace-pre-wrap text-sm text-on-surface" dir="auto">
+                  {pair.response}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      <StrategySubfield label="CTA strategy" value={stratStr(data.cta_strategy)} />
+    </div>
+  );
+}
+
+function OfferOptimizationBody({ data }: { data: Record<string, unknown> }) {
+  const alts = stratStrArr(data.alternative_offers);
+  const structured =
+    stratStr(data.rewritten_offer) || stratStr(data.urgency_or_scarcity) || alts.length > 0;
+  if (!structured) {
+    return (
+      <pre
+        className="max-h-80 overflow-auto rounded-b-xl bg-earth-alt p-4 text-xs text-brand-muted dark:bg-surface-container-lowest dark:text-on-surface-variant"
+        dir="ltr"
+      >
+        {JSON.stringify(data, null, 2)}
+      </pre>
+    );
+  }
+  return (
+    <div className="space-y-4">
+      <StrategySubfield label="Rewritten offer" value={stratStr(data.rewritten_offer)} />
+      <StrategySubfield label="Urgency / scarcity" value={stratStr(data.urgency_or_scarcity)} />
+      <StrategyBulletList label="Alternative offers" items={alts} />
+    </div>
+  );
+}
+
 function kitArticleShellClass(expanded: boolean): string {
   return (
-    "relative isolate min-h-0 min-w-0 max-w-full overflow-x-clip overflow-y-visible rounded-2xl border border-brand-sand/30 bg-earth-card/90 p-3 sm:p-4 dark:border-outline/25 dark:bg-surface-container-lowest/60 " +
+    "relative isolate min-h-0 min-w-0 max-w-full overflow-x-clip overflow-y-visible rounded-uniform border border-brand-sand/30 bg-earth-card/90 p-3 sm:p-4 dark:border-outline/25 dark:bg-surface-container-lowest/60 " +
     (expanded ? "z-20 shadow-lg shadow-surface/30" : "z-0")
   );
 }
@@ -490,7 +706,7 @@ function KitPromptCard({
   return (
     <article
       className={
-        "relative isolate min-h-0 min-w-0 max-w-full overflow-x-clip overflow-y-visible rounded-2xl border border-brand-sand/30 bg-earth-card/90 p-3 sm:p-4 dark:border-outline/25 dark:bg-surface-container-lowest/60 " +
+        "relative isolate min-h-0 min-w-0 max-w-full overflow-x-clip overflow-y-visible rounded-uniform border border-brand-sand/30 bg-earth-card/90 p-3 sm:p-4 dark:border-outline/25 dark:bg-surface-container-lowest/60 " +
         (expanded ? "z-20 shadow-lg shadow-surface/30" : "z-0")
       }
     >
@@ -592,7 +808,7 @@ function PostCard({
   return (
     <article
       className={
-        "relative isolate min-h-0 min-w-0 max-w-full overflow-x-clip overflow-y-visible rounded-2xl border border-brand-sand/30 bg-earth-card/90 p-3 sm:p-4 dark:border-outline/25 dark:bg-surface-container-lowest/60 " +
+        "relative isolate min-h-0 min-w-0 max-w-full overflow-x-clip overflow-y-visible rounded-uniform border border-brand-sand/30 bg-earth-card/90 p-3 sm:p-4 dark:border-outline/25 dark:bg-surface-container-lowest/60 " +
         (expanded ? "z-20 shadow-lg shadow-surface/30" : "z-0")
       }
     >
@@ -684,6 +900,156 @@ function PostCard({
 
 type TocItem = { id: string; label: string };
 
+function buildContentPackageFullCopy(pkg: KitContentIdeasPackageView): string {
+  const lines: string[] = [];
+  if (pkg.ideas.length) {
+    lines.push("=== Strategic ideas ===");
+    for (const idea of pkg.ideas) {
+      lines.push(`#${idea.id ?? "?"} ${idea.title ?? ""}`.trim());
+      if (idea.description) lines.push(idea.description);
+      lines.push("");
+    }
+  }
+  if (pkg.hooks.length) {
+    lines.push("=== Hooks ===");
+    const byIdea = new Map<number, typeof pkg.hooks>();
+    for (const h of pkg.hooks) {
+      const id = typeof h.idea_id === "number" ? h.idea_id : -1;
+      if (id < 0) continue;
+      if (!byIdea.has(id)) byIdea.set(id, []);
+      byIdea.get(id)!.push(h);
+    }
+    const sortedIds = [...byIdea.keys()].sort((a, b) => a - b);
+    for (const id of sortedIds) {
+      const arr = byIdea.get(id)!;
+      arr.sort((a, b) => (a.variant_index ?? 0) - (b.variant_index ?? 0));
+      lines.push(`Idea ${id}:`);
+      for (const h of arr) {
+        lines.push(`  [${h.variant_index ?? "?"}] ${h.hook_text ?? ""}`);
+      }
+      lines.push("");
+    }
+  }
+  if (pkg.templates.length) {
+    lines.push("=== Templates ===");
+    for (const t of pkg.templates) {
+      lines.push(`Idea ${t.idea_id ?? "?"}: ${t.template_format ?? ""}`);
+    }
+  }
+  return lines.join("\n").trim();
+}
+
+function ContentIdeasPackagePanel({ pkg, kitId }: { pkg: KitContentIdeasPackageView; kitId: string }) {
+  const hooksByIdea = new Map<number, KitContentIdeasPackageView["hooks"]>();
+  for (const h of pkg.hooks) {
+    const id = typeof h.idea_id === "number" ? h.idea_id : -1;
+    if (id < 0) continue;
+    if (!hooksByIdea.has(id)) hooksByIdea.set(id, []);
+    hooksByIdea.get(id)!.push(h);
+  }
+  for (const arr of hooksByIdea.values()) {
+    arr.sort((a, b) => (a.variant_index ?? 0) - (b.variant_index ?? 0));
+  }
+  const ideaTitle = (id: number) => pkg.ideas.find((i) => i.id === id)?.title?.trim() || `Idea ${id}`;
+  const fullCopy = buildContentPackageFullCopy(pkg);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-on-surface-variant">
+          Extra outputs from the content ideas package (strategic ideas, hooks, templates). Separate from main kit video prompts.
+        </p>
+        <CopyFieldButton text={fullCopy} label="Copy entire content package" />
+      </div>
+
+      {pkg.ideas.length > 0 ? (
+        <div className="space-y-3">
+          <h3 className="text-sm font-bold uppercase tracking-wide text-on-surface">Strategic ideas</h3>
+          <div className="grid grid-cols-1 gap-3">
+            {pkg.ideas.map((idea, i) => {
+              const id = idea.id ?? i + 1;
+              const block = [`#${id} ${idea.title ?? ""}`.trim(), idea.description ?? ""].filter(Boolean).join("\n\n");
+              return (
+                <FieldBlock
+                  key={`${kitId}-cp-idea-${id}-${i}`}
+                  label={`Idea ${id}`}
+                  copyText={block}
+                  copyLabel={`Copy idea ${id}`}
+                >
+                  {idea.title ? (
+                    <p className="px-3 pt-2 text-sm font-semibold text-on-surface [overflow-wrap:anywhere]" dir="auto">
+                      {idea.title}
+                    </p>
+                  ) : null}
+                  {idea.description ? (
+                    <p className="px-3 pb-2 text-sm leading-relaxed text-on-surface [overflow-wrap:anywhere]" dir="auto">
+                      {idea.description}
+                    </p>
+                  ) : null}
+                </FieldBlock>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
+      {pkg.hooks.length > 0 ? (
+        <div className="space-y-3">
+          <h3 className="text-sm font-bold uppercase tracking-wide text-on-surface">Hook lines</h3>
+          <div className="grid grid-cols-1 gap-3">
+            {[...hooksByIdea.entries()]
+              .sort((a, b) => a[0] - b[0])
+              .map(([ideaId, hooks]) => {
+                const body = hooks.map((h) => `[${h.variant_index ?? "?"}] ${h.hook_text ?? ""}`).join("\n");
+                return (
+                  <FieldBlock
+                    key={`${kitId}-cp-hooks-${ideaId}`}
+                    label={ideaTitle(ideaId)}
+                    copyText={body}
+                    copyLabel={`Copy hooks for idea ${ideaId}`}
+                  >
+                    <ul className="space-y-2 px-3 py-2 text-sm leading-relaxed text-on-surface [overflow-wrap:anywhere]" dir="auto">
+                      {hooks.map((h, j) => (
+                        <li key={`${ideaId}-v-${h.variant_index}-${j}`}>
+                          <span className="font-mono text-xs text-on-surface-variant">v{h.variant_index}: </span>
+                          {h.hook_text ?? "—"}
+                        </li>
+                      ))}
+                    </ul>
+                  </FieldBlock>
+                );
+              })}
+          </div>
+        </div>
+      ) : null}
+
+      {pkg.templates.length > 0 ? (
+        <div className="space-y-3">
+          <h3 className="text-sm font-bold uppercase tracking-wide text-on-surface">Reusable templates</h3>
+          <div className="grid grid-cols-1 gap-3">
+            {pkg.templates.map((t, i) => {
+              const id = t.idea_id ?? i + 1;
+              const text = t.template_format ?? "";
+              return (
+                <FieldBlock
+                  key={`${kitId}-cp-tpl-${id}-${i}`}
+                  label={`Template · ${ideaTitle(typeof t.idea_id === "number" ? t.idea_id : id)}`}
+                  copyText={text}
+                  copyLabel={`Copy template for idea ${id}`}
+                >
+                  <p className="px-3 py-2 text-sm leading-relaxed text-on-surface [overflow-wrap:anywhere] whitespace-pre-wrap" dir="auto">
+                    {text || "—"}
+                  </p>
+                </FieldBlock>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function CollapsibleSection({
   id,
   title,
@@ -709,7 +1075,7 @@ function CollapsibleSection({
     <section
       id={id}
       className={
-        "scroll-mt-24 overflow-x-clip overflow-y-visible rounded-3xl border border-brand-sand/30 bg-earth-card/90 dark:border-outline/30 dark:bg-surface-container-low/40 " +
+        "scroll-mt-24 overflow-x-clip overflow-y-visible rounded-uniform border border-brand-sand/30 bg-earth-card/90 dark:border-outline/30 dark:bg-surface-container-low/40 " +
         (open ? "relative z-10" : "relative z-0")
       }
       style={{ scrollMarginTop: SCROLL_MARGIN }}
@@ -780,49 +1146,42 @@ export default function KitViewer({
   onKitUpdate?: (next: KitSummary) => void;
   showTechnical?: boolean;
 }) {
-  const data = kit.result_json as Record<string, unknown> | null;
   const [openMap, setOpenMap] = useState<Record<string, boolean>>({});
   const [lang, setLang] = useState<ViewerLang>("ar");
-  const [regeneratingKey, setRegeneratingKey] = useState<string | null>(null);
-  const [regenError, setRegenError] = useState<string | null>(null);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const [feedbackDraft, setFeedbackDraft] = useState("");
-  const [pendingRegenerate, setPendingRegenerate] = useState<{
-    item_type: "post" | "image" | "video";
-    index: number;
-  } | null>(null);
-  const feedbackTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const {
+    data,
+    posts,
+    videoSection,
+    imageSection,
+    hasStrategyBlock,
+    marketingStrategy,
+    salesSystem,
+    offerOptimization,
+    painPoints,
+    hasStructuredPreview,
+    contentIdeasPackage,
+  } = useMemo(() => buildKitViewModel(kit), [kit]);
 
-  const posts = useMemo(() => (Array.isArray(data?.posts) ? (data!.posts as KitPostItem[]) : []), [data]);
+  const strategyOfferHeadline = useMemo(() => {
+    const rew = offerOptimization?.rewritten_offer;
+    if (typeof rew === "string" && rew.trim()) return rew.trim();
+    const leg = data?.offer_headline;
+    if (typeof leg === "string" && leg.trim()) return leg.trim();
+    return null;
+  }, [offerOptimization, data]);
 
-  const videoSection = useMemo(() => {
-    if (!data) return null;
-    const candidates: { title: string; items: unknown[] }[] = [];
-    for (const key of ["video_prompts", "video_assets", "ai_video_assets", "assets"]) {
-      const v = data[key];
-      if (Array.isArray(v) && v.length > 0) {
-        candidates.push({ title: key.replace(/_/g, " "), items: v });
-      }
-    }
-    return candidates[0] ?? null;
-  }, [data]);
-
-  const imageSection = useMemo(() => {
-    if (!data) return null;
-    const candidates: { title: string; items: unknown[] }[] = [];
-    for (const key of ["image_prompts", "image_designs", "creative_prompts", "design_prompts", "visual_prompts"]) {
-      const v = data[key];
-      if (Array.isArray(v) && v.length > 0) {
-        candidates.push({ title: key.replace(/_/g, " "), items: v });
-      }
-    }
-    return candidates[0] ?? null;
-  }, [data]);
-
-  const hasStrategyBlock = Boolean(isRecord(data?.strategy) || typeof data?.offer_headline === "string");
-  const painPoints = useMemo(() => asStringArray(data?.pain_points), [data]);
-
-  const hasStructuredPreview = posts.length > 0 || !!imageSection || !!videoSection;
+  const {
+    regeneratingKey,
+    regenError,
+    feedbackOpen,
+    feedbackDraft,
+    setFeedbackDraft,
+    pendingRegenerate,
+    feedbackTextareaRef,
+    openRegenerateDialog,
+    closeFeedbackModal,
+    submitRegenerate,
+  } = useKitRegenerate({ kit, onKitUpdate });
 
   const tocItems = useMemo((): TocItem[] => {
     const items: TocItem[] = [];
@@ -832,9 +1191,26 @@ export default function KitViewer({
     if (!hasStructuredPreview) items.push({ id: "kit-section-summary", label: "Summary" });
     if (hasStrategyBlock) items.push({ id: "kit-section-strategy", label: "Strategy & extras" });
     if (painPoints.length) items.push({ id: "kit-section-pain", label: "Pain points" });
+    if (
+      contentIdeasPackage &&
+      (contentIdeasPackage.ideas.length > 0 ||
+        contentIdeasPackage.hooks.length > 0 ||
+        contentIdeasPackage.templates.length > 0)
+    ) {
+      items.push({ id: "kit-section-content-package", label: "Content ideas package" });
+    }
     if (showTechnical) items.push({ id: "kit-section-json", label: "Full JSON" });
     return items;
-  }, [posts.length, imageSection, videoSection, hasStructuredPreview, hasStrategyBlock, painPoints.length, showTechnical]);
+  }, [
+    posts.length,
+    imageSection,
+    videoSection,
+    hasStructuredPreview,
+    hasStrategyBlock,
+    painPoints.length,
+    contentIdeasPackage,
+    showTechnical,
+  ]);
 
   const toggle = useCallback((id: string) => {
     setOpenMap((m) => ({ ...m, [id]: !m[id] }));
@@ -861,57 +1237,6 @@ export default function KitViewer({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const regenerateItem = useCallback(
-    async (item_type: "post" | "image" | "video", index: number, feedback?: string) => {
-      const key = `${item_type}-${index}`;
-      setRegenError(null);
-      setRegeneratingKey(key);
-      try {
-        const next = await regenerateKitItem(kit.id, {
-          item_type,
-          index,
-          row_version: kit.row_version,
-          feedback: feedback?.trim() || undefined,
-        });
-        onKitUpdate?.(next);
-      } catch (e) {
-        const msg = e instanceof ApiError || e instanceof Error ? e.message : String(e);
-        setRegenError(msg);
-      } finally {
-        setRegeneratingKey(null);
-      }
-    },
-    [kit.id, kit.row_version, onKitUpdate]
-  );
-
-  const openFeedbackModal = useCallback((item_type: "post" | "image" | "video", index: number) => {
-    setFeedbackDraft("");
-    setPendingRegenerate({ item_type, index });
-    setFeedbackOpen(true);
-  }, []);
-
-  const closeFeedbackModal = useCallback(() => {
-    if (regeneratingKey) return;
-    setFeedbackOpen(false);
-    setPendingRegenerate(null);
-    setFeedbackDraft("");
-  }, [regeneratingKey]);
-
-  const submitRegenerate = useCallback(
-    async (skipFeedback: boolean) => {
-      if (!pendingRegenerate) return;
-      await regenerateItem(
-        pendingRegenerate.item_type,
-        pendingRegenerate.index,
-        skipFeedback ? undefined : feedbackDraft
-      );
-      setFeedbackOpen(false);
-      setPendingRegenerate(null);
-      setFeedbackDraft("");
-    },
-    [pendingRegenerate, regenerateItem, feedbackDraft]
-  );
-
   useEffect(() => {
     if (!feedbackOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -923,7 +1248,7 @@ export default function KitViewer({
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
         e.preventDefault();
         if (!regeneratingKey) {
-          void submitRegenerate(false);
+          void submitRegenerate();
         }
       }
     };
@@ -945,7 +1270,7 @@ export default function KitViewer({
     <div className="relative space-y-6 pb-20">
       <nav
         id={TOC_ID}
-        className="sticky top-20 z-20 scroll-mt-24 rounded-2xl border border-brand-sand/30 bg-earth-card/95 p-3 shadow-lg shadow-surface/50 backdrop-blur-sm dark:border-primary/20 dark:bg-surface-container-low/95 sm:p-4 md:top-4 md:p-5"
+        className="sticky top-20 z-20 scroll-mt-24 rounded-uniform border border-brand-sand/30 bg-earth-card/95 p-3 shadow-lg shadow-surface/50 backdrop-blur-sm dark:border-primary/20 dark:bg-surface-container-low/95 sm:p-4 md:top-4 md:p-5"
         style={{ scrollMarginTop: SCROLL_MARGIN }}
         aria-label="Plan sections"
       >
@@ -1022,7 +1347,7 @@ export default function KitViewer({
                 post={p}
                 index={i}
                 lang={lang}
-                onRegenerate={(idx) => openFeedbackModal("post", idx)}
+                onRegenerate={(idx) => openRegenerateDialog("post", idx)}
                 regenerating={regeneratingKey === `post-${i}`}
               />
             ))}
@@ -1051,7 +1376,7 @@ export default function KitViewer({
                     item={rec}
                     index={i}
                     lang={lang}
-                    onRegenerate={(idx) => openFeedbackModal("image", idx)}
+                    onRegenerate={(idx) => openRegenerateDialog("image", idx)}
                     regenerating={regeneratingKey === `image-${i}`}
                     showTechnical={showTechnical}
                   />
@@ -1064,7 +1389,7 @@ export default function KitViewer({
                     item={rec}
                     index={i}
                     lang={lang}
-                    onRegenerate={(idx) => openFeedbackModal("image", idx)}
+                    onRegenerate={(idx) => openRegenerateDialog("image", idx)}
                     regenerating={regeneratingKey === `image-${i}`}
                     showTechnical={showTechnical}
                   />
@@ -1079,7 +1404,7 @@ export default function KitViewer({
                   title={title}
                   body={body}
                   caption={caption || undefined}
-                  onRegenerate={() => openFeedbackModal("image", i)}
+                  onRegenerate={() => openRegenerateDialog("image", i)}
                   regenerating={regeneratingKey === `image-${i}`}
                   copyLabel="Copy prompt"
                 />
@@ -1110,7 +1435,7 @@ export default function KitViewer({
                     item={rec}
                     index={i}
                     lang={lang}
-                    onRegenerate={(idx) => openFeedbackModal("video", idx)}
+                    onRegenerate={(idx) => openRegenerateDialog("video", idx)}
                     regenerating={regeneratingKey === `video-${i}`}
                     showTechnical={showTechnical}
                   />
@@ -1125,7 +1450,7 @@ export default function KitViewer({
                   title={title}
                   body={body}
                   caption={caption || undefined}
-                  onRegenerate={() => openFeedbackModal("video", i)}
+                  onRegenerate={() => openRegenerateDialog("video", i)}
                   regenerating={regeneratingKey === `video-${i}`}
                   copyLabel="Copy video prompt"
                 />
@@ -1134,6 +1459,24 @@ export default function KitViewer({
           </div>
         </CollapsibleSection>
       )}
+
+      {contentIdeasPackage &&
+      (contentIdeasPackage.ideas.length > 0 ||
+        contentIdeasPackage.hooks.length > 0 ||
+        contentIdeasPackage.templates.length > 0) ? (
+        <CollapsibleSection
+          id="kit-section-content-package"
+          title="Content ideas package"
+          subtitle="Strategic ideas, hooks, and templates"
+          icon="lightbulb"
+          iconBg="bg-amber-500/15 text-amber-800 dark:bg-amber-400/15 dark:text-amber-200"
+          open={!!openMap["kit-section-content-package"]}
+          onToggle={() => toggle("kit-section-content-package")}
+          tocLabel="Content ideas package"
+        >
+          <ContentIdeasPackagePanel pkg={contentIdeasPackage} kitId={kit.id} />
+        </CollapsibleSection>
+      ) : null}
 
       {!hasStructuredPreview && (
         <CollapsibleSection
@@ -1156,37 +1499,58 @@ export default function KitViewer({
         <CollapsibleSection
           id="kit-section-strategy"
           title="Strategy & additional fields"
-          subtitle="Offer line & strategy object"
+          subtitle="Offer line, positioning, sales flow, and offer copy"
           icon="auto_awesome"
           iconBg="bg-brand-accent/15 text-brand-accent dark:bg-secondary/15 dark:text-secondary"
           open={!!openMap["kit-section-strategy"]}
           onToggle={() => toggle("kit-section-strategy")}
           tocLabel="Strategy"
         >
-          {typeof data.offer_headline === "string" ? (
-            <BlockWithCopy
-              copyText={data.offer_headline}
-              copyLabel="Copy headline"
-              className="mb-4"
-            >
+          {strategyOfferHeadline ? (
+            <BlockWithCopy copyText={strategyOfferHeadline} copyLabel="Copy offer line" className="mb-4">
               <blockquote className="border-s-4 border-brand-accent bg-earth-alt/60 p-4 text-lg italic text-on-surface dark:border-secondary dark:bg-surface-container-lowest/50">
-                {data.offer_headline}
+                {strategyOfferHeadline}
               </blockquote>
             </BlockWithCopy>
           ) : null}
-          {isRecord(data.strategy) ? (
-            <BlockWithCopy
-              copyText={JSON.stringify(data.strategy, null, 2)}
-              copyLabel="Copy strategy JSON"
-            >
-              <pre
-                className="max-h-80 overflow-auto rounded-2xl bg-earth-alt p-4 text-xs text-brand-muted dark:bg-surface-container-lowest dark:text-on-surface-variant"
-                dir="ltr"
+          <div className="grid grid-cols-1 gap-4">
+            {marketingStrategy ? (
+              <FieldBlock
+                label="Marketing strategy"
+                copyText={
+                  marketingStrategyPlainText(marketingStrategy) ||
+                  JSON.stringify(marketingStrategy, null, 2)
+                }
+                copyLabel="Copy marketing strategy"
+                bodyClassName="p-3"
               >
-                {JSON.stringify(data.strategy, null, 2)}
-              </pre>
-            </BlockWithCopy>
-          ) : null}
+                <MarketingStrategyBody data={marketingStrategy} />
+              </FieldBlock>
+            ) : null}
+            {salesSystem ? (
+              <FieldBlock
+                label="Sales system"
+                copyText={salesSystemPlainText(salesSystem) || JSON.stringify(salesSystem, null, 2)}
+                copyLabel="Copy sales system"
+                bodyClassName="p-3"
+              >
+                <SalesSystemBody data={salesSystem} />
+              </FieldBlock>
+            ) : null}
+            {offerOptimization ? (
+              <FieldBlock
+                label="Offer optimization"
+                copyText={
+                  offerOptimizationPlainText(offerOptimization) ||
+                  JSON.stringify(offerOptimization, null, 2)
+                }
+                copyLabel="Copy offer optimization"
+                bodyClassName="p-3"
+              >
+                <OfferOptimizationBody data={offerOptimization} />
+              </FieldBlock>
+            ) : null}
+          </div>
         </CollapsibleSection>
       ) : null}
 
@@ -1241,7 +1605,7 @@ export default function KitViewer({
           </p>
           <BlockWithCopy copyText={JSON.stringify(data, null, 2)} copyLabel="Copy full JSON">
             <pre
-              className="max-h-[min(70vh,520px)] overflow-auto rounded-2xl bg-earth-alt p-4 text-[0.75rem] leading-relaxed text-brand-muted dark:bg-surface-container-lowest dark:text-on-surface-variant"
+              className="max-h-[min(70vh,520px)] overflow-auto rounded-uniform bg-earth-alt p-4 text-[0.75rem] leading-relaxed text-brand-muted dark:bg-surface-container-lowest dark:text-on-surface-variant"
               dir="ltr"
             >
               {JSON.stringify(data, null, 2)}
@@ -1260,67 +1624,16 @@ export default function KitViewer({
           <span className="material-symbols-outlined">vertical_align_top</span>
         </button>
       ) : null}
-      {feedbackOpen && pendingRegenerate ? (
-        <div
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-surface/65 p-4 backdrop-blur-sm"
-          onClick={closeFeedbackModal}
-          role="presentation"
-        >
-          <div
-            className="w-full max-w-xl rounded-2xl border border-brand-sand/35 bg-earth-card p-5 shadow-2xl dark:border-outline/35 dark:bg-surface-container"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-4">
-              <h3 className="font-headline text-lg font-bold text-on-surface">Regenerate item</h3>
-              <p className="mt-1 text-sm text-on-surface-variant">
-                Add optional feedback to guide the rewrite for this {pendingRegenerate.item_type} item.
-              </p>
-            </div>
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-                Feedback (optional)
-              </span>
-              <textarea
-                ref={feedbackTextareaRef}
-                value={feedbackDraft}
-                onChange={(e) => setFeedbackDraft(e.target.value)}
-                rows={4}
-                maxLength={1200}
-                className="w-full rounded-xl border border-brand-sand/35 bg-earth-alt px-3 py-2 text-sm text-on-surface outline-none transition focus-visible:ring-2 focus-visible:ring-primary/45 dark:border-outline/35 dark:bg-surface-container-high"
-                placeholder="Example: make it more concise, stronger hook, less formal tone..."
-              />
-            </label>
-            <div className="mt-2 text-[11px] text-on-surface-variant">{feedbackDraft.length}/1200</div>
-            <div className="mt-1 text-[11px] text-on-surface-variant">Shortcut: Ctrl/Cmd + Enter to regenerate</div>
-            <div className="mt-5 flex flex-wrap justify-end gap-2">
-              <button
-                type="button"
-                onClick={closeFeedbackModal}
-                disabled={Boolean(regeneratingKey)}
-                className="rounded-xl border border-brand-sand/30 bg-earth-alt px-4 py-2 text-sm font-semibold text-on-surface disabled:opacity-50 dark:border-outline/30 dark:bg-surface-container-high"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => void submitRegenerate(true)}
-                disabled={Boolean(regeneratingKey)}
-                className="rounded-xl border border-brand-sand/30 bg-earth-alt px-4 py-2 text-sm font-semibold text-on-surface disabled:opacity-50 dark:border-outline/30 dark:bg-surface-container-high"
-              >
-                Regenerate without feedback
-              </button>
-              <button
-                type="button"
-                onClick={() => void submitRegenerate(false)}
-                disabled={Boolean(regeneratingKey)}
-                className="rounded-xl bg-brand-primary px-4 py-2 text-sm font-bold text-white disabled:opacity-50 hover:bg-brand-primary/90 dark:bg-primary dark:text-on-primary"
-              >
-                {regeneratingKey ? "Regenerating..." : "Regenerate"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <RegenerateFeedbackDialog
+        open={feedbackOpen}
+        pendingType={pendingRegenerate?.item_type}
+        value={feedbackDraft}
+        onChange={setFeedbackDraft}
+        onCancel={closeFeedbackModal}
+        onSubmit={() => void submitRegenerate()}
+        disabled={Boolean(regeneratingKey)}
+        textareaRef={feedbackTextareaRef}
+      />
     </div>
   );
 }

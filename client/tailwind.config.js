@@ -10,19 +10,19 @@ export default {
       colors: {
         // Earth/Brand aliases (additive, semantic tokens remain source of truth)
         earth: {
-          bg: "#D7D2C8",
-          alt: "#D6EAE0",
+          bg: "#FAF9F6",
+          alt: "#F5F5DC",
           card: "#FFFFFF",
-          darkBg: "#1A1004",
-          darkCard: "#2A1A07",
+          darkBg: "#0d1117", /* GitHub dark base */
+          darkCard: "#161b22", /* GitHub dark secondary */
         },
         brand: {
-          text: "#362108",
-          muted: "#4B411A",
-          primary: "#004D3D",
-          accent: "#6A2E2A",
-          sand: "#E1BC80",
-          darkText: "#D7D2C8",
+          text: "#3E2723",
+          muted: "#8b949f", /* GitHub muted in dark mode, brown in light */
+          primary: "#2E7D32", /* Keep green for light mode */
+          accent: "#8D6E63", /* Keep terracotta for light mode */
+          sand: "#D7A574", /* Keep sand for light mode */
+          darkText: "#c9d1d9", /* GitHub light text */
         },
         // Digital Luxury palette (via CSS variables)
         background: "rgb(var(--c-background) / <alpha-value>)",
@@ -77,6 +77,9 @@ export default {
         DEFAULT: "0.25rem",
         lg: "0.5rem",
         xl: "0.75rem",
+        "2xl": "1rem",
+        "3xl": "1.5rem",
+        uniform: "0.75rem",
         full: "9999px",
       },
       fontFamily: {

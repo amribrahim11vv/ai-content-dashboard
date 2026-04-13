@@ -7,10 +7,12 @@
     "lint": "tsc -b --pretty false",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:competitor": "playwright test --config=playwright.competitor.config.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
+    "@supabase/supabase-js": "^2.103.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.2",
@@ -18,7 +20,6 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "kill-port": "^2.0.1",
     "@playwright/test": "^1.49.1",
     "@tailwindcss/container-queries": "^0.1.1",
     "@tailwindcss/forms": "^0.5.11",
@@ -26,6 +27,7 @@
     "@types/react-dom": "^19.0.2",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.27",
+    "kill-port": "^2.0.1",
     "postcss": "^8.5.8",
     "tailwindcss": "^3.4.19",
     "typescript": "~5.7.2",

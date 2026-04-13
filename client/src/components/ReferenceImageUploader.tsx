@@ -64,14 +64,14 @@ export default function ReferenceImageUploader(props: ReferenceImageUploaderProp
   };
 
   return (
-    <div className="space-y-3 rounded-xl border border-outline/30 bg-surface-container-lowest p-3 dark:border-brand-muted/40 dark:bg-earth-darkBg/60">
+    <div className="space-y-3 rounded-xl border border-outline/30 bg-surface-container-lowest p-3 dark:border-muted/40 dark:bg-earth-darkBg/60">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-semibold text-on-surface">
           Reference image <span className="text-on-surface-variant">(Optional)</span>
         </p>
         <button
           type="button"
-          className="rounded-lg border border-outline/40 bg-surface-container-high px-3 py-1.5 text-xs font-semibold text-on-surface transition hover:bg-surface-container-highest disabled:cursor-not-allowed disabled:opacity-50 dark:border-brand-muted/40 dark:bg-earth-darkCard"
+          className="rounded-lg border border-outline/40 bg-surface-container-high px-3 py-1.5 text-xs font-semibold text-on-surface transition hover:bg-surface-container-highest disabled:cursor-not-allowed disabled:opacity-50 dark:border-muted/40 dark:bg-surface-container-high"
           onClick={handleOpenPicker}
           disabled={props.disabled}
         >
@@ -93,7 +93,7 @@ export default function ReferenceImageUploader(props: ReferenceImageUploaderProp
           <img src={props.value} alt="Reference preview" className="max-h-52 w-full rounded-lg object-cover" />
           <button
             type="button"
-            className="rounded-lg border border-outline/40 bg-surface-container-high px-3 py-1.5 text-xs font-semibold text-on-surface transition hover:bg-surface-container-highest disabled:cursor-not-allowed disabled:opacity-50 dark:border-brand-muted/40 dark:bg-earth-darkCard"
+            className="rounded-lg border border-outline/40 bg-surface-container-high px-3 py-1.5 text-xs font-semibold text-on-surface transition hover:bg-surface-container-highest disabled:cursor-not-allowed disabled:opacity-50 dark:border-muted/40 dark:bg-surface-container-high"
             onClick={handleRemove}
             disabled={props.disabled}
           >
@@ -110,3 +110,4 @@ export default function ReferenceImageUploader(props: ReferenceImageUploaderProp
     </div>
   );
 }
+

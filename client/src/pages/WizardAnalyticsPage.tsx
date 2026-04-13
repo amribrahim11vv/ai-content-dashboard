@@ -51,6 +51,7 @@ export default function WizardAnalyticsPage() {
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Card label="Total events" value={String(summary.totalEvents)} />
         <Card label="Wizard starts" value={String(summary.started)} />
+        <Card label="Diagnosis completed" value={String(summary.diagnosisCompleted)} />
         <Card label="Generate clicks" value={String(summary.generateClicks)} />
         <Card label="Successful kits" value={String(summary.success)} />
       </section>
@@ -60,6 +61,11 @@ export default function WizardAnalyticsPage() {
         <Card label="Generate success rate" value={`${summary.generateSuccessRate.toFixed(1)}%`} />
       </section>
 
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Card label="Diagnosis → Generate rate" value={`${summary.diagnosisToGenerateRate.toFixed(1)}%`} />
+        <Card label="Avg TTFPV" value={`${Math.round(summary.avgTimeToFirstPerceivedValueMs)} ms`} />
+      </section>
+
       <section className="rounded-2xl border border-outline/30 bg-surface-container-low p-4">
         <h2 className="text-lg font-bold text-on-surface">Events by wizard type</h2>
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -67,6 +73,15 @@ export default function WizardAnalyticsPage() {
           <Card label="offer" value={String(summary.byWizardType.offer)} />
           <Card label="deep" value={String(summary.byWizardType.deep)} />
           <Card label="unknown" value={String(summary.byWizardType.unknown)} />
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-outline/30 bg-surface-container-low p-4">
+        <h2 className="text-lg font-bold text-on-surface">A/B split visibility</h2>
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <Card label="Variant A events" value={String(summary.byVariant.A)} />
+          <Card label="Variant B events" value={String(summary.byVariant.B)} />
+          <Card label="Unknown variant events" value={String(summary.byVariant.unknown)} />
         </div>
       </section>
 

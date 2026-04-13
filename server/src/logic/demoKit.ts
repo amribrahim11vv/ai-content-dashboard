@@ -1,5 +1,31 @@
 import type { SubmissionSnapshot } from "./constants.js";
 import { isHighBudget } from "./industry.js";
+import { PACKAGE_HOOKS_PER_IDEA } from "./packageConstants.js";
+import type { ContentIdeasPackage } from "./packageValidate.js";
+
+/** Deterministic chained package for DEMO_MODE when `include_content_package` is on. */
+export function buildDemoContentIdeasPackage(ideaCount: number): ContentIdeasPackage {
+  const ideas = Array.from({ length: ideaCount }, (_, i) => {
+    const id = i + 1;
+    return {
+      id,
+      title: `(Demo) Idea ${id}`,
+      description: `Demo short-form concept ${id} aligned to the brief.`,
+    };
+  });
+  const hooks = ideas.flatMap((idea) =>
+    Array.from({ length: PACKAGE_HOOKS_PER_IDEA }, (_, j) => ({
+      idea_id: idea.id,
+      variant_index: j + 1,
+      hook_text: `Demo hook variant ${j + 1} for idea ${idea.id}.`,
+    }))
+  );
+  const templates = ideas.map((idea) => ({
+    idea_id: idea.id,
+    template_format: `Demo reusable template outline for idea ${idea.id} (carousel / reel beats).`,
+  }));
+  return { ideas, hooks, templates };
+}
 
 /** Minimal valid kit for DEMO_MODE — counts match snapshot. */
 export function buildDemoKitContent(data: SubmissionSnapshot): Record<string, unknown> {
