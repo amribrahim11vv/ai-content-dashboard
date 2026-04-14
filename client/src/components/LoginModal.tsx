@@ -11,11 +11,19 @@ type LoginModalProps = {
 };
 
 export default function LoginModal(props: LoginModalProps) {
-  if (!props.open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" role="dialog" aria-modal="true">
-      <div className="w-full max-w-md rounded-2xl border border-outline/30 bg-surface p-5 shadow-2xl dark:bg-earth-darkCard dark:border-muted/40">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm transition-all duration-300 ${
+        props.open ? "visible opacity-100" : "invisible opacity-0"
+      }`}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className={`w-full max-w-md transform rounded-2xl border border-outline/30 bg-surface p-6 shadow-2xl transition-all duration-300 dark:border-muted/40 dark:bg-earth-darkCard ${
+          props.open ? "scale-100 opacity-100" : "scale-95 opacity-0"
+        }`}
+      >
         <div className="flex items-start justify-between gap-3">
           <div>
             <h3 className="font-headline text-xl font-bold text-on-surface">

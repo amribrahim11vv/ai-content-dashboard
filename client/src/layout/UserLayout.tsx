@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { Skeleton } from "../components/Skeleton";
 
 function linkClass(isActive: boolean) {
   return [
@@ -13,7 +14,7 @@ function linkClass(isActive: boolean) {
 }
 
 export default function UserLayout({ demoBanner }: { demoBanner?: ReactNode }) {
-  const { entitlements, session, signInWithGoogle, signOut } = useAuth();
+  const { entitlements, session, signInWithGoogle, signOut, ready } = useAuth();
   const [themeMode, setThemeMode] = useState<"light" | "dark">(() =>
     document.documentElement.classList.contains("dark") ? "dark" : "light"
   );
@@ -29,6 +30,33 @@ export default function UserLayout({ demoBanner }: { demoBanner?: ReactNode }) {
       // ignore
     }
   };
+
+  if (!ready) {
+    return (
+      <div className="min-h-screen bg-surface text-on-surface dark:bg-earth-darkBg dark:text-secondary">
+        <header className="sticky top-0 z-30 border-b border-outline/20 bg-surface/80 backdrop-blur dark:border-muted/35 dark:bg-earth-darkBg/80">
+          <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+            <Skeleton className="h-7 w-32" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="hidden h-7 w-16 sm:inline-flex" />
+              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-8 w-16" />
+              <nav className="flex items-center gap-1">
+                <Skeleton className="h-8 w-14" />
+                <Skeleton className="h-8 w-14" />
+                <Skeleton className="h-8 w-14" />
+              </nav>
+            </div>
+          </div>
+        </header>
+
+        <main className="mx-auto w-full max-w-6xl px-2 pb-10 pt-4 sm:px-4 sm:pt-6">
+          <Skeleton className="mb-6 h-24 w-full rounded-2xl" />
+          <Skeleton className="mb-4 h-[300px] w-full rounded-2xl" />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-surface text-on-surface dark:bg-earth-darkBg dark:text-secondary">

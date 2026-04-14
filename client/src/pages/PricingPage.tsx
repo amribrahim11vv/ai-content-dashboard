@@ -132,7 +132,7 @@ export default function PricingPage() {
         </p>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3 lg:gap-8">
         {planCards.map((plan) => {
           const isCurrent = currentPlan === plan.id;
           const ctaLabel =
@@ -148,38 +148,41 @@ export default function PricingPage() {
             <article
               key={plan.id}
               className={[
-                "rounded-2xl border p-5",
+                "flex h-full flex-col rounded-3xl border p-6 sm:p-8 transition-all hover:-translate-y-1 hover:shadow-xl",
                 plan.highlight
-                  ? "border-primary/50 bg-primary/5 shadow-lg shadow-primary/15"
-                  : "border-outline/25 bg-surface-container-low",
+                  ? "border-primary/50 bg-primary/5 shadow-md shadow-primary/15"
+                  : "border-outline/25 bg-surface-container-low hover:border-outline/40",
               ].join(" ")}
             >
               {plan.highlight ? (
-                <p className="mb-3 inline-flex rounded-full bg-primary/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary">
+                <p className="mb-4 inline-flex self-start rounded-full bg-primary/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary">
                   Recommended
                 </p>
               ) : null}
               <h2 className="font-headline text-2xl font-bold text-on-surface">{plan.title}</h2>
-              <p className="mt-1 text-on-surface-variant">{plan.subtitle}</p>
-              <p className="mt-4 text-3xl font-black text-on-surface">
+              <p className="mt-2 text-on-surface-variant">{plan.subtitle}</p>
+              <p className="mt-6 text-4xl font-black text-on-surface">
                 {plan.price}
                 <span className="text-sm font-semibold text-on-surface-variant">/month</span>
               </p>
-              <ul className="mt-4 space-y-2">
+
+              <ul className="mt-8 flex-1 space-y-3">
                 {plan.features.map((f) => (
                   <FeatureItem key={f}>{f}</FeatureItem>
                 ))}
               </ul>
+
               <button
                 type="button"
                 onClick={() => onUpgradeClick(plan.id)}
                 disabled={isDisabled}
-                className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-on-primary transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-55"
+                className="mt-8 inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3.5 text-base font-bold text-on-primary transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-55"
               >
                 {ctaLabel}
               </button>
+
               {!buildUpgradeUrl(plan.id) && plan.id !== "free" ? (
-                <p className="mt-2 text-xs text-error">
+                <p className="mt-3 text-center text-xs text-error">
                   Upgrade link is not configured. Set `VITE_UPGRADE_WHATSAPP_URL` or `VITE_UPGRADE_WHATSAPP_PHONE`.
                 </p>
               ) : null}
