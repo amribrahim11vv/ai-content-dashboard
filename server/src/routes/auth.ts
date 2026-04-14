@@ -4,6 +4,11 @@ import type { Next } from "hono";
 import { db } from "../db/index.js";
 import { getAuthUser } from "../middleware/userAuth.js";
 import {
+  authSyncRateLimit,
+  authSyncUserRateLimit,
+  authSyncDeviceRateLimit,
+} from "../middleware/rateLimit.js";
+import {
   ensureUserFromSupabase,
   linkDeviceToUserAndClaimKits,
   resolveAccessContext,
@@ -63,7 +68,20 @@ export function createAuthRouter(mw: (c: import("hono").Context, next: Next) => 
     });
   });
 
-  app.post("/api/auth/sync", async (c) => {
+  /* ── POST /api/auth/sync ──────────────────────────────────────────
+   * Triple-layer rate-limit applied *in addition to* the global
+   * guard (mw) so that spam on this endpoint doesn't burn the
+   * global budget:
+   *   Layer 1 – IP-based        (stops basic flooding)
+   *   Layer 2 – User ID-based   (stops IP-rotation attacks)
+   *   Layer 3 – Device ID-based (stops multi-account attacks)
+   * ---------------------------------------------------------------- */
+  app.post(
+    "/api/auth/sync",
+    async (c, next) => await authSyncRateLimit(c, next),
+    async (c, next) => await authSyncUserRateLimit(c, next),
+    async (c, next) => await authSyncDeviceRateLimit(c, next),
+    async (c) => {
     const authUser = getAuthUser(c);
     if (!authUser) return c.json({ error: "Login required." }, 401);
     let body: z.infer<typeof syncBodySchema>;
@@ -93,3 +111,4 @@ export function createAuthRouter(mw: (c: import("hono").Context, next: Next) => 
 
   return app;
 }
+

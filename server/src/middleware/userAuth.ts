@@ -1,4 +1,8 @@
-import { createRemoteJWKSet, jwtVerify } from "jose";
+import {
+  createRemoteJWKSet,
+  jwtVerify,
+  errors as joseErrors,
+} from "jose";
 import type { Context, Next } from "hono";
 
 export type AuthUserClaims = {
@@ -52,6 +56,66 @@ export function getAuthUser(c: Context): AuthUserClaims | null {
   return (c.get("authUser") as AuthUserClaims | null | undefined) ?? null;
 }
 
+/* ------------------------------------------------------------------ */
+/*  JWT failure classification for structured logging                 */
+/* ------------------------------------------------------------------ */
+
+type JwtFailureReason =
+  | "token_expired"
+  | "invalid_signature"
+  | "claim_check_failed"
+  | "jwks_fetch_error"
+  | "malformed_token"
+  | "unknown";
+
+function classifyJwtError(err: unknown): { reason: JwtFailureReason; detail: string } {
+  // JWTExpired extends JWTClaimValidationFailed, so check it first.
+  if (err instanceof joseErrors.JWTExpired) {
+    return { reason: "token_expired", detail: (err as Error).message };
+  }
+  if (err instanceof joseErrors.JWTClaimValidationFailed) {
+    // claim & reason are public string fields on JWTClaimValidationFailed.
+    const e = err as Error & { claim?: string; reason?: string };
+    return {
+      reason: "claim_check_failed",
+      detail: `claim="${e.claim ?? "?"}" reason="${e.reason ?? "?"}"`,
+    };
+  }
+  if (err instanceof joseErrors.JWSSignatureVerificationFailed) {
+    return { reason: "invalid_signature", detail: (err as Error).message };
+  }
+  if (err instanceof joseErrors.JOSEError) {
+    return { reason: "malformed_token", detail: (err as Error).message };
+  }
+  if (err instanceof Error) {
+    // Network / JWKS fetch errors surface here.
+    const msg = err.message.toLowerCase();
+    if (msg.includes("fetch") || msg.includes("network") || msg.includes("getaddrinfo")) {
+      return { reason: "jwks_fetch_error", detail: err.message };
+    }
+    return { reason: "unknown", detail: err.message };
+  }
+  return { reason: "unknown", detail: String(err) };
+}
+
+/** Return a safe fingerprint of a JWT for logging (first 8 + last 4 chars). */
+function tokenFingerprint(token: string): string {
+  if (token.length < 16) return "***";
+  return `${token.slice(0, 8)}…${token.slice(-4)}`;
+}
+
+/* ------------------------------------------------------------------ */
+
+/** Human-readable reason returned to the client (no internal details). */
+const CLIENT_REASON: Record<JwtFailureReason, string> = {
+  token_expired: "Auth token has expired. Please sign in again.",
+  invalid_signature: "Invalid auth token.",
+  claim_check_failed: "Invalid auth token.",
+  jwks_fetch_error: "Unable to verify auth token at this time. Please retry.",
+  malformed_token: "Malformed auth token.",
+  unknown: "Invalid or expired auth token.",
+};
+
 export async function optionalSupabaseUser(c: Context, next: Next) {
   const token = parseBearerToken(c);
   if (!token || isApiSecretToken(token)) {
@@ -79,7 +143,21 @@ export async function optionalSupabaseUser(c: Context, next: Next) {
       displayName: pickDisplayName(payload as Record<string, unknown>),
     } satisfies AuthUserClaims);
     return await next();
-  } catch {
-    return c.json({ error: "Invalid or expired auth token." }, 401);
+  } catch (err) {
+    const ip = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+    const { reason, detail } = classifyJwtError(err);
+
+    // Structured log line — easy to grep / filter in any log aggregator.
+    console.warn(
+      `[AUTH] JWT verification failed` +
+        ` | reason=${reason}` +
+        ` | ip=${ip}` +
+        ` | token=${tokenFingerprint(token)}` +
+        ` | detail="${detail}"`,
+    );
+
+    const status = reason === "jwks_fetch_error" ? 503 : 401;
+    return c.json({ error: CLIENT_REASON[reason] }, status);
   }
 }
+
