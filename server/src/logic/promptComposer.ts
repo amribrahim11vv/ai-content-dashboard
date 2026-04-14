@@ -5,6 +5,9 @@ function cleanText(v: unknown): string {
   return String(v ?? "").trim();
 }
 
+const VIDEO_NEGATIVE_SUFFIX =
+  "Ensure no text, no floating letters, no watermarks. Maintain strict physical consistency.";
+
 function section(title: string, body: string): string {
   const normalized = cleanText(body);
   if (!normalized) return "";
@@ -149,6 +152,10 @@ export function buildOutputPolicyBlock(mode: CampaignMode): string {
     "Each social post must be long-form, rich, and detailed (not short snippets) in both languages.",
     "Each image design item must include `caption_ar` and `caption_en` that match that exact visual concept.",
     "Each video prompt item must include `caption_ar` and `caption_en` that match that exact video concept.",
+    "Each `video_prompts[].ai_tool_instructions` must be one compact cinematic prompt composed of exactly 3 clauses in this order: (1) camera-work clause, (2) motion-control clause, (3) strict negative ending clause.",
+    "The camera-work clause must specify shot type + camera movement + lighting mood (example tokens: close-up, medium shot, wide shot, dolly-in, slow tilt up, cinematic lighting, 4k).",
+    "The motion-control clause must enforce stability and low-artifact behavior (example tokens: slow motion, subtle movement, stable transitions, smooth pacing).",
+    `The final clause of every video prompt must be exactly: ${VIDEO_NEGATIVE_SUFFIX}`,
     "For every social post and media caption, you MUST provide two equivalent versions in meaning: local Arabic (`_ar`) and professional English (`_en`).",
     "CRITICAL: DO NOT include Arabic typography, text overlays, or lettering inside image prompts or video scene visuals. Visuals must be text-free.",
     "Spoken scripts and external captions can remain in Arabic.",
@@ -156,6 +163,17 @@ export function buildOutputPolicyBlock(mode: CampaignMode): string {
     "Return `diagnosis_plan` object with keys: `quickWin24h`, `focus7d`, `priority`, `rationale`.",
     "Return `narrative_summary` as a short 2-4 line user-facing summary in Arabic.",
     `Campaign mode: ${mode}. Keep style aligned with this mode while preserving factual clarity.`,
+  ].join("\n");
+}
+
+export function buildVideoDirectorPolicyBlock(): string {
+  return [
+    "Treat all video prompts as cinematic direction, not plain event descriptions.",
+    "Camera work is mandatory: specify shot framing, lens perspective, camera move, and lighting mood in each video prompt.",
+    "Motion control is mandatory: prefer slow, subtle, physically coherent movement to reduce artifacts.",
+    "Avoid fast chaotic motion unless the brief explicitly requires it; default to smooth pacing and stable transitions.",
+    "Every generated `ai_tool_instructions` must end with this exact sentence:",
+    VIDEO_NEGATIVE_SUFFIX,
   ].join("\n");
 }
 
@@ -205,6 +223,7 @@ export function composePrompt(input: {
     section("Client Context (auto-injected)", buildClientContextBlock(input.snapshot)),
     section("Conditional Diagnostic Rules", buildDiagnosticRulesBlock(input.snapshot)),
     section("Few-shot Guidance", buildFewShotGuidanceBlock()),
+    section("Video Director Rules", buildVideoDirectorPolicyBlock()),
     section("Output Rules", buildOutputPolicyBlock(input.mode)),
   ]
     .map((x) => cleanText(x))
