@@ -8,7 +8,7 @@ import { getAuthUser } from "../middleware/userAuth.js";
 import { canApplyAdminRoleChange } from "../services/adminRolePolicy.js";
 
 const bodySchema = z.object({
-  plan_code: z.enum(["free", "creator_pro", "agency", "admin_unlimited"]),
+  plan_code: z.enum(["starter", "early_adopter", "admin_unlimited"]),
   status: z.enum(["active", "trialing", "cancelled", "expired"]).default("active"),
   period_start: z.string().optional(),
   period_end: z.string().nullable().optional(),

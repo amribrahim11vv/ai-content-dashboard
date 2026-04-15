@@ -39,7 +39,7 @@ export default function UserLayout({ demoBanner }: { demoBanner?: ReactNode }) {
           </Link>
           <div className="flex items-center gap-2">
             <span className="hidden rounded-lg border border-outline/25 bg-surface-container-high px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant sm:inline-flex">
-              Plan: {entitlements?.plan_code ?? "free"}
+              Plan: {entitlements?.plan_code ?? "starter"}
             </span>
             {session ? (
               <button

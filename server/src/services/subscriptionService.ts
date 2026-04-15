@@ -12,12 +12,13 @@ import { HttpError } from "./serviceErrors.js";
 import type { db as dbType } from "../db/index.js";
 import type { CampaignMode } from "../logic/campaignMode.js";
 
-export type PlanCode = "free" | "creator_pro" | "agency" | "admin_unlimited";
-export type UsageKind = "kits" | "retry" | "regenerate";
+export type PlanCode = "starter" | "early_adopter" | "admin_unlimited";
+export type UsageKind = "retry" | "regenerate";
 
 type PlanSpec = {
   code: PlanCode;
-  monthlyKits: number | null;
+  monthlyVideoPrompts: number | null;
+  monthlyImagePrompts: number | null;
   monthlyRetry: number | null;
   monthlyRegenerate: number | null;
   allowReferenceImage: boolean;
@@ -25,25 +26,19 @@ type PlanSpec = {
 };
 
 export const PLAN_SPECS: Record<PlanCode, PlanSpec> = {
-  free: {
-    code: "free",
-    monthlyKits: 2,
+  starter: {
+    code: "starter",
+    monthlyVideoPrompts: 1,
+    monthlyImagePrompts: 2,
     monthlyRetry: 0,
     monthlyRegenerate: 0,
     allowReferenceImage: false,
     allowedCampaignModes: ["social"],
   },
-  creator_pro: {
-    code: "creator_pro",
-    monthlyKits: 30,
-    monthlyRetry: 30,
-    monthlyRegenerate: 30,
-    allowReferenceImage: true,
-    allowedCampaignModes: ["social", "offer", "deep"],
-  },
-  agency: {
-    code: "agency",
-    monthlyKits: 150,
+  early_adopter: {
+    code: "early_adopter",
+    monthlyVideoPrompts: 5,
+    monthlyImagePrompts: 15,
     monthlyRetry: null,
     monthlyRegenerate: null,
     allowReferenceImage: true,
@@ -51,7 +46,8 @@ export const PLAN_SPECS: Record<PlanCode, PlanSpec> = {
   },
   admin_unlimited: {
     code: "admin_unlimited",
-    monthlyKits: null,
+    monthlyVideoPrompts: null,
+    monthlyImagePrompts: null,
     monthlyRetry: null,
     monthlyRegenerate: null,
     allowReferenceImage: true,
@@ -65,7 +61,8 @@ export type AccessContext = {
   planCode: PlanCode;
   usage: {
     periodKey: string;
-    kitsUsed: number;
+    videoPromptsUsed: number;
+    imagePromptsUsed: number;
     retryUsed: number;
     regenerateUsed: number;
   };
@@ -74,9 +71,8 @@ export type AccessContext = {
 export function normalizePlanCode(value: string): PlanCode {
   const v = value.trim().toLowerCase();
   if (v === "admin_unlimited" || v === "admin") return "admin_unlimited";
-  if (v === "agency") return "agency";
-  if (v === "creator_pro" || v === "pro" || v === "creator") return "creator_pro";
-  return "free";
+  if (v === "early_adopter" || v === "early-adopter" || v === "paid_beta" || v === "pro" || v === "creator" || v === "creator_pro" || v === "agency") return "early_adopter";
+  return "starter";
 }
 
 export function normalizeEmail(value: string): string {
@@ -172,7 +168,7 @@ export async function linkDeviceToUserAndClaimKits(
 }
 
 async function resolvePlanCode(db: typeof dbType, userId: string | null): Promise<PlanCode> {
-  if (!userId) return "free";
+  if (!userId) return "starter";
   const now = new Date();
   const row = (
     await db
@@ -188,7 +184,7 @@ async function resolvePlanCode(db: typeof dbType, userId: string | null): Promis
       .orderBy(desc(planSubscriptions.updatedAt))
       .limit(1)
   )[0];
-  if (!row) return "free";
+  if (!row) return "starter";
   return normalizePlanCode(row.planCode);
 }
 
@@ -209,7 +205,8 @@ async function getOrCreateUsage(
       userId: owner.userId,
       deviceId: owner.userId ? null : owner.deviceId,
       periodKey,
-      kitsUsed: 0,
+      videoPromptsUsed: 0,
+      imagePromptsUsed: 0,
       retryUsed: 0,
       regenerateUsed: 0,
       createdAt: now,
@@ -234,7 +231,8 @@ export async function resolveAccessContext(
     planCode,
     usage: {
       periodKey,
-      kitsUsed: usage.kitsUsed,
+      videoPromptsUsed: usage.videoPromptsUsed,
+      imagePromptsUsed: usage.imagePromptsUsed,
       retryUsed: usage.retryUsed,
       regenerateUsed: usage.regenerateUsed,
     },
@@ -247,7 +245,7 @@ function deny(message: string, code: string): never {
 
 export function enforceGenerateEntitlements(
   access: AccessContext,
-  input: { campaignMode: CampaignMode; hasReferenceImage: boolean }
+  input: { campaignMode: CampaignMode; hasReferenceImage: boolean; requestedVideoPrompts: number; requestedImagePrompts: number }
 ) {
   const spec = getPlanSpec(access.planCode);
   if (!spec.allowedCampaignModes.includes(input.campaignMode)) {
@@ -256,8 +254,17 @@ export function enforceGenerateEntitlements(
   if (input.hasReferenceImage && !spec.allowReferenceImage) {
     deny("Reference image upload is not available on this plan.", "PLAN_REFERENCE_IMAGE_LOCKED");
   }
-  if (spec.monthlyKits !== null && access.usage.kitsUsed >= spec.monthlyKits) {
-    deny("Monthly kit limit reached for your plan.", "PLAN_MONTHLY_KITS_EXCEEDED");
+  if (
+    spec.monthlyVideoPrompts !== null &&
+    access.usage.videoPromptsUsed + Math.max(0, input.requestedVideoPrompts) > spec.monthlyVideoPrompts
+  ) {
+    deny("Monthly video prompts limit reached for your plan.", "PLAN_MONTHLY_VIDEO_PROMPTS_EXCEEDED");
+  }
+  if (
+    spec.monthlyImagePrompts !== null &&
+    access.usage.imagePromptsUsed + Math.max(0, input.requestedImagePrompts) > spec.monthlyImagePrompts
+  ) {
+    deny("Monthly image prompts limit reached for your plan.", "PLAN_MONTHLY_IMAGE_PROMPTS_EXCEEDED");
   }
 }
 
@@ -283,19 +290,39 @@ export async function consumeUsage(
   const periodKey = periodKeyOf(new Date());
   const row = await getOrCreateUsage(db, owner, periodKey);
   const next = {
-    kitsUsed: row.kitsUsed,
+    videoPromptsUsed: row.videoPromptsUsed,
+    imagePromptsUsed: row.imagePromptsUsed,
     retryUsed: row.retryUsed,
     regenerateUsed: row.regenerateUsed,
   };
-  if (kind === "kits") next.kitsUsed += 1;
   if (kind === "retry") next.retryUsed += 1;
   if (kind === "regenerate") next.regenerateUsed += 1;
   await db
     .update(monthlyUsageCounters)
     .set({
-      kitsUsed: next.kitsUsed,
+      videoPromptsUsed: next.videoPromptsUsed,
+      imagePromptsUsed: next.imagePromptsUsed,
       retryUsed: next.retryUsed,
       regenerateUsed: next.regenerateUsed,
+      updatedAt: new Date(),
+    })
+    .where(eq(monthlyUsageCounters.id, row.id));
+}
+
+export async function consumeGeneratedAssets(
+  db: typeof dbType,
+  owner: { userId: string | null; deviceId: string },
+  usage: { videoPromptsUsed: number; imagePromptsUsed: number }
+): Promise<void> {
+  const periodKey = periodKeyOf(new Date());
+  const row = await getOrCreateUsage(db, owner, periodKey);
+  const nextVideo = row.videoPromptsUsed + Math.max(0, usage.videoPromptsUsed);
+  const nextImage = row.imagePromptsUsed + Math.max(0, usage.imagePromptsUsed);
+  await db
+    .update(monthlyUsageCounters)
+    .set({
+      videoPromptsUsed: nextVideo,
+      imagePromptsUsed: nextImage,
       updatedAt: new Date(),
     })
     .where(eq(monthlyUsageCounters.id, row.id));

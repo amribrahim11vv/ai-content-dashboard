@@ -61,7 +61,8 @@ export function createAuthRouter(mw: (c: import("hono").Context, next: Next) => 
       plan_code: access.planCode,
       usage: {
         period_key: access.usage.periodKey,
-        kits_used: access.usage.kitsUsed,
+        video_prompts_used: access.usage.videoPromptsUsed,
+        image_prompts_used: access.usage.imagePromptsUsed,
         retry_used: access.usage.retryUsed,
         regenerate_used: access.usage.regenerateUsed,
       },
@@ -102,7 +103,8 @@ export function createAuthRouter(mw: (c: import("hono").Context, next: Next) => 
       plan_code: access.planCode,
       usage: {
         period_key: access.usage.periodKey,
-        kits_used: access.usage.kitsUsed,
+        video_prompts_used: access.usage.videoPromptsUsed,
+        image_prompts_used: access.usage.imagePromptsUsed,
         retry_used: access.usage.retryUsed,
         regenerate_used: access.usage.regenerateUsed,
       },

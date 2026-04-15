@@ -2,15 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import LoginModal from "../components/LoginModal";
 import { useAuth } from "../auth/AuthContext";
 
-type PlanId = "free" | "creator_pro" | "agency";
+type PlanId = "starter" | "early_adopter";
 
 const WHATSAPP_BASE = "https://wa.me/";
 const DEFAULT_PHONE = "";
 
 function planToLabel(plan: PlanId) {
-  if (plan === "creator_pro") return "Creator Pro";
-  if (plan === "agency") return "Agency";
-  return "Free Trial";
+  if (plan === "early_adopter") return "Early Adopter";
+  return "Starter";
 }
 
 function buildUpgradeUrl(plan: PlanId): string {
@@ -41,7 +40,7 @@ export default function PricingPage() {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
 
-  const currentPlan = entitlements?.plan_code ?? "free";
+  const currentPlan = entitlements?.plan_code ?? "starter";
 
   useEffect(() => {
     if (!session || !pendingPlan) return;
@@ -54,42 +53,32 @@ export default function PricingPage() {
   const planCards = useMemo(
     () => [
       {
-        id: "free" as const,
-        title: "Free Trial",
+        id: "starter" as const,
+        title: "Starter",
         price: "$0",
-        subtitle: "Start and feel the product",
+        subtitle: "For trial and quick evaluation",
         highlight: false,
         features: [
-          "2 kits / month",
-          "Social campaign only",
+          "1 video prompt / month",
+          "2 image prompts / month",
+          "Social mode only",
           "No reference image upload",
-          "Device-based history",
+          "Perfect for testing output quality",
         ],
       },
       {
-        id: "creator_pro" as const,
-        title: "Creator Pro",
-        price: "$15",
-        subtitle: "Best for creators and founders",
+        id: "early_adopter" as const,
+        title: "Early Adopter",
+        price: "$3",
+        subtitle: "Limited launch pricing for first users",
         highlight: true,
         features: [
-          "30 kits / month",
-          "Social + Offer + Deep modes",
+          "5 video prompts / month",
+          "15 image prompts / month",
+          "All campaign modes unlocked",
           "Reference image enabled",
-          "Full account history",
-        ],
-      },
-      {
-        id: "agency" as const,
-        title: "Agency",
-        price: "$39",
-        subtitle: "For managers and teams",
-        highlight: false,
-        features: [
-          "150 kits / month",
-          "All Creator Pro features",
-          "Retry/Regenerate practically unlimited",
-          "Built for heavy production workflows",
+          "Manual instant activation via WhatsApp",
+          "Early adopter discount (limited time)",
         ],
       },
     ],
@@ -97,7 +86,7 @@ export default function PricingPage() {
   );
 
   const onUpgradeClick = (plan: PlanId) => {
-    if (plan === "free") return;
+    if (plan === "starter") return;
     const url = buildUpgradeUrl(plan);
     if (!url) return;
     setPendingPlan(plan);
@@ -132,18 +121,16 @@ export default function PricingPage() {
         </p>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2">
         {planCards.map((plan) => {
           const isCurrent = currentPlan === plan.id;
           const ctaLabel =
-            plan.id === "free"
+            plan.id === "starter"
               ? "Start Free"
               : isCurrent
                 ? "Current Plan"
-                : plan.id === "creator_pro"
-                  ? "Upgrade to Creator Pro"
-                  : "Upgrade to Agency";
-          const isDisabled = plan.id === "free" || isCurrent || !buildUpgradeUrl(plan.id);
+                : "Upgrade to Early Adopter";
+          const isDisabled = plan.id === "starter" || isCurrent || !buildUpgradeUrl(plan.id);
           return (
             <article
               key={plan.id}
@@ -163,7 +150,7 @@ export default function PricingPage() {
               <p className="mt-1 text-on-surface-variant">{plan.subtitle}</p>
               <p className="mt-4 text-3xl font-black text-on-surface">
                 {plan.price}
-                <span className="text-sm font-semibold text-on-surface-variant">/month</span>
+                <span className="text-sm font-semibold text-on-surface-variant"> launch</span>
               </p>
               <ul className="mt-4 space-y-2">
                 {plan.features.map((f) => (
@@ -178,7 +165,7 @@ export default function PricingPage() {
               >
                 {ctaLabel}
               </button>
-              {!buildUpgradeUrl(plan.id) && plan.id !== "free" ? (
+              {!buildUpgradeUrl(plan.id) && plan.id !== "starter" ? (
                 <p className="mt-2 text-xs text-error">
                   Upgrade link is not configured. Set `VITE_UPGRADE_WHATSAPP_URL` or `VITE_UPGRADE_WHATSAPP_PHONE`.
                 </p>
@@ -189,7 +176,7 @@ export default function PricingPage() {
       </div>
 
       <div className="rounded-xl border border-outline/20 bg-surface-container-low p-4 text-sm text-on-surface-variant">
-        Activation is currently handled quickly by support on WhatsApp until direct checkout is enabled.
+        Payment is currently handled directly via WhatsApp (Vodafone Cash / InstaPay), then your plan is activated immediately from admin panel.
       </div>
 
       <LoginModal

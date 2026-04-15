@@ -68,6 +68,8 @@ export const monthlyUsageCounters = socialGeni.table("monthly_usage_counters", {
   userId: text("user_id"),
   deviceId: text("device_id"),
   periodKey: text("period_key").notNull(),
+  videoPromptsUsed: integer("video_prompts_used").notNull().default(0),
+  imagePromptsUsed: integer("image_prompts_used").notNull().default(0),
   kitsUsed: integer("kits_used").notNull().default(0),
   regenerateUsed: integer("regenerate_used").notNull().default(0),
   retryUsed: integer("retry_used").notNull().default(0),
