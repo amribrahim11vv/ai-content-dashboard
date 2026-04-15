@@ -29,6 +29,11 @@ type UiMessage = {
   text: string;
 };
 
+function isUnauthorizedErrorMessage(message: string): boolean {
+  const m = message.toLowerCase();
+  return m.includes("unauthorized") || m.includes("auth token");
+}
+
 function fmtDate(value: string | null) {
   if (!value) return "—";
   const d = new Date(value);
@@ -61,6 +66,7 @@ export default function AdminPlansPage() {
   const [roleSaving, setRoleSaving] = useState(false);
 
   const [snapshotLoading, setSnapshotLoading] = useState(false);
+  const [planLoadError, setPlanLoadError] = useState<string | null>(null);
   const [savingPlan, setSavingPlan] = useState(false);
   const [snapshot, setSnapshot] = useState<{
     user: { id: string; supabase_user_id: string; email: string; display_name: string; is_admin: boolean };
@@ -119,8 +125,29 @@ export default function AdminPlansPage() {
   const loadPlans = async (targetUserId: string) => {
     if (!targetUserId.trim()) return;
     setSnapshotLoading(true);
+    setPlanLoadError(null);
     try {
-      const data = await getAdminUserPlans(targetUserId);
+      let data: Awaited<ReturnType<typeof getAdminUserPlans>> | null = null;
+      let lastError: Error | null = null;
+
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          data = await getAdminUserPlans(targetUserId);
+          break;
+        } catch (e) {
+          const err = e instanceof Error ? e : new Error("Failed to load plans.");
+          lastError = err;
+          if (attempt === 0 && isUnauthorizedErrorMessage(err.message)) {
+            await new Promise((resolve) => window.setTimeout(resolve, 350));
+            continue;
+          }
+          throw err;
+        }
+      }
+
+      if (!data) {
+        throw lastError ?? new Error("Failed to load plans.");
+      }
       setMessage(null);
       setSnapshot(data);
       if (data.subscriptions[0]) {
@@ -136,8 +163,12 @@ export default function AdminPlansPage() {
         setPeriodEnd("");
       }
     } catch (e) {
-      setSnapshot(null);
-      setMessage({ tone: "error", text: e instanceof Error ? e.message : "Failed to load plans." });
+      const text = e instanceof Error ? e.message : "Failed to load plans.";
+      setPlanLoadError(text);
+      if (!isUnauthorizedErrorMessage(text) || users.length === 0) {
+        setSnapshot(null);
+        setMessage({ tone: "error", text });
+      }
     } finally {
       setSnapshotLoading(false);
     }
@@ -407,6 +438,7 @@ export default function AdminPlansPage() {
           <div className="rounded-2xl border border-outline/30 bg-surface-container-low p-4 sm:p-5">
             <h3 className="text-lg font-bold text-on-surface">Update plan</h3>
             {snapshotLoading ? <p className="mt-2 text-sm text-on-surface-variant">Loading current plan...</p> : null}
+            {planLoadError ? <p className="mt-2 text-sm text-error">{planLoadError}</p> : null}
 
             <div className="mt-3 grid gap-3 md:grid-cols-2">
               <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
