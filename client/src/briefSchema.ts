@@ -7,10 +7,10 @@ import type { BriefForm } from "./types";
  * - G_LIMITS numeric ranges
  */
 export const BRIEF_LIMITS = {
-  num_posts: { min: 1, max: 25, fallback: 5 },
-  num_image_designs: { min: 1, max: 10, fallback: 5 },
-  num_video_prompts: { min: 1, max: 10, fallback: 3 },
-  content_package_idea_count: { min: 1, max: 25, fallback: 10 },
+  num_posts: { min: 0, max: 25, fallback: 0 },
+  num_image_designs: { min: 0, max: 10, fallback: 0 },
+  num_video_prompts: { min: 0, max: 10, fallback: 0 },
+  content_package_idea_count: { min: 0, max: 25, fallback: 0 },
 } as const;
 
 const L = BRIEF_LIMITS;

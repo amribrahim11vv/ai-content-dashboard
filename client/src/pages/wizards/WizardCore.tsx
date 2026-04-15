@@ -116,6 +116,64 @@ const btnPrimary =
 const btnSecondary =
   "rounded-xl border border-outline/30 bg-surface-container-high px-5 py-3 font-semibold text-on-surface transition hover:bg-surface-container-highest focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50 dark:border-brand-muted/40 dark:bg-earth-darkCard dark:text-brand-darkText";
 
+type NumericBoundInputProps = {
+  id: string;
+  className: string;
+  value: number;
+  min: number;
+  max: number;
+  fallback: number;
+  startEmptyWhenFallback: boolean;
+  onCommit: (value: number) => void;
+  onBlur?: () => void;
+};
+
+function NumericBoundInput(props: NumericBoundInputProps) {
+  const { id, className, value, min, max, fallback, startEmptyWhenFallback, onCommit, onBlur } = props;
+  const [text, setText] = useState(() => (startEmptyWhenFallback && value === fallback ? "" : String(value)));
+  const [isFocused, setIsFocused] = useState(false);
+
+  useEffect(() => {
+    if (isFocused) return;
+    setText(startEmptyWhenFallback && value === fallback ? "" : String(value));
+  }, [fallback, isFocused, startEmptyWhenFallback, value]);
+
+  const commit = () => {
+    const raw = text.trim();
+    const next = raw === "" ? fallback : clamp(Number(raw), min, max);
+    onCommit(next);
+    setText(startEmptyWhenFallback && next === fallback ? "" : String(next));
+    onBlur?.();
+  };
+
+  return (
+    <input
+      id={id}
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      className={className}
+      value={text}
+      onFocus={() => setIsFocused(true)}
+      onChange={(e) => {
+        const digits = e.target.value.replace(/[^\d]/g, "");
+        setText(digits);
+      }}
+      onBlur={() => {
+        setIsFocused(false);
+        commit();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          commit();
+        }
+      }}
+      aria-describedby={`${id}_hint`}
+    />
+  );
+}
+
 export default function WizardCore(props: WizardCoreProps) {
   const { entitlements } = useAuth();
   const currentPlan = entitlements?.plan_code ?? "starter";
@@ -812,10 +870,21 @@ export default function WizardCore(props: WizardCoreProps) {
                             name="num_posts"
                             control={control}
                             render={({ field }) => (
-                              <input id="num_posts" type="number" className={inputCls} value={field.value} onChange={(e) => field.onChange(clamp(Number(e.target.value) || 0, LIMITS.num_posts.min, LIMITS.num_posts.max))} />
+                              <NumericBoundInput
+                                id="num_posts"
+                                className={inputCls}
+                                value={field.value}
+                                min={LIMITS.num_posts.min}
+                                max={LIMITS.num_posts.max}
+                                fallback={LIMITS.num_posts.fallback}
+                                startEmptyWhenFallback={!showDraftBanner}
+                                onCommit={field.onChange}
+                                onBlur={field.onBlur}
+                              />
                             )}
                           />
                         </div>
+                        <p id="num_posts_hint" className="mt-1 text-xs text-on-surface-variant">Type directly (0–{LIMITS.num_posts.max}).</p>
                         {errors.num_posts && <p className={errCls}>{errors.num_posts.message}</p>}
                       </div>
                     )}
@@ -827,10 +896,21 @@ export default function WizardCore(props: WizardCoreProps) {
                             name="num_image_designs"
                             control={control}
                             render={({ field }) => (
-                              <input id="num_image_designs" type="number" className={inputCls} value={field.value} onChange={(e) => field.onChange(clamp(Number(e.target.value) || 0, LIMITS.num_image_designs.min, LIMITS.num_image_designs.max))} />
+                              <NumericBoundInput
+                                id="num_image_designs"
+                                className={inputCls}
+                                value={field.value}
+                                min={LIMITS.num_image_designs.min}
+                                max={LIMITS.num_image_designs.max}
+                                fallback={LIMITS.num_image_designs.fallback}
+                                startEmptyWhenFallback={!showDraftBanner}
+                                onCommit={field.onChange}
+                                onBlur={field.onBlur}
+                              />
                             )}
                           />
                         </div>
+                        <p id="num_image_designs_hint" className="mt-1 text-xs text-on-surface-variant">Set 0 if you only want videos.</p>
                         {errors.num_image_designs && <p className={errCls}>{errors.num_image_designs.message}</p>}
                       </div>
                     )}
@@ -844,10 +924,21 @@ export default function WizardCore(props: WizardCoreProps) {
                         name="num_video_prompts"
                         control={control}
                         render={({ field }) => (
-                          <input id="num_video_prompts" type="number" className={inputCls} value={field.value} onChange={(e) => field.onChange(clamp(Number(e.target.value) || 0, LIMITS.num_video_prompts.min, LIMITS.num_video_prompts.max))} />
+                          <NumericBoundInput
+                            id="num_video_prompts"
+                            className={inputCls}
+                            value={field.value}
+                            min={LIMITS.num_video_prompts.min}
+                            max={LIMITS.num_video_prompts.max}
+                            fallback={LIMITS.num_video_prompts.fallback}
+                            startEmptyWhenFallback={!showDraftBanner}
+                            onCommit={field.onChange}
+                            onBlur={field.onBlur}
+                          />
                         )}
                       />
                     </div>
+                    <p id="num_video_prompts_hint" className="mt-1 text-xs text-on-surface-variant">Set 0 if you only want images.</p>
                     {errors.num_video_prompts && <p className={errCls}>{errors.num_video_prompts.message}</p>}
                   </div>
                 )}
@@ -861,20 +952,16 @@ export default function WizardCore(props: WizardCoreProps) {
                         name="content_package_idea_count"
                         control={control}
                         render={({ field }) => (
-                          <input
+                          <NumericBoundInput
                             id="content_package_idea_count"
-                            type="number"
                             className={inputCls}
                             value={field.value}
-                            onChange={(e) =>
-                              field.onChange(
-                                clamp(
-                                  Number(e.target.value) || 0,
-                                  LIMITS.content_package_idea_count.min,
-                                  LIMITS.content_package_idea_count.max
-                                )
-                              )
-                            }
+                            min={LIMITS.content_package_idea_count.min}
+                            max={LIMITS.content_package_idea_count.max}
+                            fallback={LIMITS.content_package_idea_count.fallback}
+                            startEmptyWhenFallback={!showDraftBanner}
+                            onCommit={field.onChange}
+                            onBlur={field.onBlur}
                           />
                         )}
                       />
