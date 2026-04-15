@@ -16,13 +16,13 @@ const demoMode = import.meta.env.VITE_DEMO_MODE === "true";
 
 export default function App() {
   const { entitlements } = useAuth();
-  const plan = entitlements?.plan_code ?? "free";
-  const modeLocked = plan === "free";
+  const plan = entitlements?.plan_code ?? "starter";
+  const modeLocked = plan === "starter";
   const LockedMode = ({ mode }: { mode: "offer" | "deep" }) => (
     <div className="rounded-2xl border border-outline/25 bg-surface-container-low p-6 text-on-surface">
       <h2 className="font-headline text-xl font-bold">🔒 {mode === "offer" ? "Offer" : "Deep"} mode is locked</h2>
       <p className="mt-2 text-on-surface-variant">
-        This mode is available in Creator Pro and Agency plans. Upgrade your account to unlock it.
+        This mode is available in Early Adopter plan. Upgrade your account to unlock it.
       </p>
       <p className="mt-3 text-xs text-on-surface-variant">Current plan: {plan}</p>
       <Link

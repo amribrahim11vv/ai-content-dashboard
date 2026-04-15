@@ -13,6 +13,7 @@ import {
   buildFewShotGuidanceBlock,
   buildMetaPromptBlock,
   buildOutputPolicyBlock,
+  buildVideoDirectorPolicyBlock,
   composePrompt,
 } from "./promptComposer.js";
 import { getGeminiResponseSchema } from "./responseSchema.js";
@@ -121,6 +122,8 @@ describe("promptComposer", () => {
     expect(composed).toContain("Use `post_ar` and `post_en`");
     expect(composed).toContain("equivalent versions in meaning");
     expect(composed).toContain("DO NOT include Arabic typography");
+    expect(composed).toContain("Video Director Rules");
+    expect(composed).toContain("Treat all video prompts as cinematic direction");
   });
 
   it("output policy contains media caption constraints", () => {
@@ -131,6 +134,17 @@ describe("promptComposer", () => {
     expect(block).toContain("narrative_summary");
     expect(block).toContain("marketing_strategy");
     expect(block).toContain("Arabic for strategy");
+    expect(block).toContain("camera-work clause");
+    expect(block).toContain("motion-control clause");
+    expect(block).toContain("Ensure no text, no floating letters, no watermarks. Maintain strict physical consistency.");
+  });
+
+  it("video director policy enforces cinematic camera and motion control", () => {
+    const block = buildVideoDirectorPolicyBlock();
+    expect(block).toContain("Camera work is mandatory");
+    expect(block).toContain("Motion control is mandatory");
+    expect(block).toContain("slow, subtle, physically coherent movement");
+    expect(block).toContain("Ensure no text, no floating letters, no watermarks. Maintain strict physical consistency.");
   });
 
   it("client context block includes requested counts", () => {

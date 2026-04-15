@@ -10,9 +10,8 @@ import {
 } from "../api";
 
 const planOptions = [
-  { value: "free", label: "Free" },
-  { value: "creator_pro", label: "Creator Pro" },
-  { value: "agency", label: "Agency" },
+  { value: "starter", label: "Starter" },
+  { value: "early_adopter", label: "Early Adopter" },
   { value: "admin_unlimited", label: "Admin Unlimited" },
 ] as const;
 
@@ -44,7 +43,7 @@ export default function AdminPlansPage() {
     subscriptions: AdminPlanSubscription[];
   } | null>(null);
 
-  const [planCode, setPlanCode] = useState<"free" | "creator_pro" | "agency" | "admin_unlimited">("free");
+  const [planCode, setPlanCode] = useState<"starter" | "early_adopter" | "admin_unlimited">("starter");
   const [planStatus, setPlanStatus] = useState<"active" | "trialing" | "cancelled" | "expired">("active");
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
@@ -150,7 +149,7 @@ export default function AdminPlansPage() {
     }
   };
 
-  const applyQuickPlan = async (nextPlan: "creator_pro" | "agency") => {
+  const applyQuickPlan = async (nextPlan: "early_adopter") => {
     setPlanCode(nextPlan);
     setPlanStatus("active");
     setPeriodStart("");
@@ -162,10 +161,7 @@ export default function AdminPlansPage() {
     setSaving(true);
     setMessage(null);
     try {
-      await updateAdminUserPlan(userId.trim(), {
-        plan_code: nextPlan,
-        status: "active",
-      });
+      await updateAdminUserPlan(userId.trim(), { plan_code: nextPlan, status: "active" });
       setMessage(`Quick upgrade applied: ${nextPlan}.`);
       await loadPlans();
     } catch (e) {
@@ -403,19 +399,11 @@ export default function AdminPlansPage() {
             <div className="mt-4 flex flex-wrap gap-3 border-t border-outline/20 pt-4">
               <button
                 type="button"
-                onClick={() => void applyQuickPlan("creator_pro")}
+                onClick={() => void applyQuickPlan("early_adopter")}
                 disabled={saving}
                 className="rounded-xl border border-outline/30 bg-surface-container-high px-4 py-2 text-sm font-bold text-on-surface disabled:opacity-60 dark:bg-surface-container-high"
               >
-                Quick Upgrade → Creator Pro
-              </button>
-              <button
-                type="button"
-                onClick={() => void applyQuickPlan("agency")}
-                disabled={saving}
-                className="rounded-xl border border-outline/30 bg-surface-container-high px-4 py-2 text-sm font-bold text-on-surface disabled:opacity-60 dark:bg-surface-container-high"
-              >
-                Quick Upgrade → Agency
+                Quick Upgrade → Early Adopter
               </button>
             </div>
           </div>

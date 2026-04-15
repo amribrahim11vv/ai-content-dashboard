@@ -118,8 +118,8 @@ const btnSecondary =
 
 export default function WizardCore(props: WizardCoreProps) {
   const { entitlements } = useAuth();
-  const currentPlan = entitlements?.plan_code ?? "free";
-  const referenceImageLocked = currentPlan === "free";
+  const currentPlan = entitlements?.plan_code ?? "starter";
+  const referenceImageLocked = currentPlan === "starter";
   const nav = useNavigate();
   const maxStep = props.stepOrder.length - 1;
   const wizardType = useMemo(() => getWizardTypeFromDraftKey(props.draftKey), [props.draftKey]);
@@ -760,7 +760,7 @@ export default function WizardCore(props: WizardCoreProps) {
                     />
                     {referenceImageLocked && (
                       <div className="mt-1 flex items-center gap-2 text-xs text-on-surface-variant">
-                        <span>🔒 Reference image is available on Creator Pro and Agency plans.</span>
+                        <span>🔒 Reference image is available on Early Adopter plan.</span>
                         <button
                           type="button"
                           className="font-bold text-primary underline-offset-2 hover:underline"
@@ -933,8 +933,9 @@ export default function WizardCore(props: WizardCoreProps) {
                   <div className="rounded-xl border border-outline/20 bg-surface-container-low/60 p-4 text-xs text-on-surface-variant dark:border-outline/25 dark:bg-earth-darkCard/40">
                     <p className="font-semibold text-on-surface">Current plan usage</p>
                     <p className="mt-1">
-                      Plan: <strong>{entitlements.plan_code}</strong> · Kits used this month:{" "}
-                      <strong>{entitlements.usage.kits_used}</strong>
+                      Plan: <strong>{entitlements.plan_code}</strong> · Video prompts used:{" "}
+                      <strong>{entitlements.usage.video_prompts_used}</strong> · Image prompts used:{" "}
+                      <strong>{entitlements.usage.image_prompts_used}</strong>
                     </p>
                   </div>
                 )}

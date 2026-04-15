@@ -2,7 +2,7 @@ import { apiUrl, ApiError, buildHeaders, parseErrorMessage } from "./httpClient"
 
 export type AdminPlanSubscription = {
   id: string;
-  plan_code: "free" | "creator_pro" | "agency" | "admin_unlimited";
+  plan_code: "starter" | "early_adopter" | "admin_unlimited";
   status: "active" | "trialing" | "cancelled" | "expired";
   period_start: string;
   period_end: string | null;
@@ -21,7 +21,7 @@ export type AdminPlanSnapshot = {
 };
 
 type UpdatePayload = {
-  plan_code: "free" | "creator_pro" | "agency" | "admin_unlimited";
+  plan_code: "starter" | "early_adopter" | "admin_unlimited";
   status: "active" | "trialing" | "cancelled" | "expired";
   period_start?: string;
   period_end?: string | null;

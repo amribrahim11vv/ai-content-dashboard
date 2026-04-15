@@ -94,12 +94,20 @@ CREATE TABLE IF NOT EXISTS social_geni.monthly_usage_counters (
   user_id TEXT,
   device_id TEXT,
   period_key TEXT NOT NULL,
+  video_prompts_used INTEGER NOT NULL DEFAULT 0,
+  image_prompts_used INTEGER NOT NULL DEFAULT 0,
   kits_used INTEGER NOT NULL DEFAULT 0,
   regenerate_used INTEGER NOT NULL DEFAULT 0,
   retry_used INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL
 );
+
+ALTER TABLE social_geni.monthly_usage_counters
+ADD COLUMN IF NOT EXISTS video_prompts_used INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE social_geni.monthly_usage_counters
+ADD COLUMN IF NOT EXISTS image_prompts_used INTEGER NOT NULL DEFAULT 0;
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_usage_user_period
   ON social_geni.monthly_usage_counters (user_id, period_key)
