@@ -50,26 +50,24 @@ export default function HelpPage() {
   }, [data.last_updated]);
 
   return (
-    <>
+    <div className="max-w-5xl mx-auto w-full">
       {err && (
-        <p className="mx-auto mb-6 max-w-3xl rounded-xl border border-error/30 bg-error/10 px-4 py-3 text-sm text-error" role="alert">
-          {err}
-        </p>
+        <div className="mb-6 flex items-center gap-2 rounded-lg border border-red-200/50 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 px-4 py-3 text-sm font-medium text-red-700 dark:text-red-400 shadow-sm animate-in fade-in slide-in-from-top-2" role="alert">
+           <span className="material-symbols-outlined text-[18px]">error</span>
+           {err}
+        </div>
       )}
 
-      <section className="mx-auto mb-12 max-w-5xl text-center md:mb-16">
-        <h1 className="headline mb-5 text-3xl font-black tracking-tight text-on-surface sm:text-4xl md:mb-6 md:text-6xl">
-          How can we{" "}
-          <span className="text-primary">illuminate</span> your
-          journey?
+      <section className="mb-12 text-center md:mb-16">
+        <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl md:mb-4 lg:text-6xl">
+          How can we help?
         </h1>
-        <p className="mx-auto mb-8 max-w-2xl text-base text-on-surface-variant dark:text-secondary/80 md:mb-10 md:text-lg">
-          Access the Social Geni knowledge base, technical documentation, and direct support lines to keep your vision
-          in focus.
+        <p className="mx-auto mb-8 max-w-2xl text-base text-gray-600 dark:text-gray-400 md:mb-10 lg:text-lg">
+          Access the Social Geni knowledge base, technical documentation, and direct support lines.
         </p>
         <div className="group relative mx-auto max-w-2xl">
           <div className="pointer-events-none absolute inset-y-0 start-5 flex items-center">
-            <span className="material-symbols-outlined text-on-surface-variant transition-colors group-focus-within:text-tertiary">
+            <span className="material-symbols-outlined text-gray-400 dark:text-gray-500 transition-colors group-focus-within:text-gray-900 dark:group-focus-within:text-white">
               search
             </span>
           </div>
@@ -77,110 +75,93 @@ export default function HelpPage() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="glow-focus w-full rounded-uniform border-none bg-surface-container-lowest py-4 ps-14 pe-6 text-sm text-on-surface placeholder:text-outline transition-all focus:ring-2 focus:ring-primary/35 md:py-5 md:text-base dark:bg-surface-container-high dark:text-secondary dark:placeholder:text-secondary/45"
-            placeholder="Search guides and FAQ (API)…"
+            className="w-full rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111] py-4 ps-14 pe-6 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 shadow-sm transition-all focus:outline-none focus:border-gray-900 dark:focus:border-white/30 md:py-5 md:text-base"
+            placeholder="Search guides and FAQ..."
             aria-label="Filter help topics"
           />
         </div>
       </section>
 
-      <section className="mx-auto mb-16 grid max-w-5xl grid-cols-1 gap-4 sm:gap-6 md:mb-20 md:grid-cols-3">
+      <section className="mb-16 grid grid-cols-1 gap-6 md:mb-20 md:grid-cols-3">
         {filteredResources.map((r) => (
           <div
             key={r.id}
-            className="glass-panel group rounded-[1.5rem] border-none p-6 sm:p-8 transition-all hover:bg-surface-container-high dark:bg-surface-container-high/85 dark:hover:bg-surface-container-high"
+            className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111] p-6 sm:p-8 shadow-sm transition-transform hover:-translate-y-1 group"
           >
-            <div
-              className={
-                "mb-6 flex h-12 w-12 items-center justify-center rounded-xl " +
-                (r.accent === "tertiary" ? "bg-tertiary-container/20 text-tertiary" : "bg-primary-container/20 text-primary")
-              }
-            >
-              <span className="material-symbols-outlined text-3xl">{r.icon}</span>
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200/50 dark:border-white/5 text-gray-900 dark:text-white">
+              <span className="material-symbols-outlined text-[24px]">{r.icon}</span>
             </div>
-            <h3 className="headline mb-3 text-xl font-bold">{r.title}</h3>
-            <p className="mb-6 text-sm leading-relaxed text-on-surface-variant">{r.desc}</p>
-            <span
-              className={
-                "inline-flex items-center gap-2 text-sm font-bold transition-all group-hover:gap-3 " +
-                (r.accent === "tertiary" ? "text-tertiary" : "text-primary")
-              }
-            >
-              {r.accent === "tertiary" ? "View Schema" : "Browse Guides"}{" "}
-              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-white">{r.title}</h3>
+            <p className="mb-6 text-sm leading-relaxed text-gray-500 dark:text-gray-400">{r.desc}</p>
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white transition-all group-hover:gap-2">
+              Explore Guide
+              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
             </span>
           </div>
         ))}
 
-        <div className="glass-panel flex flex-col items-center justify-center rounded-[1.5rem] border-none bg-surface-container p-6 sm:p-8 text-center">
-          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-secondary-container/20 text-secondary">
-            <span className="material-symbols-outlined text-4xl">support_agent</span>
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#0c0c0e] p-6 sm:p-8 text-center shadow-sm">
+          <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-gray-200 dark:bg-white/10 text-gray-900 dark:text-white">
+            <span className="material-symbols-outlined text-[28px]">support_agent</span>
           </div>
-          <h3 className="headline mb-3 text-xl font-bold">Need Direct Help?</h3>
-          <p className="mb-6 text-sm text-on-surface-variant dark:text-secondary/75">Our senior architects are available for high-tier support requests.</p>
+          <h3 className="mb-2 text-lg font-bold text-gray-900 dark:text-white">Need Direct Help?</h3>
+          <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">Our senior architects are available for high-tier support requests.</p>
           <button
             type="button"
-            className="w-full rounded-xl bg-primary py-4 font-black tracking-tight text-on-primary transition-all hover:scale-[1.02] active:scale-95"
+            className="w-full rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-100 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white focus:ring-offset-2 dark:focus:ring-offset-[#111]"
           >
-            CONTACT SUPPORT
+            Contact Support
           </button>
         </div>
       </section>
 
       {noHits && (
-        <p className="mx-auto mb-8 max-w-3xl text-center text-sm text-on-surface-variant" role="status">
-          No topics match “{query.trim()}”. Try “api”, “export”, or “LLM”.
-        </p>
+        <div className="mb-12 flex flex-col items-center justify-center py-8 text-center border border-gray-200 dark:border-white/10 rounded-2xl bg-white dark:bg-[#111] shadow-sm">
+           <span className="material-symbols-outlined text-[48px] text-gray-300 dark:text-white/10 mb-4">search_off</span>
+           <p className="text-sm font-medium text-gray-900 dark:text-white">No hits found</p>
+           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">No topics match “{query.trim()}”. Try simpler keywords.</p>
+        </div>
       )}
 
       <section className="mx-auto mb-20 max-w-3xl md:mb-24">
-        <div className="mb-6 flex flex-col gap-1 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="headline text-xl font-bold sm:text-2xl">Frequently Asked Questions</h2>
-          <span className="text-xs text-on-surface-variant sm:text-sm">Last updated: {lastUpdatedLabel}</span>
+        <div className="mb-6 flex flex-col gap-2 sm:mb-8 sm:flex-row sm:items-end sm:justify-between px-2">
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Frequently Asked Questions</h2>
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-500">Updated: {lastUpdatedLabel}</span>
         </div>
         <div className="space-y-4">
           {filteredFaq.map((item, i) => (
-            <div key={i} className="overflow-hidden rounded-uniform bg-surface-container-low dark:bg-surface-container-high/85">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between px-4 py-4 text-start transition-colors hover:bg-surface-container sm:px-8 sm:py-6 dark:hover:bg-earth-darkBg/65"
-              >
-                <span className="font-bold text-on-surface">{item.q}</span>
-                <span className="material-symbols-outlined text-on-surface-variant">expand_more</span>
-              </button>
-              <div className="border-t border-outline-variant/25 px-4 pb-5 pt-3 text-sm leading-relaxed text-on-surface-variant sm:px-8 sm:pb-6 sm:pt-4">
+            <div key={i} className="overflow-hidden rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111] shadow-sm">
+              <div className="flex w-full items-center justify-between px-5 py-4 sm:px-6 sm:py-5 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-[#161616]">
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">{item.q}</span>
+              </div>
+              <div className="px-5 py-4 sm:px-6 sm:py-5 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
                 {item.a}
               </div>
             </div>
           ))}
         </div>
-        {hasQuery && filteredFaq.length === 0 && (
-          <p className="mt-4 text-sm text-on-surface-variant" role="status">
-            No FAQ entries match your filter.
-          </p>
-        )}
       </section>
 
-      <section className="relative mx-auto flex max-w-5xl flex-col items-center gap-8 overflow-hidden rounded-[2rem] bg-surface-container-highest p-6 sm:gap-10 sm:p-8 md:flex-row md:gap-12 md:rounded-[2.5rem] md:p-12 dark:bg-surface-container-high">
-        <div className="absolute -end-32 -top-32 h-64 w-64 bg-tertiary/10 blur-[100px]" />
-        <div className="absolute -bottom-32 -start-32 h-64 w-64 bg-primary/10 blur-[100px]" />
+      <section className="relative flex flex-col items-center gap-8 overflow-hidden rounded-[2rem] border border-gray-200 dark:border-white/10 bg-white dark:bg-black p-8 sm:gap-10 sm:p-10 md:flex-row md:gap-12 md:p-12 shadow-sm">
+        <div className="absolute top-0 right-0 p-10 opacity-5 dark:opacity-20 pointer-events-none">
+           <span className="material-symbols-outlined text-[150px] -m-10">forum</span>
+        </div>
         <div className="relative z-10 flex-1">
-          <h2 className="headline mb-4 text-2xl font-bold md:text-3xl">Still seeking answers?</h2>
-          <p className="text-on-surface-variant dark:text-secondary/80">
+          <h2 className="mb-3 text-2xl font-bold text-gray-900 dark:text-white md:text-3xl">Still seeking answers?</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xl leading-relaxed">
             Join our Discord community where over 50,000 directors share techniques, workflows, and custom node configurations.
           </p>
         </div>
         <div className="relative z-10 flex w-full shrink-0 gap-4 md:w-auto">
           <button
             type="button"
-            className="flex w-full items-center justify-center gap-3 rounded-xl border border-outline-variant/30 bg-surface-container-low px-5 py-3 font-bold transition-all hover:bg-surface-container-high md:w-auto md:px-8 md:py-4 dark:border-muted/45 dark:bg-earth-darkBg/55 dark:hover:bg-earth-darkBg/75"
+            className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-6 py-3.5 text-sm font-semibold text-gray-900 dark:text-white shadow-sm transition-all hover:bg-white dark:hover:bg-white/10 active:scale-[0.98] md:w-auto focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-white/20"
           >
-            <span className="material-symbols-outlined">forum</span>
+            <span className="material-symbols-outlined text-[20px]">forum</span>
             Discord Community
           </button>
         </div>
       </section>
-    </>
+    </div>
   );
 }
-
