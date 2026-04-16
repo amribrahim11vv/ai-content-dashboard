@@ -77,14 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       entitlements,
       refreshEntitlements,
       signInWithGoogle: async () => {
-        if (!supabase) {
-          // Simulate login for UI demo testing if no backend is configured
-          setSession({
-            user: { email: "demo@socialgeni.app" },
-            access_token: "demo-token",
-          } as any);
-          return;
-        }
+        if (!supabase) return;
         await supabase.auth.signInWithOAuth({
           provider: "google",
           options: {
@@ -93,10 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
       },
       signOut: async () => {
-        if (!supabase) {
-          setSession(null);
-          return;
-        }
+        if (!supabase) return;
         await supabase.auth.signOut();
       },
     }),

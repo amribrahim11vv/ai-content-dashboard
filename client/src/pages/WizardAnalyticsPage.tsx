@@ -4,7 +4,6 @@ import {
   readWizardAnalyticsBuffer,
   summarizeWizardEvents,
 } from "../lib/wizardAnalyticsQuery";
-import { AdminPageShell } from "../components/admin/AdminPageShell";
 
 function Card({ label, value }: { label: string; value: string }) {
   return (
