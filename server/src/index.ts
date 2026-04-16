@@ -61,11 +61,15 @@ async function main() {
     });
   }
 
+  async function adminGuard(c: Context, next: Next) {
+    return await optionalSupabaseUser(c, next);
+  }
+
   const kitsApp = createKitsRouter(kitsGuard);
   const featuresApp = createFeaturesRouter(kitsGuard);
   const analyticsApp = createAnalyticsRouter();
   const authApp = createAuthRouter(kitsGuard);
-  const adminPlansApp = createAdminPlansRouter();
+  const adminPlansApp = createAdminPlansRouter(adminGuard);
 
   app.route("/", kitsApp);
   app.route("/api", featuresApp);

@@ -11,11 +11,11 @@ import AdditionalNotes from "../../components/AdditionalNotes";
 import {
   decodeMultiSelection,
   decodeSingleSelection,
-  encodeMultiSelection,
   encodeSingleSelection,
 } from "../../lib/selectionFieldCodec";
 import type { BriefForm } from "../../types";
 import {
+  BEST_CONTENT_TYPE_OPTIONS,
   BRAND_TONE_OPTIONS,
   MAIN_GOAL_OPTIONS,
   OTHER_OPTION,
@@ -43,6 +43,8 @@ type SelectionState = {
   audienceOther: string;
   platformsSelected: string[];
   platformsOther: string;
+  bestContentTypesSelected: string[];
+  bestContentTypesOther: string;
 };
 
 type WizardCoreProps = {
@@ -103,6 +105,13 @@ function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
 }
 
+function buildMultiArray(selected: readonly string[], otherText: string): string[] {
+  const values = selected.filter((v) => v && v !== OTHER_OPTION.value);
+  const other = otherText.trim();
+  if (other) values.push(other);
+  return Array.from(new Set(values));
+}
+
 const labelCls = "mb-2 ms-0.5 block text-[11px] font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400";
 const fieldShell = "overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111] transition-colors focus-within:border-gray-900 dark:focus-within:border-white/30";
 const inputCls =
@@ -116,10 +125,68 @@ const btnPrimary =
 const btnSecondary =
   "rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111] px-6 py-3 text-sm font-semibold text-gray-900 dark:text-white transition-all hover:bg-gray-50 dark:hover:bg-white/5 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-white/20";
 
+type NumericBoundInputProps = {
+  id: string;
+  className: string;
+  value: number;
+  min: number;
+  max: number;
+  fallback: number;
+  startEmptyWhenFallback: boolean;
+  onCommit: (value: number) => void;
+  onBlur?: () => void;
+};
+
+function NumericBoundInput(props: NumericBoundInputProps) {
+  const { id, className, value, min, max, fallback, startEmptyWhenFallback, onCommit, onBlur } = props;
+  const [text, setText] = useState(() => (startEmptyWhenFallback && value === fallback ? "" : String(value)));
+  const [isFocused, setIsFocused] = useState(false);
+
+  useEffect(() => {
+    if (isFocused) return;
+    setText(startEmptyWhenFallback && value === fallback ? "" : String(value));
+  }, [fallback, isFocused, startEmptyWhenFallback, value]);
+
+  const commit = () => {
+    const raw = text.trim();
+    const next = raw === "" ? fallback : clamp(Number(raw), min, max);
+    onCommit(next);
+    setText(startEmptyWhenFallback && next === fallback ? "" : String(next));
+    onBlur?.();
+  };
+
+  return (
+    <input
+      id={id}
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      className={className}
+      value={text}
+      onFocus={() => setIsFocused(true)}
+      onChange={(e) => {
+        const digits = e.target.value.replace(/[^\d]/g, "");
+        setText(digits);
+      }}
+      onBlur={() => {
+        setIsFocused(false);
+        commit();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          commit();
+        }
+      }}
+      aria-describedby={`${id}_hint`}
+    />
+  );
+}
+
 export default function WizardCore(props: WizardCoreProps) {
   const { entitlements } = useAuth();
-  const currentPlan = entitlements?.plan_code ?? "free";
-  const referenceImageLocked = currentPlan === "free";
+  const currentPlan = entitlements?.plan_code ?? "starter";
+  const referenceImageLocked = currentPlan === "starter";
   const nav = useNavigate();
   const maxStep = props.stepOrder.length - 1;
   const wizardType = useMemo(() => getWizardTypeFromDraftKey(props.draftKey), [props.draftKey]);
@@ -178,6 +245,7 @@ export default function WizardCore(props: WizardCoreProps) {
     const tone = decodeSingleSelection(initialState.form.brand_tone, BRAND_TONE_OPTIONS);
     const audience = decodeMultiSelection(initialState.form.target_audience, TARGET_AUDIENCE_OPTIONS);
     const platforms = decodeMultiSelection(initialState.form.platforms, PLATFORM_OPTIONS);
+    const bestContentTypes = decodeMultiSelection(initialState.form.best_content_types, BEST_CONTENT_TYPE_OPTIONS);
     return {
       mainGoalSelected: goal.selected,
       mainGoalOther: goal.otherText,
@@ -187,6 +255,8 @@ export default function WizardCore(props: WizardCoreProps) {
       audienceOther: audience.otherText,
       platformsSelected: platforms.selected,
       platformsOther: platforms.otherText,
+      bestContentTypesSelected: bestContentTypes.selected,
+      bestContentTypesOther: bestContentTypes.otherText,
     };
   });
 
@@ -237,6 +307,8 @@ export default function WizardCore(props: WizardCoreProps) {
       audienceOther: "",
       platformsSelected: [],
       platformsOther: "",
+      bestContentTypesSelected: [],
+      bestContentTypesOther: "",
     });
     setStep(0);
     clearStoredDraft();
@@ -256,21 +328,18 @@ export default function WizardCore(props: WizardCoreProps) {
       selectionState.brandToneOther,
       BRAND_TONE_OPTIONS
     );
-    const serializedAudience = encodeMultiSelection(
-      selectionState.audienceSelected,
-      selectionState.audienceOther,
-      TARGET_AUDIENCE_OPTIONS
-    );
-    const serializedPlatforms = encodeMultiSelection(
-      selectionState.platformsSelected,
-      selectionState.platformsOther,
-      PLATFORM_OPTIONS
+    const audienceArray = buildMultiArray(selectionState.audienceSelected, selectionState.audienceOther);
+    const platformsArray = buildMultiArray(selectionState.platformsSelected, selectionState.platformsOther);
+    const bestContentTypesArray = buildMultiArray(
+      selectionState.bestContentTypesSelected,
+      selectionState.bestContentTypesOther
     );
 
     setValue("main_goal", serializedGoal, { shouldDirty: true });
     setValue("brand_tone", serializedTone, { shouldDirty: true });
-    setValue("target_audience", serializedAudience, { shouldDirty: true });
-    setValue("platforms", serializedPlatforms, { shouldDirty: true });
+    setValue("target_audience", audienceArray, { shouldDirty: true });
+    setValue("platforms", platformsArray, { shouldDirty: true });
+    setValue("best_content_types", bestContentTypesArray, { shouldDirty: true });
   }, [selectionState, setValue]);
 
   const { next } = useWizardOrchestrator({
@@ -343,11 +412,12 @@ export default function WizardCore(props: WizardCoreProps) {
   const industryValue = watch("industry");
   const mainGoalValue = watch("main_goal");
   const audienceValue = watch("target_audience");
+  const hasAudience = Array.isArray(audienceValue) && audienceValue.length > 0;
   const canShowValuePreview =
     step >= 1 &&
     Boolean(brandNameValue?.trim()) &&
     Boolean(industryValue?.trim()) &&
-    (Boolean(mainGoalValue?.trim()) || Boolean(audienceValue?.trim()));
+    (Boolean(mainGoalValue?.trim()) || hasAudience);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-2 sm:px-4">
@@ -467,7 +537,7 @@ export default function WizardCore(props: WizardCoreProps) {
             )}
 
             {currentStep === "brand" && (
-                <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
+              <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
                 <div>
                   <label htmlFor="brand_name" className={labelCls}>Brand name</label>
                   <div className={fieldShell}><input id="brand_name" className={inputCls} {...register("brand_name")} /></div>
@@ -760,7 +830,7 @@ export default function WizardCore(props: WizardCoreProps) {
                     />
                     {referenceImageLocked && (
                       <div className="mt-1 flex items-center gap-2 text-xs text-on-surface-variant">
-                        <span>🔒 Reference image is available on Creator Pro and Agency plans.</span>
+                        <span>🔒 Reference image is available on Early Adopter plan.</span>
                         <button
                           type="button"
                           className="font-bold text-primary underline-offset-2 hover:underline"
@@ -792,8 +862,50 @@ export default function WizardCore(props: WizardCoreProps) {
                 )}
                 {showField("creative", "best_content_types") && (
                   <div>
-                    <label htmlFor="best_content_types" className={labelCls}>Best-performing content types</label>
-                    <div className={fieldShell}><textarea id="best_content_types" className={textareaCls} {...register("best_content_types")} /></div>
+                    <label className={labelCls}>Best-performing content types</label>
+                    <PillGroup
+                      options={BEST_CONTENT_TYPE_OPTIONS}
+                      selectedValues={selectionState.bestContentTypesSelected}
+                      onToggle={(value) =>
+                        setSelectionState((prev) => ({
+                          ...prev,
+                          bestContentTypesSelected: toggleListValue(prev.bestContentTypesSelected, value),
+                        }))
+                      }
+                    />
+                    <button
+                      type="button"
+                      className="mt-3 inline-flex items-center gap-2 rounded-full border border-brand-sand/30 bg-earth-card px-3 py-1.5 text-xs font-semibold text-on-surface transition hover:bg-earth-alt dark:border-outline/30 dark:bg-surface-container-high dark:hover:bg-surface-container-highest"
+                      onClick={() =>
+                        setSelectionState((prev) => {
+                          const enabled =
+                            !!prev.bestContentTypesOther.trim() ||
+                            prev.bestContentTypesSelected.includes(OTHER_OPTION.value);
+                          return {
+                            ...prev,
+                            bestContentTypesSelected: enabled
+                              ? prev.bestContentTypesSelected.filter((v) => v !== OTHER_OPTION.value)
+                              : [...prev.bestContentTypesSelected, OTHER_OPTION.value],
+                          };
+                        })
+                      }
+                    >
+                      <span>{OTHER_OPTION.icon}</span>
+                      <span>{OTHER_OPTION.labelAr}</span>
+                    </button>
+                    {selectionState.bestContentTypesSelected.includes(OTHER_OPTION.value) && (
+                      <div className={fieldShell + " mt-3"}>
+                        <input
+                          id="best_content_types_other"
+                          className={inputCls}
+                          value={selectionState.bestContentTypesOther}
+                          onChange={(e) =>
+                            setSelectionState((prev) => ({ ...prev, bestContentTypesOther: e.target.value }))
+                          }
+                          placeholder="اكتب نوع محتوى إضافي..."
+                        />
+                      </div>
+                    )}
                     {errors.best_content_types && <p className={errCls}>{errors.best_content_types.message}</p>}
                   </div>
                 )}
@@ -812,10 +924,21 @@ export default function WizardCore(props: WizardCoreProps) {
                             name="num_posts"
                             control={control}
                             render={({ field }) => (
-                              <input id="num_posts" type="number" className={inputCls} value={field.value} onChange={(e) => field.onChange(clamp(Number(e.target.value) || 0, LIMITS.num_posts.min, LIMITS.num_posts.max))} />
+                              <NumericBoundInput
+                                id="num_posts"
+                                className={inputCls}
+                                value={field.value}
+                                min={LIMITS.num_posts.min}
+                                max={LIMITS.num_posts.max}
+                                fallback={LIMITS.num_posts.fallback}
+                                startEmptyWhenFallback={!showDraftBanner}
+                                onCommit={field.onChange}
+                                onBlur={field.onBlur}
+                              />
                             )}
                           />
                         </div>
+                        <p id="num_posts_hint" className="mt-1 text-xs text-on-surface-variant">Type directly (0–{LIMITS.num_posts.max}).</p>
                         {errors.num_posts && <p className={errCls}>{errors.num_posts.message}</p>}
                       </div>
                     )}
@@ -827,10 +950,21 @@ export default function WizardCore(props: WizardCoreProps) {
                             name="num_image_designs"
                             control={control}
                             render={({ field }) => (
-                              <input id="num_image_designs" type="number" className={inputCls} value={field.value} onChange={(e) => field.onChange(clamp(Number(e.target.value) || 0, LIMITS.num_image_designs.min, LIMITS.num_image_designs.max))} />
+                              <NumericBoundInput
+                                id="num_image_designs"
+                                className={inputCls}
+                                value={field.value}
+                                min={LIMITS.num_image_designs.min}
+                                max={LIMITS.num_image_designs.max}
+                                fallback={LIMITS.num_image_designs.fallback}
+                                startEmptyWhenFallback={!showDraftBanner}
+                                onCommit={field.onChange}
+                                onBlur={field.onBlur}
+                              />
                             )}
                           />
                         </div>
+                        <p id="num_image_designs_hint" className="mt-1 text-xs text-on-surface-variant">Set 0 if you only want videos.</p>
                         {errors.num_image_designs && <p className={errCls}>{errors.num_image_designs.message}</p>}
                       </div>
                     )}
@@ -844,10 +978,21 @@ export default function WizardCore(props: WizardCoreProps) {
                         name="num_video_prompts"
                         control={control}
                         render={({ field }) => (
-                          <input id="num_video_prompts" type="number" className={inputCls} value={field.value} onChange={(e) => field.onChange(clamp(Number(e.target.value) || 0, LIMITS.num_video_prompts.min, LIMITS.num_video_prompts.max))} />
+                          <NumericBoundInput
+                            id="num_video_prompts"
+                            className={inputCls}
+                            value={field.value}
+                            min={LIMITS.num_video_prompts.min}
+                            max={LIMITS.num_video_prompts.max}
+                            fallback={LIMITS.num_video_prompts.fallback}
+                            startEmptyWhenFallback={!showDraftBanner}
+                            onCommit={field.onChange}
+                            onBlur={field.onBlur}
+                          />
                         )}
                       />
                     </div>
+                    <p id="num_video_prompts_hint" className="mt-1 text-xs text-on-surface-variant">Set 0 if you only want images.</p>
                     {errors.num_video_prompts && <p className={errCls}>{errors.num_video_prompts.message}</p>}
                   </div>
                 )}
@@ -861,20 +1006,16 @@ export default function WizardCore(props: WizardCoreProps) {
                         name="content_package_idea_count"
                         control={control}
                         render={({ field }) => (
-                          <input
+                          <NumericBoundInput
                             id="content_package_idea_count"
-                            type="number"
                             className={inputCls}
                             value={field.value}
-                            onChange={(e) =>
-                              field.onChange(
-                                clamp(
-                                  Number(e.target.value) || 0,
-                                  LIMITS.content_package_idea_count.min,
-                                  LIMITS.content_package_idea_count.max
-                                )
-                              )
-                            }
+                            min={LIMITS.content_package_idea_count.min}
+                            max={LIMITS.content_package_idea_count.max}
+                            fallback={LIMITS.content_package_idea_count.fallback}
+                            startEmptyWhenFallback={!showDraftBanner}
+                            onCommit={field.onChange}
+                            onBlur={field.onBlur}
                           />
                         )}
                       />
@@ -933,8 +1074,9 @@ export default function WizardCore(props: WizardCoreProps) {
                   <div className="rounded-xl border border-outline/20 bg-surface-container-low/60 p-4 text-xs text-on-surface-variant dark:border-outline/25 dark:bg-earth-darkCard/40">
                     <p className="font-semibold text-on-surface">Current plan usage</p>
                     <p className="mt-1">
-                      Plan: <strong>{entitlements.plan_code}</strong> · Kits used this month:{" "}
-                      <strong>{entitlements.usage.kits_used}</strong>
+                      Plan: <strong>{entitlements.plan_code}</strong> · Video prompts used:{" "}
+                      <strong>{entitlements.usage.video_prompts_used}</strong> · Image prompts used:{" "}
+                      <strong>{entitlements.usage.image_prompts_used}</strong>
                     </p>
                   </div>
                 )}

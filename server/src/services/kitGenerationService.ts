@@ -15,6 +15,7 @@ import { generateWithGuardrails } from "./aiGenerationProvider.js";
 import { runContentPackageChain } from "./contentPackageOrchestrator.js";
 import { parseReferenceImageFromDataUrl } from "./imageProcessor.js";
 import {
+  consumeGeneratedAssets,
   consumeUsage,
   enforceGenerateEntitlements,
   enforceRegenerateEntitlements,
@@ -122,6 +123,8 @@ export async function generateKitService(input: {
   enforceGenerateEntitlements(access, {
     campaignMode: snapshot.campaign_mode,
     hasReferenceImage: Boolean(referenceImage),
+    requestedVideoPrompts: snapshot.num_video_prompts,
+    requestedImagePrompts: snapshot.num_image_designs,
   });
   const fp = briefFingerprint(snapshot);
   const keyHash = hashIdempotencyKey(idemHeader);
@@ -158,7 +161,14 @@ export async function generateKitService(input: {
       isFallback: resolved.isFallback,
     });
     await d.notify(row);
-    await consumeUsage(d.db, owner, "kits");
+    await consumeGeneratedAssets(d.db, owner, {
+      videoPromptsUsed: Array.isArray((aiContent as Record<string, unknown>).video_prompts)
+        ? ((aiContent as Record<string, unknown>).video_prompts as unknown[]).length
+        : 0,
+      imagePromptsUsed: Array.isArray((aiContent as Record<string, unknown>).image_designs)
+        ? ((aiContent as Record<string, unknown>).image_designs as unknown[]).length
+        : 0,
+    });
     await finalizeIdempotencyKey(d.db, { keyHash, briefHash: fp, kitId: row.id });
     return { status: 200, body: serializeKit(row) };
   }
@@ -211,7 +221,14 @@ export async function generateKitService(input: {
       kitId: row.id,
     });
     await d.notify(row);
-    await consumeUsage(d.db, owner, "kits");
+    await consumeGeneratedAssets(d.db, owner, {
+      videoPromptsUsed: Array.isArray((aiContent as Record<string, unknown>).video_prompts)
+        ? ((aiContent as Record<string, unknown>).video_prompts as unknown[]).length
+        : 0,
+      imagePromptsUsed: Array.isArray((aiContent as Record<string, unknown>).image_designs)
+        ? ((aiContent as Record<string, unknown>).image_designs as unknown[]).length
+        : 0,
+    });
     await finalizeIdempotencyKey(d.db, { keyHash, briefHash: fp, kitId: row.id });
     return { status: 201, body: serializeKit(row) };
   } catch (err) {

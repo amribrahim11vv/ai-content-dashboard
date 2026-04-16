@@ -28,7 +28,7 @@ export default function DeepContentWizard() {
       defaults={{
         campaign_mode: "deep",
         main_goal: "Build authority with high-depth content",
-        best_content_types: "case study, educational carousel, deep explainer video",
+        best_content_types: ["case study", "educational carousel", "deep explainer video"],
       }}
     />
   );

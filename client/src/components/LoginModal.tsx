@@ -11,11 +11,19 @@ type LoginModalProps = {
 };
 
 export default function LoginModal(props: LoginModalProps) {
-  if (!props.open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 dark:bg-black/60 px-4 backdrop-blur-md transition-all" role="dialog" aria-modal="true">
-      <div className="w-full max-w-sm rounded-[2rem] border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111] p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 dark:bg-black/60 px-4 backdrop-blur-md transition-all duration-300 ${
+        props.open ? "visible opacity-100" : "invisible opacity-0"
+      }`}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className={`w-full max-w-sm rounded-[2rem] border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111] p-8 shadow-2xl transition-all duration-300 ${
+          props.open ? "scale-100 opacity-100" : "scale-95 opacity-0"
+        }`}
+      >
         <div className="mb-6 flex flex-col items-center text-center">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 shadow-sm">
             <span className="material-symbols-outlined text-gray-900 dark:text-white text-3xl">login</span>

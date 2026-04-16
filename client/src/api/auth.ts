@@ -6,10 +6,11 @@ export type EntitlementsResponse = {
   user_id: string | null;
   email: string;
   display_name: string;
-  plan_code: "free" | "creator_pro" | "agency";
+  plan_code: "starter" | "early_adopter" | "admin_unlimited";
   usage: {
     period_key: string;
-    kits_used: number;
+    video_prompts_used: number;
+    image_prompts_used: number;
     retry_used: number;
     regenerate_used: number;
   };

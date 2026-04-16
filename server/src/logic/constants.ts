@@ -17,9 +17,9 @@ export type SubmissionSnapshot = {
   email: string;
   brand_name: string;
   industry: string;
-  target_audience: string;
+  target_audience: string[];
   main_goal: string;
-  platforms: string;
+  platforms: string[];
   brand_tone: string;
   brand_colors: string;
   offer: string;
@@ -28,7 +28,7 @@ export type SubmissionSnapshot = {
   reference_image: string;
   campaign_duration: string;
   budget_level: string;
-  best_content_types: string;
+  best_content_types: string[];
   /** Wizard path: shapes tone and priorities via prompt prefix (social / offer / deep). */
   campaign_mode: CampaignMode;
   num_posts: number;

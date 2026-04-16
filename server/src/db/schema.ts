@@ -5,6 +5,7 @@ import {
   boolean,
   bigint,
   timestamp,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 /** Isolated schema on shared Supabase — avoids colliding with other apps in `public`. */
@@ -15,6 +16,9 @@ export const kits = socialGeni.table("kits", {
   deviceId: text("device_id").notNull().default(""),
   userId: text("user_id"),
   briefJson: text("brief_json").notNull(),
+  targetAudienceV2: jsonb("target_audience_v2").$type<string[]>().notNull().default([]),
+  platformsV2: jsonb("platforms_v2").$type<string[]>().notNull().default([]),
+  bestContentTypesV2: jsonb("best_content_types_v2").$type<string[]>().notNull().default([]),
   resultJson: text("result_json"),
   deliveryStatus: text("delivery_status").notNull(),
   modelUsed: text("model_used").notNull(),
@@ -39,6 +43,7 @@ export const users = socialGeni.table("users", {
   supabaseUserId: text("supabase_user_id").notNull().unique(),
   email: text("email").notNull().default(""),
   displayName: text("display_name").notNull().default(""),
+  isAdmin: boolean("is_admin").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 });
@@ -67,6 +72,8 @@ export const monthlyUsageCounters = socialGeni.table("monthly_usage_counters", {
   userId: text("user_id"),
   deviceId: text("device_id"),
   periodKey: text("period_key").notNull(),
+  videoPromptsUsed: integer("video_prompts_used").notNull().default(0),
+  imagePromptsUsed: integer("image_prompts_used").notNull().default(0),
   kitsUsed: integer("kits_used").notNull().default(0),
   regenerateUsed: integer("regenerate_used").notNull().default(0),
   retryUsed: integer("retry_used").notNull().default(0),

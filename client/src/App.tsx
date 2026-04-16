@@ -21,8 +21,8 @@ const demoMode = import.meta.env.VITE_DEMO_MODE === "true";
 
 export default function App() {
   const { entitlements } = useAuth();
-  const plan = entitlements?.plan_code ?? "free";
-  const modeLocked = plan === "free";
+  const plan = entitlements?.plan_code ?? "starter";
+  const modeLocked = plan === "starter";
   const LockedMode = ({ mode }: { mode: "offer" | "deep" }) => (
     <div className="flex flex-col items-center justify-center min-h-[50vh]">
       <div className="w-full max-w-md rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111] p-8 shadow-sm text-center">
@@ -33,7 +33,7 @@ export default function App() {
           {mode === "offer" ? "Offer Engine" : "Deep Content"} Locked
         </h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed mb-6">
-          This advanced capability is exclusively available on Creator Pro and Agency plans. Upgrade your studio to unlock it immediately.
+          This advanced capability is exclusively available on the Early Adopter plan. Upgrade your studio to unlock it immediately.
         </p>
         <div className="flex flex-col items-center gap-3">
           <Link

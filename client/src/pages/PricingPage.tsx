@@ -2,15 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import LoginModal from "../components/LoginModal";
 import { useAuth } from "../auth/AuthContext";
 
-type PlanId = "free" | "creator_pro" | "agency";
+type PlanId = "starter" | "early_adopter";
 
 const WHATSAPP_BASE = "https://wa.me/";
 const DEFAULT_PHONE = "";
 
 function planToLabel(plan: PlanId) {
-  if (plan === "creator_pro") return "Creator Pro";
-  if (plan === "agency") return "Agency";
-  return "Free Trial";
+  if (plan === "early_adopter") return "Early Adopter";
+  return "Starter";
 }
 
 function buildUpgradeUrl(plan: PlanId): string {
@@ -41,7 +40,7 @@ export default function PricingPage() {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
 
-  const currentPlan = entitlements?.plan_code ?? "free";
+  const currentPlan = entitlements?.plan_code ?? "starter";
 
   useEffect(() => {
     if (!session || !pendingPlan) return;
@@ -54,42 +53,32 @@ export default function PricingPage() {
   const planCards = useMemo(
     () => [
       {
-        id: "free" as const,
-        title: "Free Trial",
+        id: "starter" as const,
+        title: "Starter",
         price: "$0",
-        subtitle: "Start and feel the product",
+        subtitle: "For trial and quick evaluation",
         highlight: false,
         features: [
-          "2 kits / month",
-          "Social campaign only",
+          "1 video prompt / month",
+          "2 image prompts / month",
+          "Social mode only",
           "No reference image upload",
-          "Device-based history",
+          "Perfect for testing output quality",
         ],
       },
       {
-        id: "creator_pro" as const,
-        title: "Creator Pro",
-        price: "$15",
-        subtitle: "Best for creators and founders",
+        id: "early_adopter" as const,
+        title: "Early Adopter",
+        price: "$3",
+        subtitle: "Symbolic paid beta for first users",
         highlight: true,
         features: [
-          "30 kits / month",
-          "Social + Offer + Deep modes",
+          "2 video prompts / month",
+          "10 image prompts / month",
+          "All campaign modes unlocked",
           "Reference image enabled",
-          "Full account history",
-        ],
-      },
-      {
-        id: "agency" as const,
-        title: "Agency",
-        price: "$39",
-        subtitle: "For managers and teams",
-        highlight: false,
-        features: [
-          "150 kits / month",
-          "All Creator Pro features",
-          "Retry/Regenerate practically unlimited",
-          "Built for heavy production workflows",
+          "Manual instant activation via WhatsApp",
+          "Early adopter discount (limited time)",
         ],
       },
     ],
@@ -97,7 +86,7 @@ export default function PricingPage() {
   );
 
   const onUpgradeClick = (plan: PlanId) => {
-    if (plan === "free") return;
+    if (plan === "starter") return;
     const url = buildUpgradeUrl(plan);
     if (!url) return;
     setPendingPlan(plan);
@@ -134,46 +123,73 @@ export default function PricingPage() {
         </div>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-3 items-start max-w-6xl mx-auto">
+      <div className="relative overflow-hidden rounded-3xl border border-gray-200 dark:border-indigo-500/10 bg-white dark:bg-[#111] p-8 shadow-sm">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-indigo-500/10 blur-[64px]" />
+        <div className="pointer-events-none absolute -bottom-16 left-16 h-48 w-48 rounded-full bg-blue-500/10 blur-[64px]" />
+        
+        <div className="relative">
+          <p className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 shadow-sm">
+            <span className="material-symbols-outlined text-sm">bolt</span>
+            Instant Free Trial
+          </p>
+          <h2 className="mt-5 text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
+            Try now for free — no payment, no login required
+          </h2>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+            Start immediately with the Starter plan using your device. When you are ready to scale, upgrade to Early Adopter with instant manual activation.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <span className="inline-flex items-center rounded-full border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-4 py-1.5 text-xs font-semibold tracking-wide text-gray-600 dark:text-gray-400">
+              100% Free Start
+            </span>
+            <span className="inline-flex items-center rounded-full border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-4 py-1.5 text-xs font-semibold tracking-wide text-gray-600 dark:text-gray-400">
+              No Card Required
+            </span>
+            <span className="inline-flex items-center rounded-full border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-4 py-1.5 text-xs font-semibold tracking-wide text-gray-600 dark:text-gray-400">
+              No Login Required
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2 max-w-4xl mx-auto">
         {planCards.map((plan) => {
           const isCurrent = currentPlan === plan.id;
-          const isMissingUrl = !buildUpgradeUrl(plan.id) && plan.id !== "free";
+          const isMissingUrl = !buildUpgradeUrl(plan.id) && plan.id !== "starter";
           const ctaLabel =
-            plan.id === "free"
+            plan.id === "starter"
               ? "Start Free"
               : isCurrent
                 ? "Current Plan"
-                : plan.id === "creator_pro"
-                  ? "Upgrade to Creator Pro"
-                  : "Upgrade to Agency";
-          const isDisabled = plan.id === "free" || isCurrent || isMissingUrl;
+                : "Upgrade to Early Adopter";
+          const isDisabled = plan.id === "starter" || isCurrent || isMissingUrl;
           
           return (
             <article
               key={plan.id}
               className={[
-                "relative flex flex-col rounded-3xl p-8 bg-white dark:bg-[#111] shadow-xl transition-transform hover:-translate-y-1",
+                "relative flex flex-col rounded-3xl p-8 bg-white dark:bg-[#111] shadow-xl transition-transform hover:-translate-y-1 border",
                 plan.highlight
-                  ? "border border-indigo-500/20 dark:border-indigo-500/30 ring-1 ring-inset ring-indigo-500/10 dark:ring-indigo-500/20 shadow-indigo-500/5 lg:-mt-4 lg:mb-4 lg:scale-105"
-                  : "border border-gray-200 dark:border-white/10",
+                  ? "border-gray-900/50 dark:border-white/30 ring-1 ring-inset ring-gray-900/10 dark:ring-white/10 lg:-mt-4 lg:mb-4 lg:scale-105"
+                  : "border-gray-200 dark:border-white/10",
               ].join(" ")}
             >
               {plan.highlight && (
                 <div className="absolute -top-4 left-0 right-0 flex justify-center">
-                  <span className="rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 px-4 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-sm">
+                  <span className="rounded-full bg-gray-900 dark:bg-white px-4 py-1 text-[11px] font-bold uppercase tracking-wider text-white dark:text-black shadow-sm">
                     Recommended
                   </span>
                 </div>
               )}
               
-              <div className="mb-6">
+              <div className="mb-6 mt-2">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{plan.title}</h2>
                 <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{plan.subtitle}</p>
               </div>
 
               <div className="mb-8 flex items-baseline text-gray-900 dark:text-white">
                 <span className="text-5xl font-extrabold tracking-tight">{plan.price}</span>
-                <span className="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400">/month</span>
+                <span className="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400">{plan.id === 'starter' ? '/month' : <span className="text-gray-400">launch</span>}</span>
               </div>
 
               <ul className="mb-10 space-y-4 flex-1">
@@ -187,12 +203,12 @@ export default function PricingPage() {
                 onClick={() => onUpgradeClick(plan.id)}
                 disabled={isDisabled}
                 className={[
-                  "w-full rounded-xl px-4 py-3 text-sm font-bold shadow-sm transition-all focus-visible:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-[#111]",
+                  "w-full rounded-xl px-4 py-3.5 text-sm font-bold shadow-sm transition-all focus-visible:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-[#111]",
                   plan.highlight && !isDisabled
                     ? "bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 focus:ring-gray-900 dark:focus:ring-white"
                     : isDisabled
-                    ? "bg-gray-100 text-gray-400 dark:bg-white/5 dark:text-gray-600 cursor-not-allowed"
-                    : "bg-gray-50 text-gray-900 border border-gray-200 hover:bg-gray-100 dark:bg-white/5 dark:text-white dark:border-white/10 dark:hover:bg-white/10 focus:ring-gray-200 dark:focus:ring-white/20"
+                    ? "bg-gray-100 text-gray-400 dark:bg-white/5 dark:text-gray-600 cursor-not-allowed border border-transparent"
+                    : "bg-gray-50 text-gray-900 border border-gray-200 hover:bg-gray-100 dark:bg-[#111] dark:text-white dark:border-white/20 dark:hover:bg-white/5 focus:ring-gray-200 dark:focus:ring-white/20"
                 ].join(" ")}
               >
                 {ctaLabel}
@@ -200,8 +216,8 @@ export default function PricingPage() {
               
               {isMissingUrl && (
                 <div className="mt-3 text-center">
-                  <p className="text-[10px] text-red-500 dark:text-red-400 opacity-80">
-                    Upgrade link not configured. Check env vars.
+                  <p className="text-xs text-red-500 dark:text-red-400 opacity-90 font-medium">
+                    Upgrade link is not configured. Set `VITE_UPGRADE_WHATSAPP_URL`.
                   </p>
                 </div>
               )}
@@ -210,8 +226,8 @@ export default function PricingPage() {
         })}
       </div>
 
-      <div className="max-w-2xl mx-auto rounded-2xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/[0.02] p-5 text-center text-sm text-gray-500 dark:text-gray-400 shadow-sm backdrop-blur-sm">
-        Activation is currently handled securely by support via WhatsApp until direct checkout is deployed.
+      <div className="max-w-2xl mx-auto rounded-2xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-[#111] px-5 py-4 text-center text-sm text-gray-600 dark:text-gray-400 shadow-sm backdrop-blur-sm">
+        Payment is currently handled directly via WhatsApp (Vodafone Cash / InstaPay), then your plan is activated immediately from admin panel.
       </div>
 
       <LoginModal

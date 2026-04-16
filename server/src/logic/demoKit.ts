@@ -29,8 +29,9 @@ export function buildDemoContentIdeasPackage(ideaCount: number): ContentIdeasPac
 
 /** Minimal valid kit for DEMO_MODE — counts match snapshot. */
 export function buildDemoKitContent(data: SubmissionSnapshot): Record<string, unknown> {
+  const primaryPlatform = data.platforms[0] || "Instagram";
   const mkPost = (i: number) => ({
-    platform: data.platforms || "Instagram",
+    platform: primaryPlatform,
     format: "Reel caption",
     goal: data.main_goal || "engagement",
     caption: `(Demo) Hook أول سطر قوي للبوست ${i} لبراند ${data.brand_name}. نص قصير جاهز للتجربة.`,

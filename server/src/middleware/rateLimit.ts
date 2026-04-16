@@ -138,7 +138,9 @@ export const rateLimit = createRateLimit({
 const AUTH_SYNC_LIMIT = Math.max(
   2,
   Math.min(
-    30,
+    // Keep default conservative (5), but allow higher production tuning
+    // for login/sync bursts via AUTH_SYNC_RATE_LIMIT (recommended 60-90).
+    120,
     parseInt(process.env.AUTH_SYNC_RATE_LIMIT ?? "5", 10) || 5,
   ),
 );

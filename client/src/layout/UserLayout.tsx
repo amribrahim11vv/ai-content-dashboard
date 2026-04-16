@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { useEffect, useRef } from "react";
+import { Skeleton } from "../components/Skeleton";
 
 function linkClass(isActive: boolean) {
   return [
@@ -14,7 +15,7 @@ function linkClass(isActive: boolean) {
 }
 
 export default function UserLayout({ demoBanner }: { demoBanner?: ReactNode }) {
-  const { entitlements, session, signInWithGoogle, signOut } = useAuth();
+  const { entitlements, session, signInWithGoogle, signOut, ready } = useAuth();
   const location = useLocation();
   const [themeMode, setThemeMode] = useState<"light" | "dark">(() =>
     document.documentElement.classList.contains("dark") ? "dark" : "light"
@@ -47,6 +48,33 @@ export default function UserLayout({ demoBanner }: { demoBanner?: ReactNode }) {
       // ignore
     }
   };
+
+  if (!ready) {
+    return (
+      <div className="min-h-screen bg-surface text-on-surface dark:bg-earth-darkBg dark:text-secondary">
+        <header className="sticky top-0 z-30 border-b border-outline/20 bg-surface/80 backdrop-blur dark:border-muted/35 dark:bg-earth-darkBg/80">
+          <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+            <Skeleton className="h-7 w-32" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="hidden h-7 w-16 sm:inline-flex" />
+              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-8 w-16" />
+              <nav className="flex items-center gap-1">
+                <Skeleton className="h-8 w-14" />
+                <Skeleton className="h-8 w-14" />
+                <Skeleton className="h-8 w-14" />
+              </nav>
+            </div>
+          </div>
+        </header>
+
+        <main className="mx-auto w-full max-w-6xl px-2 pb-10 pt-4 sm:px-4 sm:pt-6">
+          <Skeleton className="mb-6 h-24 w-full rounded-2xl" />
+          <Skeleton className="mb-4 h-[300px] w-full rounded-2xl" />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black text-gray-900 dark:text-gray-100 antialiased selection:bg-indigo-100 selection:text-indigo-900 dark:selection:bg-indigo-500/30 dark:selection:text-indigo-100">
@@ -84,7 +112,7 @@ export default function UserLayout({ demoBanner }: { demoBanner?: ReactNode }) {
               <div className="flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 py-1 px-2.5 shadow-sm">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
                 <span className="text-[11px] font-medium tracking-wide text-gray-600 dark:text-gray-400 uppercase">
-                  {entitlements?.plan_code ?? "Free"}
+                  {entitlements?.plan_code ?? "starter"}
                 </span>
               </div>
             </div>
@@ -102,7 +130,6 @@ export default function UserLayout({ demoBanner }: { demoBanner?: ReactNode }) {
                 {themeMode === "dark" ? "light_mode" : "dark_mode"}
               </span>
             </button>
-
             {session ? (
               <div className="relative" ref={dropdownRef}>
                 <button

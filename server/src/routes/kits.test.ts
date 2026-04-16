@@ -75,6 +75,36 @@ describe("kits routes device header enforcement", () => {
     );
   });
 
+  it("accepts array payload fields for generate route", async () => {
+    const deviceId = "6b813b44-522f-4a53-9522-4a43ceadb523";
+    generateKitService.mockResolvedValueOnce({ status: 201, body: { id: "k2" } });
+    const body = JSON.stringify({
+      brand_name: "Test",
+      industry: "SaaS",
+      target_audience: ["youth", "entrepreneurs"],
+      platforms: ["instagram", "tiktok"],
+      best_content_types: ["educational", "testimonials"],
+    });
+
+    const res = await appRequest("/api/kits/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Idempotency-Key": "idem-2",
+        "X-Device-ID": deviceId,
+      },
+      body,
+    });
+
+    expect(res.status).toBe(201);
+    expect(generateKitService).toHaveBeenCalledWith(
+      expect.objectContaining({
+        idempotencyKey: "idem-2",
+        deviceId,
+      })
+    );
+  });
+
   it("passes valid device id into get-by-id service", async () => {
     const deviceId = "da84fbef-f991-46d8-8f95-4c1e4edca53b";
     getKitByIdService.mockResolvedValueOnce({ id: "k1" });

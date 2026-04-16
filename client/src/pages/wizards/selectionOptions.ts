@@ -30,6 +30,15 @@ export const PLATFORM_OPTIONS: readonly SelectionOption[] = [
   { value: "youtube", labelAr: "YouTube", icon: "▶️" },
 ] as const;
 
+export const BEST_CONTENT_TYPE_OPTIONS: readonly SelectionOption[] = [
+  { value: "educational", labelAr: "محتوى تعليمي", icon: "🎓" },
+  { value: "behind_the_scenes", labelAr: "خلف الكواليس", icon: "🎬" },
+  { value: "before_after", labelAr: "قبل / بعد", icon: "✨" },
+  { value: "testimonials", labelAr: "آراء العملاء", icon: "🗣️" },
+  { value: "offers_promotions", labelAr: "عروض وتخفيضات", icon: "🏷️" },
+  { value: "faq", labelAr: "أسئلة شائعة", icon: "❓" },
+] as const;
+
 export const OTHER_OPTION: SelectionOption = {
   value: "__other__",
   labelAr: "أخرى (اكتب بنفسك)",

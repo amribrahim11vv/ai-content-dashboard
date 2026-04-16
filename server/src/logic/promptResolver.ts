@@ -30,6 +30,7 @@ export function normalizeIndustrySlug(value: string): string {
 }
 
 function snapshotMap(s: SubmissionSnapshot): Record<string, string> {
+  const list = (value: string[]) => value.join(", ");
   return {
     brand_name: s.brand_name,
     industry: s.industry,
@@ -37,9 +38,9 @@ function snapshotMap(s: SubmissionSnapshot): Record<string, string> {
     farming_niche: s.industry,
     /** Alias for seasonality; mapped from campaign duration / timing field. */
     season_or_timing: s.campaign_duration,
-    target_audience: s.target_audience,
+    target_audience: list(s.target_audience),
     main_goal: s.main_goal,
-    platforms: s.platforms,
+    platforms: list(s.platforms),
     brand_tone: s.brand_tone,
     brand_colors: s.brand_colors,
     offer: s.offer,
@@ -47,7 +48,7 @@ function snapshotMap(s: SubmissionSnapshot): Record<string, string> {
     visual_notes: s.visual_notes,
     campaign_duration: s.campaign_duration,
     budget_level: s.budget_level,
-    best_content_types: s.best_content_types,
+    best_content_types: list(s.best_content_types),
     diagnostic_role: s.diagnostic_role,
     diagnostic_account_stage: s.diagnostic_account_stage,
     diagnostic_followers_band: s.diagnostic_followers_band,
@@ -73,7 +74,7 @@ export async function resolvePrompt(industryInput: string, snapshot: SubmissionS
   const useMetaPrompt = isUseMetaPrompt();
   const hasCoreContext =
     Boolean(String(snapshot.industry ?? "").trim()) &&
-    Boolean(String(snapshot.target_audience ?? "").trim()) &&
+    snapshot.target_audience.length > 0 &&
     (Boolean(String(snapshot.main_goal ?? "").trim()) || Boolean(String(snapshot.offer ?? "").trim()));
 
   if (useMetaPrompt && hasCoreContext) {

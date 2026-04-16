@@ -9,7 +9,30 @@ export function normalizeCellValue(value: unknown): string {
   return String(value ?? "").trim();
 }
 
-export function normalizeKey(value: string): string {
+export function normalizeStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return Array.from(
+      new Set(
+        value
+          .map((item) => String(item ?? "").trim())
+          .filter(Boolean)
+      )
+    );
+  }
+
+  const text = String(value ?? "").trim();
+  if (!text) return [];
+  return Array.from(
+    new Set(
+      text
+        .split(/[,،]/g)
+        .map((item) => item.trim())
+        .filter(Boolean)
+    )
+  );
+}
+
+export function normalizeKey(value: unknown): string {
   return normalizeCellValue(value)
     .toLowerCase()
     .replace(/[أإآ]/g, "ا")
@@ -51,15 +74,26 @@ export function buildSubmissionSnapshot(source: Record<string, unknown> | null |
   const s = source ?? {};
   const submittedAtCandidate = s.submitted_at ? new Date(String(s.submitted_at)) : new Date();
   const submittedAt = Number.isNaN(submittedAtCandidate.getTime()) ? new Date() : submittedAtCandidate;
+  const legacyArrayFields = ["target_audience", "platforms", "best_content_types"].filter(
+    (key) => typeof s[key] === "string" && String(s[key] ?? "").trim().length > 0
+  );
+  if (legacyArrayFields.length > 0) {
+    console.info(
+      "[legacy_array_payload]",
+      JSON.stringify({
+        fields: legacyArrayFields,
+      })
+    );
+  }
 
   return {
     submitted_at: submittedAt,
     email: extractFirstEmail(String(s.email ?? "")),
     brand_name: String(s.brand_name ?? "").trim(),
     industry: String(s.industry ?? "").trim(),
-    target_audience: String(s.target_audience ?? "").trim(),
+    target_audience: normalizeStringArray(s.target_audience),
     main_goal: String(s.main_goal ?? "").trim(),
-    platforms: String(s.platforms ?? "").trim(),
+    platforms: normalizeStringArray(s.platforms),
     brand_tone: String(s.brand_tone ?? "").trim(),
     brand_colors: String(s.brand_colors ?? "").trim(),
     offer: String(s.offer ?? "").trim(),
@@ -68,7 +102,7 @@ export function buildSubmissionSnapshot(source: Record<string, unknown> | null |
     reference_image: String(s.reference_image ?? "").trim(),
     campaign_duration: String(s.campaign_duration ?? "").trim(),
     budget_level: String(s.budget_level ?? "").trim(),
-    best_content_types: String(s.best_content_types ?? "").trim(),
+    best_content_types: normalizeStringArray(s.best_content_types),
     campaign_mode: normalizeCampaignMode(s.campaign_mode),
     num_posts: sanitizeCount(s.num_posts, G_LIMITS.num_posts.min, G_LIMITS.num_posts.max, G_LIMITS.num_posts.fallback),
     num_image_designs: sanitizeCount(

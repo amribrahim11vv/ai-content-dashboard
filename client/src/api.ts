@@ -19,6 +19,17 @@ export {
 export type { HelpTopicsResponse } from "./api/misc";
 export { getEntitlements, syncAuthDevice } from "./api/auth";
 export type { EntitlementsResponse } from "./api/auth";
-export { getAdminUserPlans, updateAdminUserPlan } from "./api/adminPlans";
-export type { AdminPlanSnapshot, AdminPlanSubscription } from "./api/adminPlans";
+export {
+  getAdminUserPlans,
+  updateAdminUserPlan,
+  listAdminUsers,
+  updateAdminUserRole,
+  updateAdminUserRoleByEmail,
+} from "./api/adminPlans";
+export type {
+  AdminPlanSnapshot,
+  AdminPlanSubscription,
+  AdminUserItem,
+  AdminUsersResponse,
+} from "./api/adminPlans";
 

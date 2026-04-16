@@ -7,7 +7,6 @@ import ReferenceImageUploader from "../../components/ReferenceImageUploader";
 import {
   decodeMultiSelection,
   decodeSingleSelection,
-  encodeMultiSelection,
   encodeSingleSelection,
 } from "../../lib/selectionFieldCodec";
 import {
@@ -202,9 +201,12 @@ export function AudienceStep({ form, showField }: StepProps) {
           name="target_audience"
           control={control}
           render={({ field }) => {
-            const { selected, otherText } = decodeMultiSelection(field.value || "", TARGET_AUDIENCE_OPTIONS);
+            const { selected, otherText } = decodeMultiSelection(field.value || [], TARGET_AUDIENCE_OPTIONS);
             const onChange = (newSelected: string[], newOther: string) => {
-              field.onChange(encodeMultiSelection(newSelected, newOther, TARGET_AUDIENCE_OPTIONS));
+              const values = newSelected.filter((v) => v !== OTHER_OPTION.value);
+              const other = newOther.trim();
+              if (other) values.push(other);
+              field.onChange(Array.from(new Set(values)));
             };
             const toggle = (val: string) => {
               const next = selected.includes(val) ? selected.filter(v => v !== val) : [...selected, val];
@@ -309,9 +311,12 @@ export function ChannelsStep({ form, showField }: StepProps) {
           name="platforms"
           control={control}
           render={({ field }) => {
-            const { selected, otherText } = decodeMultiSelection(field.value || "", PLATFORM_OPTIONS);
+            const { selected, otherText } = decodeMultiSelection(field.value || [], PLATFORM_OPTIONS);
             const onChange = (newSelected: string[], newOther: string) => {
-              field.onChange(encodeMultiSelection(newSelected, newOther, PLATFORM_OPTIONS));
+              const values = newSelected.filter((v) => v !== OTHER_OPTION.value);
+              const other = newOther.trim();
+              if (other) values.push(other);
+              field.onChange(Array.from(new Set(values)));
             };
             const toggle = (val: string) => {
               const next = selected.includes(val) ? selected.filter((v) => v !== val) : [...selected, val];
@@ -483,11 +488,30 @@ export function CreativeStep({ form, showField }: StepProps) {
         </div>
       )}
       {showField("creative", "best_content_types") && (
-        <div>
-          <label htmlFor="best_content_types" className={labelCls}>Best-performing content types</label>
-          <div className={fieldShell}><textarea id="best_content_types" className={textareaCls} {...register("best_content_types")} /></div>
-          {errors.best_content_types && <p className={errCls}>{errors.best_content_types.message}</p>}
-        </div>
+        <Controller
+          name="best_content_types"
+          control={form.control}
+          render={({ field }) => (
+            <div>
+              <label htmlFor="best_content_types" className={labelCls}>Best-performing content types</label>
+              <div className={fieldShell}>
+                <textarea
+                  id="best_content_types"
+                  className={textareaCls}
+                  value={Array.isArray(field.value) ? field.value.join(", ") : ""}
+                  onChange={(e) => {
+                    const values = e.target.value
+                      .split(/[,،]/g)
+                      .map((item) => item.trim())
+                      .filter(Boolean);
+                    field.onChange(Array.from(new Set(values)));
+                  }}
+                />
+              </div>
+              {errors.best_content_types && <p className={errCls}>{errors.best_content_types.message}</p>}
+            </div>
+          )}
+        />
       )}
     </div>
   );

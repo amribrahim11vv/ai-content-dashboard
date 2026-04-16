@@ -2,6 +2,17 @@ import { and, desc, eq } from "drizzle-orm";
 import { kits, type KitRow } from "../db/schema.js";
 import { getStatusBadgeLabel, getStatusBadgePalette } from "../logic/status.js";
 
+function normalizeArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return Array.from(
+    new Set(
+      value
+        .map((item) => String(item ?? "").trim())
+        .filter(Boolean)
+    )
+  );
+}
+
 export function serializeKit(row: KitRow) {
   const status = row.deliveryStatus;
   const palette = getStatusBadgePalette(status);
@@ -13,9 +24,21 @@ export function serializeKit(row: KitRow) {
       result = null;
     }
   }
+  let briefJson = row.briefJson;
+  try {
+    const parsedBrief = JSON.parse(row.briefJson) as Record<string, unknown>;
+    if (parsedBrief && typeof parsedBrief === "object") {
+      parsedBrief.target_audience = normalizeArray(row.targetAudienceV2);
+      parsedBrief.platforms = normalizeArray(row.platformsV2);
+      parsedBrief.best_content_types = normalizeArray(row.bestContentTypesV2);
+      briefJson = JSON.stringify(parsedBrief);
+    }
+  } catch {
+    briefJson = row.briefJson;
+  }
   return {
     id: row.id,
-    brief_json: row.briefJson,
+    brief_json: briefJson,
     result_json: result,
     delivery_status: row.deliveryStatus,
     status_badge: getStatusBadgeLabel(status),
@@ -57,6 +80,9 @@ export async function persistKit(
       deviceId: owner.deviceId,
       userId: owner.userId ?? null,
       briefJson,
+      targetAudienceV2: normalizeArray(snapshot.target_audience),
+      platformsV2: normalizeArray(snapshot.platforms),
+      bestContentTypesV2: normalizeArray(snapshot.best_content_types),
       resultJson: aiContent ? JSON.stringify(aiContent) : null,
       deliveryStatus: meta.deliveryStatus,
       modelUsed: meta.modelUsed,
@@ -95,6 +121,9 @@ export async function updateKit(
     .update(kits)
     .set({
       briefJson,
+      targetAudienceV2: normalizeArray(snapshot.target_audience),
+      platformsV2: normalizeArray(snapshot.platforms),
+      bestContentTypesV2: normalizeArray(snapshot.best_content_types),
       resultJson: aiContent ? JSON.stringify(aiContent) : null,
       deliveryStatus: meta.deliveryStatus,
       modelUsed: meta.modelUsed,

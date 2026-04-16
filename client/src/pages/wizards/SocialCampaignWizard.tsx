@@ -29,7 +29,7 @@ export default function SocialCampaignWizard() {
       defaults={{
         campaign_mode: "social",
         main_goal: "Grow social reach and engagement",
-        platforms: "instagram, tiktok, facebook",
+        platforms: ["instagram", "tiktok", "facebook"],
       }}
     />
   );

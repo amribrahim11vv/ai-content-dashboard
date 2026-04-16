@@ -2,7 +2,11 @@ import type { SubmissionSnapshot } from "../logic/constants.js";
 import { isHighBudget } from "../logic/industry.js";
 import { normalizeKey } from "../logic/parse.js";
 
-function toDisplayValue(value: string): string {
+function toDisplayValue(value: unknown): string {
+  if (Array.isArray(value)) {
+    const joined = value.map((item) => String(item ?? "").trim()).filter(Boolean).join("، ");
+    return joined || "-";
+  }
   const v = String(value ?? "").trim();
   return v || "-";
 }

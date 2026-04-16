@@ -9,9 +9,9 @@ export type BaseBrief = {
   email: string;
   brand_name: string;
   industry: string;
-  target_audience: string;
+  target_audience: string[];
   main_goal: string;
-  platforms: string;
+  platforms: string[];
   brand_tone: string;
   campaign_mode: CampaignMode;
 };
@@ -23,13 +23,13 @@ export type OfferBrief = BaseBrief & {
 
 export type SocialBrief = BaseBrief & {
   visual_notes: string;
-  best_content_types: string;
+  best_content_types: string[];
 };
 
 export type DeepBrief = BaseBrief & {
   campaign_duration: string;
   budget_level: string;
-  best_content_types: string;
+  best_content_types: string[];
 };
 
 export type BriefByMode = {

@@ -5,6 +5,19 @@ function cleanText(v: unknown): string {
   return String(v ?? "").trim();
 }
 
+function cleanList(v: unknown): string {
+  if (Array.isArray(v)) {
+    return v
+      .map((item) => String(item ?? "").trim())
+      .filter(Boolean)
+      .join("، ");
+  }
+  return cleanText(v);
+}
+
+const VIDEO_NEGATIVE_SUFFIX =
+  "Ensure no text, no floating letters, no watermarks. Maintain strict physical consistency.";
+
 function section(title: string, body: string): string {
   const normalized = cleanText(body);
   if (!normalized) return "";
@@ -121,9 +134,9 @@ export function buildClientContextBlock(snapshot: SubmissionSnapshot): string {
   const lines = [
     `Brand name: ${cleanText(snapshot.brand_name)}`,
     `Industry: ${cleanText(snapshot.industry)}`,
-    `Target audience: ${cleanText(snapshot.target_audience)}`,
+    `Target audience: ${cleanList(snapshot.target_audience)}`,
     `Main goal: ${cleanText(snapshot.main_goal)}`,
-    `Platforms: ${cleanText(snapshot.platforms)}`,
+    `Platforms: ${cleanList(snapshot.platforms)}`,
     `Brand tone: ${cleanText(snapshot.brand_tone)}`,
     `Brand colors: ${cleanText(snapshot.brand_colors)}`,
     `Offer: ${cleanText(snapshot.offer)}`,
@@ -132,7 +145,7 @@ export function buildClientContextBlock(snapshot: SubmissionSnapshot): string {
     `Reference image attached: ${cleanText(snapshot.reference_image) ? "yes" : "no"}`,
     `Campaign duration/timing: ${cleanText(snapshot.campaign_duration)}`,
     `Budget level: ${cleanText(snapshot.budget_level)}`,
-    `Best content types: ${cleanText(snapshot.best_content_types)}`,
+    `Best content types: ${cleanList(snapshot.best_content_types)}`,
     `Requested posts count: ${snapshot.num_posts}`,
     `Requested image designs count: ${snapshot.num_image_designs}`,
     `Requested video prompts count: ${snapshot.num_video_prompts}`,
@@ -149,6 +162,10 @@ export function buildOutputPolicyBlock(mode: CampaignMode): string {
     "Each social post must be long-form, rich, and detailed (not short snippets) in both languages.",
     "Each image design item must include `caption_ar` and `caption_en` that match that exact visual concept.",
     "Each video prompt item must include `caption_ar` and `caption_en` that match that exact video concept.",
+    "Each `video_prompts[].ai_tool_instructions` must be one compact cinematic prompt composed of exactly 3 clauses in this order: (1) camera-work clause, (2) motion-control clause, (3) strict negative ending clause.",
+    "The camera-work clause must specify shot type + camera movement + lighting mood (example tokens: close-up, medium shot, wide shot, dolly-in, slow tilt up, cinematic lighting, 4k).",
+    "The motion-control clause must enforce stability and low-artifact behavior (example tokens: slow motion, subtle movement, stable transitions, smooth pacing).",
+    `The final clause of every video prompt must be exactly: ${VIDEO_NEGATIVE_SUFFIX}`,
     "For every social post and media caption, you MUST provide two equivalent versions in meaning: local Arabic (`_ar`) and professional English (`_en`).",
     "CRITICAL: DO NOT include Arabic typography, text overlays, or lettering inside image prompts or video scene visuals. Visuals must be text-free.",
     "Spoken scripts and external captions can remain in Arabic.",
@@ -159,12 +176,23 @@ export function buildOutputPolicyBlock(mode: CampaignMode): string {
   ].join("\n");
 }
 
+export function buildVideoDirectorPolicyBlock(): string {
+  return [
+    "Treat all video prompts as cinematic direction, not plain event descriptions.",
+    "Camera work is mandatory: specify shot framing, lens perspective, camera move, and lighting mood in each video prompt.",
+    "Motion control is mandatory: prefer slow, subtle, physically coherent movement to reduce artifacts.",
+    "Avoid fast chaotic motion unless the brief explicitly requires it; default to smooth pacing and stable transitions.",
+    "Every generated `ai_tool_instructions` must end with this exact sentence:",
+    VIDEO_NEGATIVE_SUFFIX,
+  ].join("\n");
+}
+
 export function buildMetaPromptBlock(snapshot: SubmissionSnapshot): string {
   const industry = cleanText(snapshot.industry) || "General";
-  const audience = cleanText(snapshot.target_audience) || "General audience";
+  const audience = cleanList(snapshot.target_audience) || "General audience";
   const goal = cleanText(snapshot.main_goal) || "Drive measurable marketing outcomes";
   const offer = cleanText(snapshot.offer) || "Not specified";
-  const platforms = cleanText(snapshot.platforms) || "Not specified";
+  const platforms = cleanList(snapshot.platforms) || "Not specified";
   const hasReferenceImage = Boolean(cleanText(snapshot.reference_image));
   return [
     "You are a Creative Director and strategic marketer.",
@@ -191,6 +219,33 @@ export function buildMetaPromptBlock(snapshot: SubmissionSnapshot): string {
   ].join("\n");
 }
 
+function hashDiversitySeed(input: string): string {
+  let hash = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
+  }
+  return hash.toString(36);
+}
+
+export function buildDiversityPolicyBlock(snapshot: SubmissionSnapshot): string {
+  const saltInput = [
+    cleanText(snapshot.brand_name),
+    cleanText(snapshot.industry),
+    cleanText(snapshot.main_goal),
+    cleanList(snapshot.platforms),
+    snapshot.submitted_at.toISOString(),
+  ].join("|");
+  const runSalt = hashDiversitySeed(saltInput);
+
+  return [
+    `Run diversity salt: ${runSalt}`,
+    "Generate fresh concepts for this specific run. Do not copy phrase templates from previous outputs.",
+    "For posts, vary hook style, opening angle, and CTA framing across items while staying on-brand.",
+    "For image/video concepts, vary scene composition, context, and emotional trigger (avoid repeated setup).",
+    "Never repeat identical captions, headlines, or `ai_tool_instructions` across this response.",
+  ].join("\n");
+}
+
 export function composePrompt(input: {
   campaignPrefix: string;
   creativeDirection: string;
@@ -205,6 +260,8 @@ export function composePrompt(input: {
     section("Client Context (auto-injected)", buildClientContextBlock(input.snapshot)),
     section("Conditional Diagnostic Rules", buildDiagnosticRulesBlock(input.snapshot)),
     section("Few-shot Guidance", buildFewShotGuidanceBlock()),
+    section("Diversity Rules", buildDiversityPolicyBlock(input.snapshot)),
+    section("Video Director Rules", buildVideoDirectorPolicyBlock()),
     section("Output Rules", buildOutputPolicyBlock(input.mode)),
   ]
     .map((x) => cleanText(x))

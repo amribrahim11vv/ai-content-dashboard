@@ -7,10 +7,10 @@ import type { BriefForm } from "./types";
  * - G_LIMITS numeric ranges
  */
 export const BRIEF_LIMITS = {
-  num_posts: { min: 1, max: 25, fallback: 5 },
-  num_image_designs: { min: 1, max: 10, fallback: 5 },
-  num_video_prompts: { min: 1, max: 10, fallback: 3 },
-  content_package_idea_count: { min: 1, max: 25, fallback: 10 },
+  num_posts: { min: 0, max: 25, fallback: 0 },
+  num_image_designs: { min: 0, max: 10, fallback: 0 },
+  num_video_prompts: { min: 0, max: 10, fallback: 0 },
+  content_package_idea_count: { min: 0, max: 25, fallback: 0 },
 } as const;
 
 const L = BRIEF_LIMITS;
@@ -24,9 +24,9 @@ export const briefSchema = z.object({
     }),
   brand_name: z.string().trim().min(1, "Brand name is required"),
   industry: z.string(),
-  target_audience: z.string(),
+  target_audience: z.array(z.string().trim().min(1)).default([]),
   main_goal: z.string(),
-  platforms: z.string(),
+  platforms: z.array(z.string().trim().min(1)).default([]),
   brand_tone: z.string(),
   brand_colors: z.string(),
   offer: z.string(),
@@ -35,7 +35,7 @@ export const briefSchema = z.object({
   reference_image: z.string().max(3_000_000).optional(),
   campaign_duration: z.string(),
   budget_level: z.string(),
-  best_content_types: z.string(),
+  best_content_types: z.array(z.string().trim().min(1)).default([]),
   num_posts: z.coerce
     .number({ invalid_type_error: "Enter a valid number" })
     .int()
@@ -78,9 +78,9 @@ const requiredStr = (message: string) => z.string().trim().min(1, { message });
 /** Social path: minimum viable brief for reach/engagement prompts. */
 export const socialBriefSchema = briefSchema.extend({
   industry: requiredStr("Select an industry"),
-  target_audience: requiredStr("Select at least one audience"),
+  target_audience: z.array(z.string().trim().min(1)).min(1, "Select at least one audience"),
   main_goal: requiredStr("Select a main campaign goal"),
-  platforms: requiredStr("Select at least one active platform"),
+  platforms: z.array(z.string().trim().min(1)).min(1, "Select at least one active platform"),
   brand_tone: requiredStr("Select brand tone"),
 });
 
@@ -88,18 +88,18 @@ export const socialBriefSchema = briefSchema.extend({
 export const offerBriefSchema = briefSchema.extend({
   industry: requiredStr("Select an industry"),
   offer: requiredStr("Describe your offer"),
-  target_audience: requiredStr("Select at least one audience"),
+  target_audience: z.array(z.string().trim().min(1)).min(1, "Select at least one audience"),
   main_goal: requiredStr("Select a main goal"),
 });
 
 /** Deep path: authority content minimum. */
 export const deepBriefSchema = briefSchema.extend({
   industry: requiredStr("Select an industry"),
-  target_audience: requiredStr("Select at least one audience"),
+  target_audience: z.array(z.string().trim().min(1)).min(1, "Select at least one audience"),
   main_goal: requiredStr("Select a main goal"),
   visual_notes: requiredStr("Add creative direction"),
   campaign_duration: requiredStr("Add timing or duration"),
-  best_content_types: requiredStr("List content types you want"),
+  best_content_types: z.array(z.string().trim().min(1)).min(1, "Select at least one content type"),
 });
 
 export const socialBriefSchemaWithDiagnosis = socialBriefSchema.extend({
@@ -148,9 +148,9 @@ export function initialBriefForm(): BriefForm {
     email: "",
     brand_name: "",
     industry: "",
-    target_audience: "",
+    target_audience: [],
     main_goal: "",
-    platforms: "",
+    platforms: [],
     brand_tone: "",
     brand_colors: "",
     offer: "",
@@ -159,7 +159,7 @@ export function initialBriefForm(): BriefForm {
     reference_image: "",
     campaign_duration: "",
     budget_level: "",
-    best_content_types: "",
+    best_content_types: [],
     num_posts: L.num_posts.fallback,
     num_image_designs: L.num_image_designs.fallback,
     num_video_prompts: L.num_video_prompts.fallback,

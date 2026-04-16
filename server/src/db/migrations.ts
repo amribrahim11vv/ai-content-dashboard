@@ -8,6 +8,9 @@ CREATE TABLE IF NOT EXISTS social_geni.kits (
   device_id TEXT NOT NULL DEFAULT '',
   user_id TEXT,
   brief_json TEXT NOT NULL,
+  target_audience_v2 JSONB NOT NULL DEFAULT '[]'::jsonb,
+  platforms_v2 JSONB NOT NULL DEFAULT '[]'::jsonb,
+  best_content_types_v2 JSONB NOT NULL DEFAULT '[]'::jsonb,
   result_json TEXT,
   delivery_status TEXT NOT NULL,
   model_used TEXT NOT NULL,
@@ -25,6 +28,24 @@ ADD COLUMN IF NOT EXISTS device_id TEXT NOT NULL DEFAULT '';
 
 ALTER TABLE social_geni.kits
 ADD COLUMN IF NOT EXISTS user_id TEXT;
+
+ALTER TABLE social_geni.kits
+ADD COLUMN IF NOT EXISTS target_audience_v2 JSONB NOT NULL DEFAULT '[]'::jsonb;
+
+ALTER TABLE social_geni.kits
+ADD COLUMN IF NOT EXISTS platforms_v2 JSONB NOT NULL DEFAULT '[]'::jsonb;
+
+ALTER TABLE social_geni.kits
+ADD COLUMN IF NOT EXISTS best_content_types_v2 JSONB NOT NULL DEFAULT '[]'::jsonb;
+
+UPDATE social_geni.kits
+SET
+  target_audience_v2 = COALESCE(target_audience_v2, '[]'::jsonb),
+  platforms_v2 = COALESCE(platforms_v2, '[]'::jsonb),
+  best_content_types_v2 = COALESCE(best_content_types_v2, '[]'::jsonb)
+WHERE target_audience_v2 IS NULL
+   OR platforms_v2 IS NULL
+   OR best_content_types_v2 IS NULL;
 
 CREATE TABLE IF NOT EXISTS social_geni.idempotency_keys (
   key_hash TEXT PRIMARY KEY NOT NULL,
@@ -57,9 +78,13 @@ CREATE TABLE IF NOT EXISTS social_geni.users (
   supabase_user_id TEXT NOT NULL UNIQUE,
   email TEXT NOT NULL DEFAULT '',
   display_name TEXT NOT NULL DEFAULT '',
+  is_admin BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL
 );
+
+ALTER TABLE social_geni.users
+ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT FALSE;
 
 CREATE TABLE IF NOT EXISTS social_geni.user_devices (
   id TEXT PRIMARY KEY NOT NULL,
@@ -90,12 +115,20 @@ CREATE TABLE IF NOT EXISTS social_geni.monthly_usage_counters (
   user_id TEXT,
   device_id TEXT,
   period_key TEXT NOT NULL,
+  video_prompts_used INTEGER NOT NULL DEFAULT 0,
+  image_prompts_used INTEGER NOT NULL DEFAULT 0,
   kits_used INTEGER NOT NULL DEFAULT 0,
   regenerate_used INTEGER NOT NULL DEFAULT 0,
   retry_used INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL
 );
+
+ALTER TABLE social_geni.monthly_usage_counters
+ADD COLUMN IF NOT EXISTS video_prompts_used INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE social_geni.monthly_usage_counters
+ADD COLUMN IF NOT EXISTS image_prompts_used INTEGER NOT NULL DEFAULT 0;
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_usage_user_period
   ON social_geni.monthly_usage_counters (user_id, period_key)

@@ -6,7 +6,7 @@ function cleanToken(v: string): string {
   return v.replace(/\s+/g, " ").trim();
 }
 
-export function splitSelectionString(raw: string): string[] {
+export function splitSelectionString(raw: unknown): string[] {
   return String(raw ?? "")
     .split(SPLIT_RE)
     .map(cleanToken)
@@ -18,7 +18,7 @@ function optionMatches(token: string, option: SelectionOption): boolean {
   return t === option.value.toLowerCase() || t === option.labelAr.toLowerCase();
 }
 
-export function decodeSingleSelection(raw: string, options: readonly SelectionOption[]) {
+export function decodeSingleSelection(raw: unknown, options: readonly SelectionOption[]) {
   const tokens = splitSelectionString(raw);
   const first = tokens[0] ?? "";
   if (!first) return { selected: "", otherText: "" };
@@ -27,7 +27,7 @@ export function decodeSingleSelection(raw: string, options: readonly SelectionOp
   return { selected: "__other__", otherText: first };
 }
 
-export function decodeMultiSelection(raw: string, options: readonly SelectionOption[]) {
+export function decodeMultiSelection(raw: unknown, options: readonly SelectionOption[]) {
   const tokens = splitSelectionString(raw);
   const selected = new Set<string>();
   const others: string[] = [];

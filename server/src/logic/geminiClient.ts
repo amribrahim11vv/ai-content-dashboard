@@ -6,6 +6,8 @@ export type GeminiSettings = {
   model: string;
   timeoutMs: number;
   maxRetries: number;
+  temperature?: number;
+  topP?: number;
 };
 
 export type GeminiReferenceImage = {
@@ -100,8 +102,8 @@ export async function callGeminiAPI(
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: responseSchema ?? getGeminiResponseSchema(),
-      temperature: 0.4,
-      topP: 0.9,
+      temperature: settings.temperature ?? 0.75,
+      topP: settings.topP ?? 0.9,
     },
   };
 
@@ -165,6 +167,8 @@ export function loadGeminiSettingsFromEnv(): GeminiSettings {
   const model = String(process.env.GEMINI_MODEL ?? G_DEFAULT_MODEL).trim() || G_DEFAULT_MODEL;
   const timeoutMs = Math.min(55_000, Math.max(5_000, parseInt(process.env.GEMINI_TIMEOUT_MS ?? "55000", 10) || 55_000));
   const maxRetries = Math.max(0, Math.min(3, parseInt(process.env.GEMINI_MAX_RETRIES ?? String(G_DEFAULT_MAX_RETRIES), 10) || G_DEFAULT_MAX_RETRIES));
+  const temperature = Math.min(1, Math.max(0, parseFloat(process.env.GEMINI_TEMPERATURE ?? "0.75") || 0.75));
+  const topP = Math.min(1, Math.max(0, parseFloat(process.env.GEMINI_TOP_P ?? "0.9") || 0.9));
 
-  return { apiKey, model, timeoutMs, maxRetries };
+  return { apiKey, model, timeoutMs, maxRetries, temperature, topP };
 }

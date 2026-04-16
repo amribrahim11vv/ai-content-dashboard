@@ -13,6 +13,15 @@ export function resolveDeliveryStatus(emailResult: EmailSendResult): string {
   return "generated";
 }
 
+function listText(value: unknown): string {
+  if (Array.isArray(value)) {
+    const joined = value.map((item) => String(item ?? "").trim()).filter(Boolean).join(", ");
+    return joined || "-";
+  }
+  const text = String(value ?? "").trim();
+  return text || "-";
+}
+
 export async function sendKitEmail(data: SubmissionSnapshot, aiContent: Record<string, unknown>): Promise<EmailSendResult> {
   const apiKey = String(process.env.RESEND_API_KEY ?? "").trim();
   const from = String(process.env.RESEND_FROM ?? "").trim();
@@ -117,7 +126,7 @@ export async function sendAdminFailureAlert(
     "Client Email: " + (data.email || "-"),
     "Industry: " + (data.industry || "-"),
     "Goal: " + (data.main_goal || "-"),
-    "Platforms: " + (data.platforms || "-"),
+    "Platforms: " + listText(data.platforms),
     "Model: " + modelUsed,
     "Kit ID: " + kitId,
     "Correlation ID: " + correlationId,
