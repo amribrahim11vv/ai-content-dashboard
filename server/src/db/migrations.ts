@@ -256,10 +256,58 @@ CREATE INDEX IF NOT EXISTS idx_industry_prompts_status ON social_geni.industry_p
 `;
 
 function splitDdlStatements(sql: string): string[] {
-  return sql
-    .split(";")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
+  const statements: string[] = [];
+  let current = "";
+  let inSingleQuote = false;
+  let dollarTag: string | null = null;
+
+  for (let i = 0; i < sql.length; i++) {
+    const ch = sql[i];
+    const next = sql[i + 1];
+
+    if (!inSingleQuote) {
+      if (ch === "$") {
+        const tail = sql.slice(i);
+        const openMatch = tail.match(/^\$[A-Za-z_][A-Za-z0-9_]*\$/) ?? tail.match(/^\$\$/);
+        if (openMatch) {
+          const tag = openMatch[0];
+          if (!dollarTag) {
+            dollarTag = tag;
+          } else if (dollarTag === tag) {
+            dollarTag = null;
+          }
+          current += tag;
+          i += tag.length - 1;
+          continue;
+        }
+      }
+    }
+
+    if (!dollarTag && ch === "'" && next === "'") {
+      current += "''";
+      i++;
+      continue;
+    }
+
+    if (!dollarTag && ch === "'") {
+      inSingleQuote = !inSingleQuote;
+      current += ch;
+      continue;
+    }
+
+    if (!dollarTag && !inSingleQuote && ch === ";") {
+      const trimmed = current.trim();
+      if (trimmed.length > 0) statements.push(trimmed);
+      current = "";
+      continue;
+    }
+
+    current += ch;
+  }
+
+  const trailing = current.trim();
+  if (trailing.length > 0) statements.push(trailing);
+  return statements;
 }
 
 export async function runMigrations(): Promise<void> {
