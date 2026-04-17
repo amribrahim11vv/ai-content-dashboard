@@ -12,6 +12,8 @@ import { respondHttpError } from "./httpErrorMapping.js";
 import { getAuthUser } from "../middleware/userAuth.js";
 import { ensureUserFromSupabase } from "../services/subscriptionService.js";
 import { db } from "../db/index.js";
+import { users } from "../db/schema.js";
+import { eq } from "drizzle-orm";
 
 const deviceIdSchema = z.string().uuid();
 
@@ -81,6 +83,23 @@ async function resolveOwner(c: import("hono").Context) {
   return { ok: true as const, owner: { deviceId: device.deviceId, userId: user.id } };
 }
 
+async function requireAdminAccess(c: import("hono").Context): Promise<Response | null> {
+  const authUser = getAuthUser(c);
+  if (!authUser) return c.json({ error: "Unauthorized" }, 401);
+  const current = (
+    await db
+      .select({
+        id: users.id,
+        isAdmin: users.isAdmin,
+      })
+      .from(users)
+      .where(eq(users.supabaseUserId, authUser.supabaseUserId))
+      .limit(1)
+  )[0];
+  if (!current?.isAdmin) return c.json({ error: "Admin access required." }, 403);
+  return null;
+}
+
 export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => Promise<void | Response>) {
   const app = new Hono();
 
@@ -113,11 +132,13 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
   app.get("/api/kits", async (c) => {
     const scopeAll = c.req.query("scope") === "all";
     if (scopeAll) {
-      return c.json(await listKitsService());
+      const blocked = await requireAdminAccess(c);
+      if (blocked) return blocked;
+      return c.json(await listKitsService(undefined, { includeUsage: true }));
     }
     const ownerRes = await resolveOwner(c);
     if (!ownerRes.ok) return ownerRes.response;
-    return c.json(await listKitsService(ownerRes.owner));
+    return c.json(await listKitsService(ownerRes.owner, { includeUsage: false }));
   });
 
   app.get("/api/kits/:id", async (c) => {
@@ -127,9 +148,12 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
       const ownerRes = await resolveOwner(c);
       if (!ownerRes.ok) return ownerRes.response;
       owner = ownerRes.owner;
+    } else {
+      const blocked = await requireAdminAccess(c);
+      if (blocked) return blocked;
     }
     try {
-      return c.json(await getKitByIdService(c.req.param("id"), owner));
+      return c.json(await getKitByIdService(c.req.param("id"), owner, { includeUsage: scopeAll }));
     } catch (err) {
       return respondHttpError(c, err, "Unexpected error while loading kit.");
     }

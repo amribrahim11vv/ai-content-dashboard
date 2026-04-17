@@ -1,6 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import { kits, type KitRow } from "../db/schema.js";
 import { getStatusBadgeLabel, getStatusBadgePalette } from "../logic/status.js";
+import type { GenerationUsageTotals } from "./aiGenerationProvider.js";
 
 function normalizeArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
@@ -13,7 +14,7 @@ function normalizeArray(value: unknown): string[] {
   );
 }
 
-export function serializeKit(row: KitRow) {
+export function serializeKit(row: KitRow, opts?: { includeUsage?: boolean }) {
   const status = row.deliveryStatus;
   const palette = getStatusBadgePalette(status);
   let result: unknown = null;
@@ -36,7 +37,7 @@ export function serializeKit(row: KitRow) {
   } catch {
     briefJson = row.briefJson;
   }
-  return {
+  const base = {
     id: row.id,
     brief_json: briefJson,
     result_json: result,
@@ -52,6 +53,13 @@ export function serializeKit(row: KitRow) {
     created_at: row.createdAt.toISOString(),
     updated_at: row.updatedAt.toISOString(),
   };
+  if (!opts?.includeUsage) return base;
+  return {
+    ...base,
+    prompt_tokens: row.promptTokens,
+    completion_tokens: row.completionTokens,
+    total_tokens: row.totalTokens,
+  };
 }
 
 export async function persistKit(
@@ -66,6 +74,7 @@ export async function persistKit(
     correlationId: string;
     promptVersionId?: string | null;
     isFallback?: boolean;
+    tokenUsage?: GenerationUsageTotals;
     rowVersion?: number;
   }
 ) {
@@ -90,6 +99,9 @@ export async function persistKit(
       correlationId: meta.correlationId,
       promptVersionId: meta.promptVersionId ?? null,
       isFallback: meta.isFallback ?? false,
+      promptTokens: meta.tokenUsage?.promptTokens ?? 0,
+      completionTokens: meta.tokenUsage?.completionTokens ?? 0,
+      totalTokens: meta.tokenUsage?.totalTokens ?? 0,
       rowVersion: meta.rowVersion ?? 0,
       createdAt: now,
       updatedAt: now,
@@ -112,6 +124,7 @@ export async function updateKit(
     correlationId: string;
     promptVersionId?: string | null;
     isFallback?: boolean;
+    tokenUsage?: GenerationUsageTotals;
     rowVersion: number;
   }
 ) {
@@ -131,6 +144,9 @@ export async function updateKit(
       correlationId: meta.correlationId,
       promptVersionId: meta.promptVersionId ?? null,
       isFallback: meta.isFallback ?? false,
+      promptTokens: meta.tokenUsage?.promptTokens ?? 0,
+      completionTokens: meta.tokenUsage?.completionTokens ?? 0,
+      totalTokens: meta.tokenUsage?.totalTokens ?? 0,
       rowVersion: meta.rowVersion,
       updatedAt: now,
     })
@@ -139,23 +155,27 @@ export async function updateKit(
   return updated[0] ?? null;
 }
 
-export async function listKits(db: any, owner: { deviceId: string; userId?: string | null }) {
+export async function listKits(
+  db: any,
+  owner: { deviceId: string; userId?: string | null },
+  opts?: { includeUsage?: boolean }
+) {
   const rows = await db
     .select()
     .from(kits)
     .where(owner.userId ? eq(kits.userId, owner.userId) : eq(kits.deviceId, owner.deviceId))
     .orderBy(desc(kits.createdAt))
     .limit(200);
-  return rows.map(serializeKit);
+  return rows.map((row: KitRow) => serializeKit(row, opts));
 }
 
-export async function listAllKits(db: any) {
+export async function listAllKits(db: any, opts?: { includeUsage?: boolean }) {
   const rows = await db
     .select()
     .from(kits)
     .orderBy(desc(kits.createdAt))
     .limit(200);
-  return rows.map(serializeKit);
+  return rows.map((row: KitRow) => serializeKit(row, opts));
 }
 
 export async function getKitById(db: any, id: string, owner: { deviceId: string; userId?: string | null }) {

@@ -48,9 +48,9 @@ The UI (**Kit Viewer**) is organized around these layers so a user can **jump to
 | **Social manager** | **Copy-paste-ready posts** and hashtag/CTA structure; language toggle where the kit exposes Arabic and English fields. |
 | **Designer or AI operator** | **Image and video prompt blocks** detailed enough to feed Midjourney, DALL·E, Runway-class tools, etc. |
 | **Sales or growth** | **Pain points, objections, funnel and CTA angles** from the sales-system portion of the kit—useful for landing pages, ads, or call scripts. |
-| **Internal admin / strategist** | **Prompt catalog** and industry templates so the *voice of the machine* stays on-brand across many kits; **analytics** on wizard usage; ability to **see all kits** for QA or support. |
+| **Internal admin / strategist** | **Prompt catalog** and industry templates so the *voice of the machine* stays on-brand across many kits; **analytics** on wizard usage; ability to **see all kits** for QA or support; **user/admin role management** and operational plan controls. |
 
-The public flow assumes **no full user accounts** for kit listing: kits created from a browser are **scoped to a stable device identity** so the same visitor sees **their** history when they return. Admins use separate routes to see **everything**. That trade-off favors **speed to value** for anonymous or lightweight use while still allowing operational oversight.
+The public flow supports a **free trial experience** for fast onboarding, while authenticated users get persistent account-level features (profile, brand voice, integrations readiness, saved preferences). Admins use separate routes to see **everything** and manage privileged access.
 
 ---
 
@@ -82,9 +82,29 @@ Purpose: **Separate “how we want the AI to think” from “what this client t
 
 Purpose: **Improve prompts and spot failures**. Seeing all kits and how people move through the wizard informs product and content strategy—not just debugging.
 
+### 5.7 Account surfaces (Profile, Brand Voice, Integrations, Help)
+
+Purpose: make account features **real and persistent**, not placeholder UI.
+
+- **Profile** stores user-facing identity settings synced with auth.
+- **Brand Voice** stores writing pillars, avoided words, and a sample snippet; this context is injected into generation prompts.
+- **Integrations** surface product readiness and connection roadmap in a clear UX.
+- **Help** gives searchable guidance and quick support paths.
+
 ---
 
-## 6. Why structured JSON (and strict validation) matters to the *idea*
+## 6. Current monetization model (Paid Beta)
+
+The product currently follows a **Paid Beta** model with simple, asset-based quotas:
+
+- **Starter (free trial)**: limited trial usage to experience real output quality quickly.
+- **Early Adopter (paid beta)**: symbolic low-cost entry plan for early customer acquisition, focused on practical starter quotas (e.g. small monthly video/image limits) rather than high-volume access.
+
+The pricing philosophy is intentional: remove friction for first adoption, validate conversion behavior with real users, then iterate packaging and pricing based on usage evidence.
+
+---
+
+## 7. Why structured JSON (and strict validation) matters to the *idea*
 
 If the model returned free-form prose, the app could not reliably show **“Video prompt #2”** or **merge a regenerated post back into the kit**. The product promise of a **kit** depends on a **contract**: known keys for posts, designs, videos, strategy objects, etc.
 
@@ -92,40 +112,49 @@ That is why the backend uses a **response schema** and validation: the **UX is d
 
 Creative-policy rules (e.g. constraints around **Arabic text inside image/video visual frames** vs. captions and scripts) exist so outputs stay **usable** in real creative pipelines and regional contexts.
 
+Prompting policy also enforces production-oriented output quality, including:
+
+- stronger negative constraints for generated visual prompts,
+- camera-language guidance for video prompts,
+- motion-control wording to reduce artifacts,
+- anti-repetition and diversity controls to reduce near-identical outputs across runs.
+
 ---
 
-## 7. Reliability and iteration as product features
+## 8. Reliability and iteration as product features
 
 - **Failed generation**: The user should be able to **retry** with a clear path (full retry from stored brief), not lose the brief or start from zero manually.
 - **Row versioning**: Prevents two tabs from silently overwriting each other’s updates—again, about **trust** in the artifact.
 - **Regenerate one item**: Matches how people work—“fix this asset only.”
+- **Plan and usage enforcement**: Usage checks are tied to active plan subscriptions and per-period counters so product limits stay predictable.
 
 These are not secondary; they reinforce that a **kit is an object you own and refine**, not a disposable chat transcript.
 
 ---
 
-## 8. Positioning summary
+## 9. Positioning summary
 
 | Dimension | Intent |
 |-----------|--------|
-| **Vs. generic ChatGPT** | Fixed structure, stored kits, wizard-driven context, bilingual fields where defined, copy-oriented UI. |
+| **Vs. generic ChatGPT** | Fixed structure, stored kits, wizard-driven context, bilingual fields where defined, copy-oriented UI, and account-aware brand voice injection. |
 | **Vs. a static template shop** | Every kit is **generated** from the user’s brief and industry prompts, not a dead PDF. |
 | **Vs. a pure scheduling tool** | Strong on **creation** (copy + prompts + strategy); scheduling is out of scope unless added later. |
 
 ---
 
-## 9. Under the hood (short pointer)
+## 10. Under the hood (short pointer)
 
 - **Stack**: React (Vite) + Hono API + PostgreSQL (Drizzle), Gemini for generation. See README for diagrams and versions.
-- **Auth model**: Browser calls from allowed origins or Bearer `API_SECRET` for tools; kits list/detail for normal users tied to **`X-Device-ID`**; admin uses broader list scope.
+- **Auth model**: Browser calls from allowed origins or Bearer `API_SECRET` for tools; trial and standard flows are supported; admin uses broader list scope with role-based checks.
 - **Key code**: `server/src/logic/responseSchema.ts` (output shape), `server/src/services/kitGenerationService.ts` (orchestration), `client/src/KitViewer.tsx` (presentation), `client/src/features/kits/kitViewModel.ts` (mapping `result_json` to UI).
+- **Account feature routes**: `server/src/routes/features.ts` + account pages in `client/src/pages/` (`ProfilePage`, `BrandVoicePage`, `IntegrationsPage`, `HelpPage`).
 
 ---
 
-## 10. Future direction (product-level)
+## 11. Future direction (product-level)
 
-Ideas already noted in the repo include field-level repair endpoints, richer validation errors for power users, and shared typing between client and server—each would further strengthen the **“kit as a reliable artifact”** story.
+Ideas already noted in the repo include field-level repair endpoints, richer validation errors for power users, stronger multi-select semantics across all wizard fields, and deeper shared typing between client and server—each would further strengthen the **“kit as a reliable artifact”** story.
 
 ---
 
-*This brief prioritizes purpose and experience. Operational and API specifics live in `README.md` and the codebase.*
+*This brief prioritizes purpose and experience and reflects the current Paid Beta phase. Operational and API specifics live in `README.md` and the codebase.*

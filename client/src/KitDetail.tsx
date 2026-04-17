@@ -242,6 +242,23 @@ export default function KitDetail({ showTechnical = false }: { showTechnical?: b
           </p>
         ) : null}
 
+        {showTechnical ? (
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-outline/25 bg-surface-container-low p-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-on-surface-variant">Prompt tokens</p>
+              <p className="mt-1 text-sm font-semibold text-on-surface">{(kit.prompt_tokens ?? 0).toLocaleString()}</p>
+            </div>
+            <div className="rounded-xl border border-outline/25 bg-surface-container-low p-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-on-surface-variant">Completion tokens</p>
+              <p className="mt-1 text-sm font-semibold text-on-surface">{(kit.completion_tokens ?? 0).toLocaleString()}</p>
+            </div>
+            <div className="rounded-xl border border-outline/25 bg-surface-container-low p-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-on-surface-variant">Total tokens</p>
+              <p className="mt-1 text-sm font-semibold text-on-surface">{(kit.total_tokens ?? 0).toLocaleString()}</p>
+            </div>
+          </div>
+        ) : null}
+
         {kit.last_error && (
           <div className="rounded-2xl border border-error/30 bg-error/10 p-4">
             <div className="mb-2 text-xs font-bold uppercase tracking-wider text-error">Error details</div>

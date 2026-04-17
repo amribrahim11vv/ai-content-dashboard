@@ -10,6 +10,9 @@ export type KitSummary = {
   correlation_id: string;
   prompt_version_id?: string | null;
   is_fallback?: boolean;
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
   row_version: number;
   created_at: string;
   updated_at: string;

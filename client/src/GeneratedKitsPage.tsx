@@ -13,6 +13,11 @@ function initials(name: string, id: string): string {
   return s.slice(0, 2).toUpperCase() || "—";
 }
 
+function formatTokens(total?: number): string {
+  const value = typeof total === "number" ? total : 0;
+  return value.toLocaleString();
+}
+
 export default function GeneratedKitsPage({ adminMode = false }: { adminMode?: boolean }) {
   const compactTable = useCompactTable();
   const [kits, setKits] = useState<KitSummary[] | null>(null);
@@ -79,6 +84,11 @@ export default function GeneratedKitsPage({ adminMode = false }: { adminMode?: b
                     <p className="mt-auto text-[11px] font-medium text-gray-400 dark:text-gray-500">
                       {dt.toLocaleDateString()} · {dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </p>
+                    {adminMode && (
+                      <p className="mt-2 inline-flex w-fit rounded-full border border-gray-200 px-2 py-0.5 text-[11px] font-semibold text-gray-600 dark:border-white/10 dark:text-gray-300">
+                        Tokens: {formatTokens(k.total_tokens)}
+                      </p>
+                    )}
                   </Link>
                 </li>
               );
@@ -115,6 +125,7 @@ export default function GeneratedKitsPage({ adminMode = false }: { adminMode?: b
                   <th className={thPad + " text-start font-medium"}>Industry</th>
                   <th className={thPad + " text-start font-medium"}>Date</th>
                   <th className={thPad + " text-start font-medium"}>Status</th>
+                  {adminMode && <th className={thPad + " text-start font-medium"}>Tokens</th>}
                   <th className={thPad + " text-end font-medium"}></th>
                 </tr>
               </thead>
@@ -176,6 +187,13 @@ export default function GeneratedKitsPage({ adminMode = false }: { adminMode?: b
                           </span>
                         )}
                       </td>
+                      {adminMode && (
+                        <td className={tdPad}>
+                          <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                            {formatTokens(k.total_tokens)}
+                          </span>
+                        </td>
+                      )}
                       <td className={tdPad + " text-end"}>
                         <Link
                           to={kitDetailsBase + k.id}

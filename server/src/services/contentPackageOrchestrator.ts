@@ -12,7 +12,12 @@ import {
   validatePackageCoherence,
   validateTemplatesStep,
 } from "../logic/packageValidate.js";
-import { type AIGenerationDependencies, generateJsonStepWithGuardrails } from "./aiGenerationProvider.js";
+import {
+  addUsageTotals,
+  type AIGenerationDependencies,
+  type GenerationUsageTotals,
+  generateJsonStepWithGuardrails,
+} from "./aiGenerationProvider.js";
 
 function asIdeasData(ideaCount: number) {
   return (raw: unknown) => {
@@ -43,11 +48,12 @@ export async function runContentPackageChain(
   settings: GeminiSettings,
   referenceImage?: GeminiReferenceImage,
   deps?: AIGenerationDependencies
-): Promise<ContentIdeasPackage> {
+): Promise<{ data: ContentIdeasPackage; usage: GenerationUsageTotals }> {
   const ideaCount = snapshot.content_package_idea_count;
+  let usage: GenerationUsageTotals = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
 
   const ideasPrompt = buildIdeasStepPrompt(snapshot);
-  const ideas: ContentIdea[] = await generateJsonStepWithGuardrails(
+  const ideasResult = await generateJsonStepWithGuardrails(
     ideasPrompt,
     settings,
     getIdeasStepSchema(ideaCount),
@@ -55,6 +61,8 @@ export async function runContentPackageChain(
     referenceImage,
     deps
   );
+  usage = addUsageTotals(usage, ideasResult.usage);
+  const ideas: ContentIdea[] = ideasResult.data;
 
   const ideasPayloadJson = JSON.stringify({ ideas }, null, 2);
 
@@ -64,7 +72,7 @@ export async function runContentPackageChain(
   let hooks: ContentHook[];
   let templates: ContentTemplate[];
   try {
-    [hooks, templates] = await Promise.all([
+    const [hooksResult, templatesResult] = await Promise.all([
       generateJsonStepWithGuardrails(
         hooksPrompt,
         settings,
@@ -82,6 +90,10 @@ export async function runContentPackageChain(
         deps
       ),
     ]);
+    hooks = hooksResult.data;
+    templates = templatesResult.data;
+    usage = addUsageTotals(usage, hooksResult.usage);
+    usage = addUsageTotals(usage, templatesResult.usage);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     throw new Error(`content_package_chain phase2 failed: ${msg}`);
@@ -92,5 +104,5 @@ export async function runContentPackageChain(
     throw new Error(`content_package_chain coherence failed: ${coherence.join(" | ")}`);
   }
 
-  return { ideas, hooks, templates };
+  return { data: { ideas, hooks, templates }, usage };
 }

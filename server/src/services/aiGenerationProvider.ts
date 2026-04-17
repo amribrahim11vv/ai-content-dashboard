@@ -3,6 +3,7 @@ import {
   callGeminiAPI,
   type GeminiReferenceImage,
   type GeminiSettings,
+  type GeminiUsageMetadata,
 } from "../logic/geminiClient.js";
 import { isPlainObject } from "../logic/parse.js";
 import { validateGeminiResponse } from "../logic/validate.js";
@@ -10,6 +11,31 @@ import { validateGeminiResponse } from "../logic/validate.js";
 export type AIGenerationDependencies = {
   callAPI?: typeof callGeminiAPI;
 };
+
+export type GenerationUsageTotals = {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+};
+
+function usageToTotals(usage?: GeminiUsageMetadata): GenerationUsageTotals {
+  return {
+    promptTokens: usage?.promptTokenCount ?? 0,
+    completionTokens: usage?.candidatesTokenCount ?? 0,
+    totalTokens: usage?.totalTokenCount ?? 0,
+  };
+}
+
+export function addUsageTotals(
+  left: GenerationUsageTotals,
+  right?: GenerationUsageTotals
+): GenerationUsageTotals {
+  return {
+    promptTokens: left.promptTokens + (right?.promptTokens ?? 0),
+    completionTokens: left.completionTokens + (right?.completionTokens ?? 0),
+    totalTokens: left.totalTokens + (right?.totalTokens ?? 0),
+  };
+}
 
 export function buildJsonCorrectionPrompt(basePrompt: string, validationErrors: string[]): string {
   return [
@@ -34,15 +60,15 @@ export async function generateJsonStepWithGuardrails<T>(
   validate: JsonStepValidate<T>,
   referenceImage?: GeminiReferenceImage,
   deps?: AIGenerationDependencies
-): Promise<T> {
+): Promise<{ data: T; usage: GenerationUsageTotals }> {
   const callAPI = deps?.callAPI ?? callGeminiAPI;
   let promptText = basePrompt;
   let lastErrors: string[] = [];
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
-    const raw = await callAPI(promptText, settings, responseSchema, referenceImage);
-    const result = validate(raw);
-    if (result.ok) return result.data;
+    const response = await callAPI(promptText, settings, responseSchema, referenceImage);
+    const result = validate(response.json);
+    if (result.ok) return { data: result.data, usage: usageToTotals(response.usage) };
     lastErrors = result.errors;
     if (attempt === 0) {
       promptText = buildJsonCorrectionPrompt(basePrompt, lastErrors);
@@ -58,20 +84,30 @@ export async function generateWithGuardrails(
   settings: GeminiSettings,
   referenceImage?: GeminiReferenceImage,
   deps?: AIGenerationDependencies
-): Promise<{ aiContent: Record<string, unknown>; jsonValid: boolean; retryCount: number }> {
+): Promise<{
+  aiContent: Record<string, unknown>;
+  jsonValid: boolean;
+  retryCount: number;
+  usage: GenerationUsageTotals;
+}> {
   const callAPI = deps?.callAPI ?? callGeminiAPI;
   let retryCount = 0;
   let promptText = basePrompt;
   let lastErrors: string[] = [];
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
-    const raw = await callAPI(promptText, settings, undefined, referenceImage);
-    if (!isPlainObject(raw)) {
+    const response = await callAPI(promptText, settings, undefined, referenceImage);
+    if (!isPlainObject(response.json)) {
       lastErrors = ["Gemini returned non-object JSON."];
     } else {
-      const validationErrors = validateGeminiResponse(raw, snapshot);
+      const validationErrors = validateGeminiResponse(response.json, snapshot);
       if (validationErrors.length === 0) {
-        return { aiContent: raw as Record<string, unknown>, jsonValid: true, retryCount };
+        return {
+          aiContent: response.json as Record<string, unknown>,
+          jsonValid: true,
+          retryCount,
+          usage: usageToTotals(response.usage),
+        };
       }
       lastErrors = validationErrors;
     }

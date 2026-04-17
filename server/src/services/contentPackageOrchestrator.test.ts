@@ -37,9 +37,9 @@ function templatesPayload(ideaList: { id: number }[]) {
 
 function routingMock(n: number, ideas = ideasPayload(n)) {
   return async (prompt: string) => {
-    if (prompt.includes("Generate exactly") && prompt.includes("distinct short-form content ideas")) return ideas;
-    if (prompt.includes("You are a hook copywriter")) return hooksPayload(ideas.ideas);
-    if (prompt.includes("You are a content systems designer.")) return templatesPayload(ideas.ideas);
+    if (prompt.includes("Generate exactly") && prompt.includes("distinct short-form content ideas")) return { json: ideas };
+    if (prompt.includes("You are a hook copywriter")) return { json: hooksPayload(ideas.ideas) };
+    if (prompt.includes("You are a content systems designer.")) return { json: templatesPayload(ideas.ideas) };
     throw new Error("unexpected prompt fragment");
   };
 }
@@ -55,10 +55,10 @@ describe("contentPackageOrchestrator", () => {
     const out = await runContentPackageChain(snapshot, settings, undefined, {
       callAPI: routingMock(n),
     });
-    expect(out.ideas).toHaveLength(n);
-    expect(out.hooks).toHaveLength(n * PACKAGE_HOOKS_PER_IDEA);
-    expect(out.templates).toHaveLength(n);
-    expect(out.ideas[0]?.id).toBe(1);
+    expect(out.data.ideas).toHaveLength(n);
+    expect(out.data.hooks).toHaveLength(n * PACKAGE_HOOKS_PER_IDEA);
+    expect(out.data.templates).toHaveLength(n);
+    expect(out.data.ideas[0]?.id).toBe(1);
   });
 
   it("fails coherence when hooks reuse the same variant_index for an idea", async () => {
@@ -78,9 +78,9 @@ describe("contentPackageOrchestrator", () => {
       ],
     };
     const callAPI = async (prompt: string) => {
-      if (prompt.includes("Generate exactly") && prompt.includes("distinct short-form content ideas")) return ideas;
-      if (prompt.includes("You are a hook copywriter")) return badHooks;
-      if (prompt.includes("You are a content systems designer.")) return templatesPayload(ideas.ideas);
+      if (prompt.includes("Generate exactly") && prompt.includes("distinct short-form content ideas")) return { json: ideas };
+      if (prompt.includes("You are a hook copywriter")) return { json: badHooks };
+      if (prompt.includes("You are a content systems designer.")) return { json: templatesPayload(ideas.ideas) };
       throw new Error("unexpected");
     };
     await expect(

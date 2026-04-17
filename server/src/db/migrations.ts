@@ -18,6 +18,9 @@ CREATE TABLE IF NOT EXISTS social_geni.kits (
   correlation_id TEXT NOT NULL,
   prompt_version_id TEXT,
   is_fallback BOOLEAN NOT NULL DEFAULT FALSE,
+  prompt_tokens INTEGER NOT NULL DEFAULT 0,
+  completion_tokens INTEGER NOT NULL DEFAULT 0,
+  total_tokens INTEGER NOT NULL DEFAULT 0,
   row_version INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL
@@ -37,6 +40,15 @@ ADD COLUMN IF NOT EXISTS platforms_v2 JSONB NOT NULL DEFAULT '[]'::jsonb;
 
 ALTER TABLE social_geni.kits
 ADD COLUMN IF NOT EXISTS best_content_types_v2 JSONB NOT NULL DEFAULT '[]'::jsonb;
+
+ALTER TABLE social_geni.kits
+ADD COLUMN IF NOT EXISTS prompt_tokens INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE social_geni.kits
+ADD COLUMN IF NOT EXISTS completion_tokens INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE social_geni.kits
+ADD COLUMN IF NOT EXISTS total_tokens INTEGER NOT NULL DEFAULT 0;
 
 UPDATE social_geni.kits
 SET

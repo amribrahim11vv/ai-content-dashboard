@@ -77,7 +77,7 @@ describe("aiGenerationProvider", () => {
       snapshot,
       { apiKey: "x", model: "m", timeoutMs: 10000, maxRetries: 0 },
       undefined,
-      { callAPI: async () => fakePayload }
+      { callAPI: async () => ({ json: fakePayload }) }
     );
     expect(result.jsonValid).toBe(true);
   });
@@ -92,7 +92,7 @@ describe("aiGenerationProvider", () => {
     };
     let calls = 0;
     const ideaCount = 10;
-    const data = await generateJsonStepWithGuardrails(
+    const result = await generateJsonStepWithGuardrails(
       "prompt",
       { apiKey: "x", model: "m", timeoutMs: 10_000, maxRetries: 0 },
       getIdeasStepSchema(ideaCount),
@@ -101,12 +101,12 @@ describe("aiGenerationProvider", () => {
       {
         callAPI: async () => {
           calls += 1;
-          if (calls === 1) return { ideas: [] };
-          return good;
+          if (calls === 1) return { json: { ideas: [] } };
+          return { json: good };
         },
       }
     );
     expect(calls).toBe(2);
-    expect(data.ideas).toHaveLength(10);
+    expect(result.data.ideas).toHaveLength(10);
   });
 });

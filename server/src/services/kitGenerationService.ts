@@ -12,6 +12,7 @@ import { buildSubmissionSnapshot, briefFingerprint, isPlainObject, parseSubmissi
 import { resolvePrompt } from "../logic/promptResolver.js";
 import { normalizeDeliveryStatus } from "../logic/status.js";
 import { generateWithGuardrails } from "./aiGenerationProvider.js";
+import { addUsageTotals, type GenerationUsageTotals } from "./aiGenerationProvider.js";
 import { runContentPackageChain } from "./contentPackageOrchestrator.js";
 import { parseReferenceImageFromDataUrl } from "./imageProcessor.js";
 import {
@@ -113,6 +114,7 @@ async function persistGenerationFailure(params: {
   correlationId: string;
   promptVersionId?: string | null;
   isFallback?: boolean;
+  tokenUsage?: GenerationUsageTotals;
 }) {
   return persistKit(params.db, params.snapshot, null, params.owner, {
     deliveryStatus: "failed_generation",
@@ -121,6 +123,7 @@ async function persistGenerationFailure(params: {
     correlationId: params.correlationId,
     promptVersionId: params.promptVersionId,
     isFallback: params.isFallback,
+    tokenUsage: params.tokenUsage,
   });
 }
 
@@ -209,16 +212,19 @@ export async function generateKitService(input: {
   }
 
   try {
-    const { aiContent, jsonValid, retryCount } = await generateWithGuardrails(
+    const { aiContent, jsonValid, retryCount, usage: primaryUsage } = await generateWithGuardrails(
       resolved.renderedPrompt,
       snapshot,
       settings,
       referenceImage,
       { callAPI: d.callGemini }
     );
+    let usage = primaryUsage;
     if (shouldRunContentPackageChain(snapshot)) {
-      const pkg = await runContentPackageChain(snapshot, settings, referenceImage, { callAPI: d.callGemini });
-      (aiContent as Record<string, unknown>)[CONTENT_IDEAS_PACKAGE_KEY] = pkg as unknown as Record<string, unknown>;
+      const pkgResult = await runContentPackageChain(snapshot, settings, referenceImage, { callAPI: d.callGemini });
+      (aiContent as Record<string, unknown>)[CONTENT_IDEAS_PACKAGE_KEY] =
+        pkgResult.data as unknown as Record<string, unknown>;
+      usage = addUsageTotals(usage, pkgResult.usage);
     }
     const emailResult = await d.sendKit(snapshot, aiContent);
     const row = await persistKit(d.db, snapshot, aiContent, owner, {
@@ -228,6 +234,7 @@ export async function generateKitService(input: {
       correlationId,
       promptVersionId: resolved.promptVersionId,
       isFallback: resolved.isFallback,
+      tokenUsage: usage,
     });
     logGenerationTelemetry({
       phase: "generate",
@@ -261,6 +268,7 @@ export async function generateKitService(input: {
       correlationId,
       promptVersionId: resolved.promptVersionId,
       isFallback: resolved.isFallback,
+      tokenUsage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
     });
     await logKitFailure(d.db, {
       kitId: row.id,
@@ -372,16 +380,19 @@ export async function retryKitService(input: {
   }
 
   try {
-    const { aiContent, jsonValid, retryCount } = await generateWithGuardrails(
+    const { aiContent, jsonValid, retryCount, usage: primaryUsage } = await generateWithGuardrails(
       resolved.renderedPrompt,
       snapshot,
       settings,
       referenceImage,
       { callAPI: d.callGemini }
     );
+    let usage = primaryUsage;
     if (shouldRunContentPackageChain(snapshot)) {
-      const pkg = await runContentPackageChain(snapshot, settings, referenceImage, { callAPI: d.callGemini });
-      (aiContent as Record<string, unknown>)[CONTENT_IDEAS_PACKAGE_KEY] = pkg as unknown as Record<string, unknown>;
+      const pkgResult = await runContentPackageChain(snapshot, settings, referenceImage, { callAPI: d.callGemini });
+      (aiContent as Record<string, unknown>)[CONTENT_IDEAS_PACKAGE_KEY] =
+        pkgResult.data as unknown as Record<string, unknown>;
+      usage = addUsageTotals(usage, pkgResult.usage);
     }
     const emailResult = await d.sendKit(snapshot, aiContent);
     const ok = (await d.db.update(kits).set({
@@ -392,6 +403,9 @@ export async function retryKitService(input: {
       correlationId,
       promptVersionId: resolved.promptVersionId,
       isFallback: resolved.isFallback,
+      promptTokens: usage.promptTokens,
+      completionTokens: usage.completionTokens,
+      totalTokens: usage.totalTokens,
       rowVersion: nextVersion + 1,
       updatedAt: new Date(),
     }).where(and(eq(kits.id, id), eq(kits.rowVersion, nextVersion))).returning())[0];
@@ -517,8 +531,15 @@ export async function regenerateKitItemService(input: {
   ].join("\n");
 
   let generated: unknown;
+  let regenerateUsage: GenerationUsageTotals = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
   try {
-    generated = await d.callGemini(promptText, settings, schema, referenceImage);
+    const response = await d.callGemini(promptText, settings, schema, referenceImage);
+    generated = response.json;
+    regenerateUsage = {
+      promptTokens: response.usage?.promptTokenCount ?? 0,
+      completionTokens: response.usage?.candidatesTokenCount ?? 0,
+      totalTokens: response.usage?.totalTokenCount ?? 0,
+    };
   } catch (e) {
     await logKitFailure(d.db, {
       kitId: input.id,
@@ -546,6 +567,9 @@ export async function regenerateKitItemService(input: {
       correlationId,
       modelUsed: settings.model,
       lastError: "",
+      promptTokens: regenerateUsage.promptTokens,
+      completionTokens: regenerateUsage.completionTokens,
+      totalTokens: regenerateUsage.totalTokens,
       rowVersion: row.rowVersion + 1,
       updatedAt: new Date(),
     })
@@ -556,13 +580,20 @@ export async function regenerateKitItemService(input: {
   return { status: 200, body: serializeKit(updated[0]!) };
 }
 
-export async function listKitsService(owner?: { deviceId: string; userId?: string | null }) {
-  if (!owner) return listAllKits(withDeps().db);
-  return listKits(withDeps().db, owner);
+export async function listKitsService(
+  owner?: { deviceId: string; userId?: string | null },
+  opts?: { includeUsage?: boolean }
+) {
+  if (!owner) return listAllKits(withDeps().db, opts);
+  return listKits(withDeps().db, owner, opts);
 }
 
-export async function getKitByIdService(id: string, owner?: { deviceId: string; userId?: string | null }) {
+export async function getKitByIdService(
+  id: string,
+  owner?: { deviceId: string; userId?: string | null },
+  opts?: { includeUsage?: boolean }
+) {
   const row = owner ? await getKitById(withDeps().db, id, owner) : await getKitByIdAny(withDeps().db, id);
   if (!row) throw new HttpError(404, "Not found");
-  return serializeKit(row);
+  return serializeKit(row, opts);
 }

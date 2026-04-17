@@ -15,6 +15,17 @@ export type GeminiReferenceImage = {
   dataBase64: string;
 };
 
+export type GeminiUsageMetadata = {
+  promptTokenCount: number;
+  candidatesTokenCount: number;
+  totalTokenCount: number;
+};
+
+export type GeminiCallResult = {
+  json: unknown;
+  usage?: GeminiUsageMetadata;
+};
+
 function shouldRetryGemini(statusCode: number): boolean {
   return statusCode === 429 || statusCode >= 500;
 }
@@ -79,7 +90,7 @@ export async function callGeminiAPI(
   settings: GeminiSettings,
   responseSchema?: Record<string, unknown>,
   referenceImage?: GeminiReferenceImage
-): Promise<unknown> {
+): Promise<GeminiCallResult> {
   const url =
     "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(settings.model) + ":generateContent";
   const parts: Array<Record<string, unknown>> = [{ text: promptText }];
@@ -131,6 +142,11 @@ export async function callGeminiAPI(
       if (statusCode >= 200 && statusCode < 300) {
         const parsedBody = JSON.parse(rawBody) as {
           candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+          usageMetadata?: {
+            promptTokenCount?: number;
+            candidatesTokenCount?: number;
+            totalTokenCount?: number;
+          };
         };
         const modelText =
           parsedBody?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -139,7 +155,20 @@ export async function callGeminiAPI(
           throw new Error("Gemini response missing candidates[0].content.parts[0].text");
         }
 
-        return parseJsonFromModelText(modelText);
+        const json = parseJsonFromModelText(modelText);
+        const usage =
+          parsedBody?.usageMetadata &&
+          typeof parsedBody.usageMetadata.promptTokenCount === "number" &&
+          typeof parsedBody.usageMetadata.candidatesTokenCount === "number" &&
+          typeof parsedBody.usageMetadata.totalTokenCount === "number"
+            ? {
+                promptTokenCount: parsedBody.usageMetadata.promptTokenCount,
+                candidatesTokenCount: parsedBody.usageMetadata.candidatesTokenCount,
+                totalTokenCount: parsedBody.usageMetadata.totalTokenCount,
+              }
+            : undefined;
+
+        return { json, usage };
       }
 
       lastError = "HTTP " + statusCode + " - " + truncate(rawBody, 800);
