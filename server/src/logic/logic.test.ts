@@ -280,7 +280,23 @@ describe("validate", () => {
   it("requires kpi for high budget", () => {
     const data = buildSubmissionSnapshot({ brand_name: "b", budget_level: "7", num_posts: 1, num_image_designs: 1, num_video_prompts: 1 });
     const bad = {
-      posts: [{ platform: "x", format: "y", goal: "g", post_ar: "c", post_en: "c", hashtags: ["#a"], cta: "x" }],
+      posts: [
+        {
+          platform: "x",
+          format: "y",
+          goal: "g",
+          post_ar: "c",
+          post_en: "c",
+          hashtags: ["#a"],
+          cta: "x",
+          strategic_rationale: {
+            trigger_used: "identity",
+            contrast_note: "old vs new state",
+            engagement_vector: "save and share",
+          },
+          algorithmic_advantage: "Improves share and save rates with clear CTA framing.",
+        },
+      ],
       image_designs: [
         {
           platform_format: "1:1",
@@ -349,15 +365,6 @@ describe("validate", () => {
       },
       narrative_summary: "Your profile needs consistent execution before heavy conversion pushes.",
       localization_check_passed: true,
-    };
-    bad.posts[0] = {
-      ...bad.posts[0],
-      strategic_rationale: {
-        trigger_used: "identity",
-        contrast_note: "old vs new state",
-        engagement_vector: "save and share",
-      },
-      algorithmic_advantage: "Improves share and save rates with clear CTA framing.",
     };
     expect(validateGeminiResponse(bad, data).some((e) => e.includes("kpi_tracking"))).toBe(true);
   });
