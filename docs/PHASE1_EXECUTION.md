@@ -152,3 +152,9 @@ Client logs (dev only):
 - Missing critical fields show localized CTA.
 - Legacy keys remain compatible.
 - Baseline `generateKit` response still works for non-stream mode.
+
+---
+
+Phase 2 continuation is documented in:
+
+- `docs/PHASE2_EXECUTION.md`

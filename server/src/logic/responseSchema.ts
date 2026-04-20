@@ -1,5 +1,15 @@
 /** Gemini API responseSchema — parity with gGetGeminiResponseSchema */
 export function getGeminiResponseSchema(): Record<string, unknown> {
+  const strategicRationaleSchema = {
+    type: "OBJECT",
+    required: ["trigger_used", "contrast_note", "engagement_vector"],
+    properties: {
+      trigger_used: { type: "STRING" },
+      contrast_note: { type: "STRING" },
+      engagement_vector: { type: "STRING" },
+    },
+  };
+
   return {
     type: "OBJECT",
     required: [
@@ -11,6 +21,7 @@ export function getGeminiResponseSchema(): Record<string, unknown> {
       "marketing_strategy",
       "sales_system",
       "offer_optimization",
+      "localization_check_passed",
     ],
     properties: {
       narrative_summary: {
@@ -30,7 +41,17 @@ export function getGeminiResponseSchema(): Record<string, unknown> {
         type: "ARRAY",
         items: {
           type: "OBJECT",
-          required: ["platform", "format", "goal", "post_ar", "post_en", "hashtags", "cta"],
+          required: [
+            "platform",
+            "format",
+            "goal",
+            "post_ar",
+            "post_en",
+            "hashtags",
+            "cta",
+            "strategic_rationale",
+            "algorithmic_advantage",
+          ],
           properties: {
             platform: { type: "STRING" },
             format: { type: "STRING" },
@@ -39,6 +60,8 @@ export function getGeminiResponseSchema(): Record<string, unknown> {
             post_en: { type: "STRING" },
             hashtags: { type: "ARRAY", items: { type: "STRING" } },
             cta: { type: "STRING" },
+            strategic_rationale: strategicRationaleSchema,
+            algorithmic_advantage: { type: "STRING" },
           },
         },
       },
@@ -58,6 +81,8 @@ export function getGeminiResponseSchema(): Record<string, unknown> {
             "caption_en",
             "text_policy",
             "conversion_trigger",
+            "strategic_rationale",
+            "algorithmic_advantage",
           ],
           properties: {
             platform_format: { type: "STRING" },
@@ -71,6 +96,8 @@ export function getGeminiResponseSchema(): Record<string, unknown> {
             caption_en: { type: "STRING" },
             text_policy: { type: "STRING" },
             conversion_trigger: { type: "STRING" },
+            strategic_rationale: strategicRationaleSchema,
+            algorithmic_advantage: { type: "STRING" },
           },
         },
       },
@@ -78,7 +105,19 @@ export function getGeminiResponseSchema(): Record<string, unknown> {
         type: "ARRAY",
         items: {
           type: "OBJECT",
-          required: ["platform", "duration", "style", "hook_type", "scenes", "caption_ar", "caption_en", "ai_tool_instructions", "why_this_converts"],
+          required: [
+            "platform",
+            "duration",
+            "style",
+            "hook_type",
+            "scenes",
+            "caption_ar",
+            "caption_en",
+            "ai_tool_instructions",
+            "why_this_converts",
+            "strategic_rationale",
+            "algorithmic_advantage",
+          ],
           properties: {
             platform: { type: "STRING" },
             duration: { type: "STRING" },
@@ -102,6 +141,8 @@ export function getGeminiResponseSchema(): Record<string, unknown> {
             caption_en: { type: "STRING" },
             ai_tool_instructions: { type: "STRING" },
             why_this_converts: { type: "STRING" },
+            strategic_rationale: strategicRationaleSchema,
+            algorithmic_advantage: { type: "STRING" },
           },
         },
       },
@@ -161,6 +202,9 @@ export function getGeminiResponseSchema(): Record<string, unknown> {
           optimization_actions: { type: "STRING" },
           ab_tests_week1: { type: "ARRAY", items: { type: "STRING" } },
         },
+      },
+      localization_check_passed: {
+        type: "BOOLEAN",
       },
     },
   };

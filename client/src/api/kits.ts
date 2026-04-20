@@ -11,6 +11,7 @@ export type KitGenerationStreamStatus =
 export type KitGenerationStreamEvent =
   | { type: "status"; status: KitGenerationStreamStatus; message?: string }
   | { type: "partial"; progress: number; section?: string; snapshot: Record<string, unknown> }
+  | { type: "reasoning"; index: number; section?: string; line: string }
   | { type: "complete"; kit: KitSummary }
   | { type: "error"; message: string };
 
@@ -97,6 +98,17 @@ export async function generateKitStream(
           const kit = payload.kit as KitSummary;
           finalKit = kit;
           onEvent({ type: "complete", kit });
+        } else if (parsed.event === "reasoning") {
+          const rawLine = typeof payload.line === "string" ? payload.line : "";
+          const line = rawLine.replace(/\s+/g, " ").trim();
+          if (!line) continue;
+          const rawIndex = Number(payload.index ?? 0);
+          onEvent({
+            type: "reasoning",
+            index: Number.isFinite(rawIndex) && rawIndex > 0 ? rawIndex : 0,
+            section: typeof payload.section === "string" ? payload.section : undefined,
+            line: line.length > 260 ? line.slice(0, 259).trimEnd() + "…" : line,
+          });
         } else if (parsed.event === "error") {
           const message = typeof payload.message === "string" ? payload.message : "Streaming generation failed.";
           onEvent({ type: "error", message });

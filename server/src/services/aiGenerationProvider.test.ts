@@ -14,7 +14,23 @@ describe("aiGenerationProvider", () => {
       num_video_prompts: 1,
     });
     const fakePayload = {
-      posts: [{ platform: "ig", format: "post", goal: "reach", post_ar: "a", post_en: "a", hashtags: ["#a"], cta: "x" }],
+      posts: [
+        {
+          platform: "ig",
+          format: "post",
+          goal: "reach",
+          post_ar: "a",
+          post_en: "a",
+          hashtags: ["#a"],
+          cta: "x",
+          strategic_rationale: {
+            trigger_used: "urgency",
+            contrast_note: "before-after",
+            engagement_vector: "saves",
+          },
+          algorithmic_advantage: "Optimized for save and share behavior.",
+        },
+      ],
       image_designs: [
         {
           platform_format: "1:1",
@@ -28,6 +44,12 @@ describe("aiGenerationProvider", () => {
           caption_en: "caption",
           text_policy: "no-arabic",
           conversion_trigger: "trigger",
+          strategic_rationale: {
+            trigger_used: "curiosity",
+            contrast_note: "problem-solution",
+            engagement_vector: "shares",
+          },
+          algorithmic_advantage: "Improves image completion and share potential.",
         },
       ],
       video_prompts: [
@@ -41,6 +63,12 @@ describe("aiGenerationProvider", () => {
           caption_en: "caption",
           ai_tool_instructions: "instructions",
           why_this_converts: "because",
+          strategic_rationale: {
+            trigger_used: "social proof",
+            contrast_note: "proof-led sequence",
+            engagement_vector: "watch time",
+          },
+          algorithmic_advantage: "Aligns with retention-heavy ranking signals.",
         },
       ],
       marketing_strategy: {
@@ -70,6 +98,7 @@ describe("aiGenerationProvider", () => {
         rationale: "Execution speed is the current growth bottleneck.",
       },
       narrative_summary: "Start with simple consistent publishing to unlock reliable growth signals.",
+      localization_check_passed: true,
     };
 
     const result = await generateWithGuardrails(

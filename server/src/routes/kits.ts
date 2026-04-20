@@ -16,6 +16,8 @@ import { users } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 
 const deviceIdSchema = z.string().uuid();
+const REASONING_TRACE_MAX_LINES = 24;
+const REASONING_TRACE_MAX_CHARS = 240;
 
 const generateBodySchema = z
   .object({
@@ -106,6 +108,54 @@ function buildHydrationSnapshots(resultJson: unknown): Array<{ section: string; 
     snapshots.push({ section: "result_json", progress: 1, snapshot: source });
   }
   return snapshots;
+}
+
+function normalizeReasoningLine(input: string): string {
+  const compact = input.replace(/\s+/g, " ").trim();
+  if (!compact) return "";
+  if (compact.length <= REASONING_TRACE_MAX_CHARS) return compact;
+  return compact.slice(0, REASONING_TRACE_MAX_CHARS - 1).trimEnd() + "…";
+}
+
+function extractReasoningForSection(section: unknown): string[] {
+  if (!section || typeof section !== "object") return [];
+  const list = Array.isArray(section) ? section : [section];
+  const lines: string[] = [];
+  for (const item of list) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+    const rec = item as Record<string, unknown>;
+    if (typeof rec.algorithmic_advantage === "string" && rec.algorithmic_advantage.trim()) {
+      lines.push(`Advantage: ${rec.algorithmic_advantage}`);
+    }
+    const rationale = rec.strategic_rationale;
+    if (rationale && typeof rationale === "object" && !Array.isArray(rationale)) {
+      const rationaleRec = rationale as Record<string, unknown>;
+      const trigger = typeof rationaleRec.trigger_used === "string" ? rationaleRec.trigger_used : "";
+      const contrast = typeof rationaleRec.contrast_note === "string" ? rationaleRec.contrast_note : "";
+      const vector = typeof rationaleRec.engagement_vector === "string" ? rationaleRec.engagement_vector : "";
+      if (trigger) lines.push(`Trigger: ${trigger}`);
+      if (contrast) lines.push(`Contrast: ${contrast}`);
+      if (vector) lines.push(`Engagement vector: ${vector}`);
+    }
+    if (lines.length >= REASONING_TRACE_MAX_LINES) break;
+  }
+  return lines;
+}
+
+function buildReasoningTraceBySection(resultJson: unknown): Record<string, string[]> {
+  if (!resultJson || typeof resultJson !== "object" || Array.isArray(resultJson)) return {};
+  const root = resultJson as Record<string, unknown>;
+  const sections = ["posts", "image_designs", "video_prompts"];
+  const mapped: Record<string, string[]> = {};
+  for (const section of sections) {
+    const normalized = extractReasoningForSection(root[section])
+      .map(normalizeReasoningLine)
+      .filter(Boolean);
+    if (normalized.length > 0) {
+      mapped[section] = normalized.slice(0, REASONING_TRACE_MAX_LINES);
+    }
+  }
+  return mapped;
 }
 
 async function resolveOwner(c: import("hono").Context) {
@@ -199,7 +249,22 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
           clearInterval(heartbeat);
           sendEvent("status", { status: "hydrating", message: "Applying section hydration order" });
           const snapshots = buildHydrationSnapshots(result.body.result_json);
+          const reasoningBySection = buildReasoningTraceBySection(result.body.result_json);
+          let reasoningIndex = 0;
           for (const snap of snapshots) {
+            const reasoningLines = reasoningBySection[snap.section] ?? [];
+            for (const line of reasoningLines) {
+              try {
+                reasoningIndex += 1;
+                sendEvent("reasoning", {
+                  index: reasoningIndex,
+                  section: snap.section,
+                  line,
+                });
+              } catch {
+                // Best-effort stream event: reasoning trace must never break generation lifecycle.
+              }
+            }
             sendEvent("partial", snap);
           }
           sendEvent("status", { status: "persisting", message: "Final persistence complete" });

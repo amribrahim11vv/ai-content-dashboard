@@ -11,6 +11,7 @@ const STREAM_STATUS_PROGRESS_FLOOR: Record<string, number> = {
   persisting: 0.9,
   completed: 1,
 };
+const REASONING_TRACE_MAX_ITEMS = 24;
 
 export function useWizardSubmission(params: {
   draftKey: string;
@@ -32,6 +33,7 @@ export function useWizardSubmission(params: {
   const [streamSnapshot, setStreamSnapshot] = useState<Record<string, unknown> | null>(null);
   const [streamSection, setStreamSection] = useState<string>("");
   const [streamCompletedSections, setStreamCompletedSections] = useState<string[]>([]);
+  const [reasoningTrace, setReasoningTrace] = useState<Array<{ index: number; section?: string; line: string }>>([]);
 
   const onValidSubmit = async (form: BriefForm) => {
     setError(null);
@@ -42,6 +44,7 @@ export function useWizardSubmission(params: {
     setStreamSnapshot(null);
     setStreamSection("");
     setStreamCompletedSections([]);
+    setReasoningTrace([]);
     params.emit({
       name: "wizard_generate_clicked",
       wizard_type: params.wizardType,
@@ -71,6 +74,14 @@ export function useWizardSubmission(params: {
         }
         if (evt.type === "error") {
           setError(evt.message);
+          return;
+        }
+        if (evt.type === "reasoning") {
+          setReasoningTrace((prev) => {
+            const next = [...prev, { index: evt.index, section: evt.section, line: evt.line }];
+            if (next.length <= REASONING_TRACE_MAX_ITEMS) return next;
+            return next.slice(next.length - REASONING_TRACE_MAX_ITEMS);
+          });
         }
       });
       params.clearDraft();
@@ -94,6 +105,7 @@ export function useWizardSubmission(params: {
       });
     } finally {
       setLoading(false);
+      setStreamSection("");
     }
   };
 
@@ -108,5 +120,6 @@ export function useWizardSubmission(params: {
     streamSnapshot,
     streamSection,
     streamCompletedSections,
+    reasoningTrace,
   };
 }

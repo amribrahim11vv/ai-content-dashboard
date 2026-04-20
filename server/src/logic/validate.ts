@@ -40,6 +40,9 @@ export function validateGeminiResponse(aiContent: unknown, data: SubmissionSnaps
   if (typeof aiContent.narrative_summary !== "string" || !aiContent.narrative_summary.trim()) {
     errors.push("narrative_summary must be a non-empty string.");
   }
+  if (typeof aiContent.localization_check_passed !== "boolean") {
+    errors.push("localization_check_passed must be a boolean.");
+  }
 
   if (highBudgetMode && !isPlainObject(aiContent.kpi_tracking)) {
     errors.push("kpi_tracking is required for high budget mode.");
@@ -51,9 +54,35 @@ export function validateGeminiResponse(aiContent: unknown, data: SubmissionSnaps
 
   const posts = Array.isArray(aiContent.posts) ? aiContent.posts : [];
   posts.forEach((item: unknown, idx: number) => {
-    validateObjectKeys(item, ["platform", "format", "goal", "post_ar", "post_en", "hashtags", "cta"], "posts[" + idx + "]", errors);
+    validateObjectKeys(
+      item,
+      [
+        "platform",
+        "format",
+        "goal",
+        "post_ar",
+        "post_en",
+        "hashtags",
+        "cta",
+        "strategic_rationale",
+        "algorithmic_advantage",
+      ],
+      "posts[" + idx + "]",
+      errors
+    );
     if (isPlainObject(item) && !Array.isArray(item.hashtags)) {
       errors.push("posts[" + idx + "].hashtags must be an array.");
+    }
+    if (isPlainObject(item)) {
+      validateObjectKeys(
+        item.strategic_rationale,
+        ["trigger_used", "contrast_note", "engagement_vector"],
+        "posts[" + idx + "].strategic_rationale",
+        errors
+      );
+      if (typeof item.algorithmic_advantage !== "string" || !item.algorithmic_advantage.trim()) {
+        errors.push("posts[" + idx + "].algorithmic_advantage must be a non-empty string.");
+      }
     }
   });
 
@@ -73,22 +102,58 @@ export function validateGeminiResponse(aiContent: unknown, data: SubmissionSnaps
         "caption_en",
         "text_policy",
         "conversion_trigger",
+        "strategic_rationale",
+        "algorithmic_advantage",
       ],
       "image_designs[" + idx + "]",
       errors
     );
+    if (isPlainObject(item)) {
+      validateObjectKeys(
+        item.strategic_rationale,
+        ["trigger_used", "contrast_note", "engagement_vector"],
+        "image_designs[" + idx + "].strategic_rationale",
+        errors
+      );
+      if (typeof item.algorithmic_advantage !== "string" || !item.algorithmic_advantage.trim()) {
+        errors.push("image_designs[" + idx + "].algorithmic_advantage must be a non-empty string.");
+      }
+    }
   });
 
   const videos = Array.isArray(aiContent.video_prompts) ? aiContent.video_prompts : [];
   videos.forEach((item: unknown, idx: number) => {
     validateObjectKeys(
       item,
-      ["platform", "duration", "style", "hook_type", "scenes", "caption_ar", "caption_en", "ai_tool_instructions", "why_this_converts"],
+      [
+        "platform",
+        "duration",
+        "style",
+        "hook_type",
+        "scenes",
+        "caption_ar",
+        "caption_en",
+        "ai_tool_instructions",
+        "why_this_converts",
+        "strategic_rationale",
+        "algorithmic_advantage",
+      ],
       "video_prompts[" + idx + "]",
       errors
     );
     if (isPlainObject(item) && !Array.isArray(item.scenes)) {
       errors.push("video_prompts[" + idx + "].scenes must be an array.");
+    }
+    if (isPlainObject(item)) {
+      validateObjectKeys(
+        item.strategic_rationale,
+        ["trigger_used", "contrast_note", "engagement_vector"],
+        "video_prompts[" + idx + "].strategic_rationale",
+        errors
+      );
+      if (typeof item.algorithmic_advantage !== "string" || !item.algorithmic_advantage.trim()) {
+        errors.push("video_prompts[" + idx + "].algorithmic_advantage must be a non-empty string.");
+      }
     }
   });
 

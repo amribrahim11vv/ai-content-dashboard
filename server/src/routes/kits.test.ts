@@ -84,7 +84,17 @@ describe("kits routes device header enforcement", () => {
         result_json: {
           narrative_summary: "summary",
           diagnosis_plan: { quickWin24h: "win" },
-          posts: [{ platform: "ig" }],
+          posts: [
+            {
+              platform: "ig",
+              strategic_rationale: {
+                trigger_used: "urgency",
+                contrast_note: "before vs after",
+                engagement_vector: "save intent",
+              },
+              algorithmic_advantage: "Boosts saves and completion for feed ranking.",
+            },
+          ],
         },
       },
     });
@@ -102,6 +112,7 @@ describe("kits routes device header enforcement", () => {
     const text = await res.text();
     expect(text).toContain("event: status");
     expect(text).toContain("event: partial");
+    expect(text).toContain("event: reasoning");
     expect(text).toContain("event: complete");
     expect(text).toContain("\"id\":\"k-stream\"");
     const narrativeIdx = text.indexOf("\"section\":\"narrative_summary\"");

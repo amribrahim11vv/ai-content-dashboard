@@ -8,7 +8,11 @@ import {
   type ReactNode,
 } from "react";
 import type { KitPostItem, KitSummary } from "./types";
-import { buildKitViewModel, type KitContentIdeasPackageView } from "./features/kits/kitViewModel";
+import {
+  buildKitViewModel,
+  type KitContentIdeasPackageView,
+  type KitStrategyMetadata,
+} from "./features/kits/kitViewModel";
 import { useKitRegenerate } from "./features/kits/useKitRegenerate";
 import RegenerateFeedbackDialog from "./features/kits/RegenerateFeedbackDialog";
 
@@ -354,6 +358,52 @@ function StrategySubfield({ label, value }: { label: string; value: string }) {
   );
 }
 
+function hasRationaleFields(rationale: KitStrategyMetadata["strategic_rationale"]): boolean {
+  if (!rationale) return false;
+  return Boolean(
+    (rationale.trigger_used && rationale.trigger_used.trim()) ||
+      (rationale.contrast_note && rationale.contrast_note.trim()) ||
+      (rationale.engagement_vector && rationale.engagement_vector.trim())
+  );
+}
+
+function StrategyMetadataPanel({ metadata }: { metadata?: KitStrategyMetadata | null }) {
+  if (!metadata) return null;
+  const hasAdvantage = Boolean(metadata.algorithmic_advantage && metadata.algorithmic_advantage.trim());
+  const hasRationale = hasRationaleFields(metadata.strategic_rationale);
+  if (!hasAdvantage && !hasRationale) return null;
+  return (
+    <div className="rounded-xl border border-brand-sand/25 bg-earth-card/80 p-3 dark:border-outline/20 dark:bg-surface-container-lowest/50">
+      <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">AI strategy metadata</p>
+      {hasAdvantage ? (
+        <p className="mb-2 text-sm leading-relaxed text-on-surface" dir="auto">
+          <span className="font-semibold text-brand-accent dark:text-tertiary">Why this converts: </span>
+          {metadata.algorithmic_advantage}
+        </p>
+      ) : null}
+      {hasRationale ? (
+        <ul className="space-y-1.5 text-sm leading-relaxed text-on-surface" dir="auto">
+          {metadata.strategic_rationale?.trigger_used?.trim() ? (
+            <li>
+              <span className="font-semibold">Trigger:</span> {metadata.strategic_rationale.trigger_used}
+            </li>
+          ) : null}
+          {metadata.strategic_rationale?.contrast_note?.trim() ? (
+            <li>
+              <span className="font-semibold">Contrast:</span> {metadata.strategic_rationale.contrast_note}
+            </li>
+          ) : null}
+          {metadata.strategic_rationale?.engagement_vector?.trim() ? (
+            <li>
+              <span className="font-semibold">Engagement vector:</span> {metadata.strategic_rationale.engagement_vector}
+            </li>
+          ) : null}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 function StrategyBulletList({ label, items }: { label: string; items: string[] }) {
   if (!items.length) return null;
   return (
@@ -490,6 +540,7 @@ function VideoBlueprintCard({
   item,
   index,
   lang,
+  strategy,
   onRegenerate,
   regenerating,
   showTechnical,
@@ -497,6 +548,7 @@ function VideoBlueprintCard({
   item: Record<string, unknown>;
   index: number;
   lang: ViewerLang;
+  strategy?: KitStrategyMetadata | null;
   onRegenerate: (index: number) => void;
   regenerating: boolean;
   showTechnical: boolean;
@@ -563,6 +615,7 @@ function VideoBlueprintCard({
               </p>
             </FieldBlock>
           ) : null}
+          <StrategyMetadataPanel metadata={strategy} />
           <FieldBlock label="Brief (full script)" copyText={brief} copyLabel="Copy full brief">
             <div
                 className="max-h-[min(70vh,36rem)] min-w-0 overflow-y-auto rounded-lg bg-earth-alt/70 p-3 text-sm leading-relaxed text-on-surface [overflow-wrap:anywhere] whitespace-pre-wrap dark:bg-surface-container-high/15"
@@ -587,6 +640,7 @@ function ImageDesignCard({
   item,
   index,
   lang,
+  strategy,
   onRegenerate,
   regenerating,
   showTechnical,
@@ -594,6 +648,7 @@ function ImageDesignCard({
   item: Record<string, unknown>;
   index: number;
   lang: ViewerLang;
+  strategy?: KitStrategyMetadata | null;
   onRegenerate: (index: number) => void;
   regenerating: boolean;
   showTechnical: boolean;
@@ -663,6 +718,7 @@ function ImageDesignCard({
               </p>
             </FieldBlock>
           ) : null}
+          <StrategyMetadataPanel metadata={strategy} />
           <FieldBlock label="Brief (full design)" copyText={brief} copyLabel="Copy full brief">
             <div
                 className="max-h-[min(70vh,36rem)] min-w-0 overflow-y-auto rounded-lg bg-earth-alt/70 p-3 text-sm leading-relaxed text-on-surface [overflow-wrap:anywhere] whitespace-pre-wrap dark:bg-surface-container-high/15"
@@ -687,6 +743,7 @@ function KitPromptCard({
   title,
   body,
   caption,
+  strategy,
   onRegenerate,
   regenerating,
   copyLabel,
@@ -694,6 +751,7 @@ function KitPromptCard({
   title: string;
   body: string;
   caption?: string;
+  strategy?: KitStrategyMetadata | null;
   onRegenerate: () => void;
   regenerating: boolean;
   copyLabel: string;
@@ -759,6 +817,7 @@ function KitPromptCard({
                 </p>
               </FieldBlock>
             ) : null}
+            <StrategyMetadataPanel metadata={strategy} />
             <FieldBlock label="Brief" copyText={body} copyLabel={copyLabel} bodyClassName="p-0">
               <pre
                 className="max-h-48 min-h-[2.5rem] min-w-0 max-w-full overflow-auto whitespace-pre-wrap break-words p-3 text-xs leading-relaxed text-on-surface-variant [overflow-wrap:anywhere]"
@@ -779,12 +838,14 @@ function PostCard({
   post,
   index,
   lang,
+  strategy,
   onRegenerate,
   regenerating,
 }: {
   post: KitPostItem;
   index: number;
   lang: ViewerLang;
+  strategy?: KitStrategyMetadata | null;
   onRegenerate: (index: number) => void;
   regenerating: boolean;
 }) {
@@ -864,6 +925,7 @@ function PostCard({
               <p className="min-w-0 text-sm leading-relaxed text-on-surface">{goal}</p>
             </FieldBlock>
           ) : null}
+          <StrategyMetadataPanel metadata={strategy} />
           <FieldBlock label="Post" copyText={postText} copyLabel="Copy post" bodyClassName="p-0">
             <pre className="max-h-[min(40vh,280px)] min-h-[3rem] min-w-0 max-w-full overflow-auto overflow-x-auto whitespace-pre-wrap break-words bg-earth-alt/70 p-3 font-body text-sm leading-relaxed text-on-surface [overflow-wrap:anywhere] dark:bg-surface-container-high/10">
               {postText}
@@ -1151,8 +1213,11 @@ export default function KitViewer({
   const {
     data,
     posts,
+    postStrategy,
     videoSection,
+    videoStrategy,
     imageSection,
+    imageStrategy,
     hasStrategyBlock,
     marketingStrategy,
     salesSystem,
@@ -1386,6 +1451,7 @@ export default function KitViewer({
                 post={p}
                 index={i}
                 lang={lang}
+                strategy={postStrategy[i] ?? null}
                 onRegenerate={(idx) => openRegenerateDialog("post", idx)}
                 regenerating={regeneratingKey === `post-${i}`}
               />
@@ -1415,6 +1481,7 @@ export default function KitViewer({
                     item={rec}
                     index={i}
                     lang={lang}
+                    strategy={imageStrategy[i] ?? null}
                     onRegenerate={(idx) => openRegenerateDialog("image", idx)}
                     regenerating={regeneratingKey === `image-${i}`}
                     showTechnical={showTechnical}
@@ -1428,6 +1495,7 @@ export default function KitViewer({
                     item={rec}
                     index={i}
                     lang={lang}
+                    strategy={imageStrategy[i] ?? null}
                     onRegenerate={(idx) => openRegenerateDialog("image", idx)}
                     regenerating={regeneratingKey === `image-${i}`}
                     showTechnical={showTechnical}
@@ -1443,6 +1511,7 @@ export default function KitViewer({
                   title={title}
                   body={body}
                   caption={caption || undefined}
+                  strategy={imageStrategy[i] ?? null}
                   onRegenerate={() => openRegenerateDialog("image", i)}
                   regenerating={regeneratingKey === `image-${i}`}
                   copyLabel="Copy prompt"
@@ -1474,6 +1543,7 @@ export default function KitViewer({
                     item={rec}
                     index={i}
                     lang={lang}
+                    strategy={videoStrategy[i] ?? null}
                     onRegenerate={(idx) => openRegenerateDialog("video", idx)}
                     regenerating={regeneratingKey === `video-${i}`}
                     showTechnical={showTechnical}
@@ -1489,6 +1559,7 @@ export default function KitViewer({
                   title={title}
                   body={body}
                   caption={caption || undefined}
+                  strategy={videoStrategy[i] ?? null}
                   onRegenerate={() => openRegenerateDialog("video", i)}
                   regenerating={regeneratingKey === `video-${i}`}
                   copyLabel="Copy video prompt"

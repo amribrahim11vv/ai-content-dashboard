@@ -108,6 +108,34 @@ Separate JSON steps (ideas / hooks / templates) use **their own** schemas via `g
 
 ---
 
+## Phase 2 contract (prompt intelligence + localization)
+
+Phase 2 extends each generated asset object (`posts[]`, `image_designs[]`, `video_prompts[]`) with:
+
+- `strategic_rationale` object:
+  - `trigger_used`
+  - `contrast_note`
+  - `engagement_vector`
+- `algorithmic_advantage` string
+
+Root contract adds:
+
+- `localization_check_passed` boolean
+
+Localization rules in output policy:
+
+- Arabic and English variants (`*_ar`, `*_en`) must be semantically equivalent.
+- Literal word-by-word translation is explicitly disallowed.
+- `localization_check_passed` should be `true` only when parity and cultural appropriateness are satisfied.
+
+Relevant code:
+
+- `server/src/logic/responseSchema.ts`
+- `server/src/logic/promptComposer.ts`
+- `server/src/logic/validate.ts`
+
+---
+
 ## Environment knobs (non-exhaustive)
 
 `GEMINI_MODEL`, `GEMINI_TEMPERATURE`, `GEMINI_TOP_P`, `USE_META_PROMPT`, `STRICT_PROMPT_TEMPLATES`, `DEMO_MODE`, `CONTENT_PACKAGE_CHAIN_ENABLED` (see `.env.example` and `constants.ts`).

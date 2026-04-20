@@ -28,6 +28,17 @@ export type KitContentIdeasPackageView = {
   templates: KitContentTemplateItem[];
 };
 
+export type KitStrategicRationale = {
+  trigger_used?: string;
+  contrast_note?: string;
+  engagement_vector?: string;
+};
+
+export type KitStrategyMetadata = {
+  strategic_rationale: KitStrategicRationale | null;
+  algorithmic_advantage: string;
+};
+
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
@@ -50,6 +61,31 @@ function asTemplateItems(v: unknown): KitContentTemplateItem[] {
 function asStringArray(v: unknown): string[] {
   if (!Array.isArray(v)) return [];
   return v.filter((x): x is string => typeof x === "string");
+}
+
+function asStrategyMetadata(v: unknown): KitStrategyMetadata {
+  if (!isRecord(v)) {
+    return {
+      strategic_rationale: null,
+      algorithmic_advantage: "",
+    };
+  }
+  const rationale = isRecord(v.strategic_rationale)
+    ? {
+        trigger_used:
+          typeof v.strategic_rationale.trigger_used === "string" ? v.strategic_rationale.trigger_used : undefined,
+        contrast_note:
+          typeof v.strategic_rationale.contrast_note === "string" ? v.strategic_rationale.contrast_note : undefined,
+        engagement_vector:
+          typeof v.strategic_rationale.engagement_vector === "string"
+            ? v.strategic_rationale.engagement_vector
+            : undefined,
+      }
+    : null;
+  return {
+    strategic_rationale: rationale,
+    algorithmic_advantage: typeof v.algorithmic_advantage === "string" ? v.algorithmic_advantage.trim() : "",
+  };
 }
 
 function pickFirstSection(data: Record<string, unknown> | null, keys: string[]) {
@@ -75,11 +111,14 @@ function parseContentIdeasPackage(raw: unknown): KitContentIdeasPackageView | nu
 export function buildKitViewModel(kit: KitSummary) {
   const data = (kit.result_json ?? null) as Record<string, unknown> | null;
   const posts = Array.isArray(data?.posts) ? (data!.posts as KitPostItem[]) : [];
+  const postStrategy = posts.map((item) => asStrategyMetadata(item));
   const marketingStrategy = isRecord(data?.marketing_strategy) ? (data!.marketing_strategy as Record<string, unknown>) : null;
   const salesSystem = isRecord(data?.sales_system) ? (data!.sales_system as Record<string, unknown>) : null;
   const offerOptimization = isRecord(data?.offer_optimization) ? (data!.offer_optimization as Record<string, unknown>) : null;
   const videoSection = pickFirstSection(data, ["video_prompts", "video_assets", "ai_video_assets", "assets"]);
   const imageSection = pickFirstSection(data, ["image_prompts", "image_designs", "creative_prompts", "design_prompts", "visual_prompts"]);
+  const imageStrategy = (imageSection?.items ?? []).map((item) => asStrategyMetadata(item));
+  const videoStrategy = (videoSection?.items ?? []).map((item) => asStrategyMetadata(item));
   const contentIdeasPackage = data ? parseContentIdeasPackage(data[CONTENT_IDEAS_PACKAGE_KEY]) : null;
   const hasStrategyBlock = Boolean(marketingStrategy || salesSystem || offerOptimization);
   const painPoints = asStringArray(salesSystem?.pain_points);
@@ -96,8 +135,11 @@ export function buildKitViewModel(kit: KitSummary) {
   return {
     data,
     posts,
+    postStrategy,
     videoSection,
+    videoStrategy,
     imageSection,
+    imageStrategy,
     hasStrategyBlock,
     marketingStrategy,
     salesSystem,
@@ -109,5 +151,7 @@ export function buildKitViewModel(kit: KitSummary) {
     hasCriticalImages,
     hasCriticalVideos,
     missingCriticalSections,
+    localizationCheckPassed:
+      typeof data?.localization_check_passed === "boolean" ? data.localization_check_passed : null,
   };
 }

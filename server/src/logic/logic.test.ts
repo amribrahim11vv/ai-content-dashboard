@@ -136,6 +136,10 @@ describe("promptComposer", () => {
     expect(block).toContain("Arabic for strategy");
     expect(block).toContain("camera-work clause");
     expect(block).toContain("motion-control clause");
+    expect(block).toContain("strategic_rationale");
+    expect(block).toContain("algorithmic_advantage");
+    expect(block).toContain("literal word-by-word translation");
+    expect(block).toContain("localization_check_passed");
     expect(block).toContain("Ensure no text, no floating letters, no watermarks. Maintain strict physical consistency.");
   });
 
@@ -205,19 +209,26 @@ describe("responseSchema", () => {
     const postReq = props.posts.items.required as string[];
     expect(postReq).toContain("post_ar");
     expect(postReq).toContain("post_en");
+    expect(postReq).toContain("strategic_rationale");
+    expect(postReq).toContain("algorithmic_advantage");
 
     const imageReq = props.image_designs.items.required as string[];
     expect(imageReq).toContain("caption_ar");
     expect(imageReq).toContain("caption_en");
+    expect(imageReq).toContain("strategic_rationale");
+    expect(imageReq).toContain("algorithmic_advantage");
 
     const videoReq = props.video_prompts.items.required as string[];
     expect(videoReq).toContain("caption_ar");
     expect(videoReq).toContain("caption_en");
+    expect(videoReq).toContain("strategic_rationale");
+    expect(videoReq).toContain("algorithmic_advantage");
 
     const diagnosisReq = props.diagnosis_plan.required as string[];
     expect(diagnosisReq).toContain("quickWin24h");
     expect(diagnosisReq).toContain("focus7d");
     expect((schema.required as string[])).toContain("narrative_summary");
+    expect((schema.required as string[])).toContain("localization_check_passed");
   });
 });
 
@@ -283,6 +294,12 @@ describe("validate", () => {
           caption_en: "Image caption",
           text_policy: "ar",
           conversion_trigger: "t",
+          strategic_rationale: {
+            trigger_used: "urgency",
+            contrast_note: "before vs after",
+            engagement_vector: "comment prompts",
+          },
+          algorithmic_advantage: "Matches discoverability clusters for intent-heavy users.",
         },
       ],
       video_prompts: [
@@ -296,6 +313,12 @@ describe("validate", () => {
           caption_en: "Video caption",
           ai_tool_instructions: "i",
           why_this_converts: "w",
+          strategic_rationale: {
+            trigger_used: "social proof",
+            contrast_note: "problem to solution",
+            engagement_vector: "watch-time retention",
+          },
+          algorithmic_advantage: "Optimized for retention and completion signals.",
         },
       ],
       marketing_strategy: {
@@ -325,6 +348,16 @@ describe("validate", () => {
         rationale: "Current bottleneck is execution cadence.",
       },
       narrative_summary: "Your profile needs consistent execution before heavy conversion pushes.",
+      localization_check_passed: true,
+    };
+    bad.posts[0] = {
+      ...bad.posts[0],
+      strategic_rationale: {
+        trigger_used: "identity",
+        contrast_note: "old vs new state",
+        engagement_vector: "save and share",
+      },
+      algorithmic_advantage: "Improves share and save rates with clear CTA framing.",
     };
     expect(validateGeminiResponse(bad, data).some((e) => e.includes("kpi_tracking"))).toBe(true);
   });

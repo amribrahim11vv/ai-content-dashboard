@@ -429,6 +429,7 @@ export default function WizardCore(props: WizardCoreProps) {
   const partialSummary = typeof submission.streamSnapshot?.narrative_summary === "string"
     ? submission.streamSnapshot.narrative_summary
     : "";
+  const reasoningTraceLines = submission.reasoningTrace.slice(-8);
 
   useEffect(() => {
     if (!loading || reduceMotion) return;
@@ -1301,6 +1302,38 @@ export default function WizardCore(props: WizardCoreProps) {
                       {label}
                     </span>
                   ))}
+                </div>
+              ) : null}
+              {reasoningTraceLines.length > 0 ? (
+                <div
+                  style={{
+                    width: "100%",
+                    maxWidth: "42rem",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    borderRadius: "0.75rem",
+                    padding: "0.6rem 0.7rem",
+                    marginBottom: "0.6rem",
+                    background: "rgba(0,0,0,0.16)",
+                    textAlign: "start",
+                  }}
+                >
+                  <p className="wizard-loading-hint" style={{ marginBottom: "0.35rem", fontSize: "0.72rem", opacity: 0.95 }}>
+                    Live reasoning trace
+                  </p>
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto pe-1">
+                    {reasoningTraceLines.map((item, idx) => (
+                      <p
+                        key={`${item.index}-${idx}`}
+                        className={reduceMotion ? "wizard-loading-hint" : "wizard-loading-hint wizard-trace-line-enter"}
+                        style={{ fontSize: "0.74rem", margin: 0 }}
+                      >
+                        <span style={{ opacity: 0.72 }}>
+                          {(item.section && STREAM_SECTION_LABELS[item.section]) || item.section || "asset"}:
+                        </span>{" "}
+                        {item.line}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               ) : null}
               <h3>{WAITING_STAGES[tipIndex]!.title}</h3>

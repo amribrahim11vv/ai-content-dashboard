@@ -224,7 +224,7 @@ Authorization: Bearer <API_SECRET>
 | Method | Route | Purpose |
 |---|---|---|
 | `POST` | `/api/kits/generate` | Sync generation (**requires** `Idempotency-Key`) |
-| `POST` | `/api/kits/generate?stream=1` | SSE generation stream (`status` / `partial` / `complete`) |
+| `POST` | `/api/kits/generate?stream=1` | SSE generation stream (`status` / `reasoning` / `partial` / `complete`) |
 | `GET` | `/api/kits` | List kits (newest first) |
 | `GET` | `/api/kits/:id` | Kit detail |
 | `POST` | `/api/kits/:id/retry` | Retry only `failed_generation` with `{ brief_json, row_version }` |
@@ -245,10 +245,12 @@ It does **not** patch individual failed nodes in `result_json`.
 
 - Stream emits SSE events in order:
   - `status` (stage updates)
+  - `reasoning` (stream-only, bounded rationale trace for UX)
   - `partial` (progressive `result_json` snapshots, light fields first)
   - `complete` (final `KitSummary`)
   - `error` (safe message)
 - Idempotency behavior remains the same as standard generate.
+- `reasoning` is best-effort and never persisted in `result_json`.
 
 ---
 

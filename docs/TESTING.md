@@ -24,6 +24,14 @@ E2E runs dev servers in demo mode with a temporary DB (see [`README.md`](../READ
 - **Graceful degradation:** load kits with missing optional fields and confirm viewer does not crash.
 - **Critical missing sections:** confirm viewer surfaces local warning and keeps page interactive.
 
+## Phase 2 focused checks
+
+- **Schema metadata:** verify `strategic_rationale` + `algorithmic_advantage` are required for posts/images/videos.
+- **Localization flag:** verify `localization_check_passed` is validated as boolean.
+- **SSE reasoning trace:** verify `/api/kits/generate?stream=1` emits bounded `reasoning` events without breaking `status`/`partial`/`complete`.
+- **Wizard UX balance:** verify reasoning trace appears during loading while progress/status behavior remains smooth.
+- **Legacy compatibility:** verify historical kits without new Phase 2 fields still render with no crash/no noisy warnings.
+
 ## Self-review checklist (before merge)
 
 - [ ] **Behavior:** matches acceptance criteria; edge cases considered (empty input, errors).

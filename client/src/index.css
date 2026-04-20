@@ -313,6 +313,10 @@
   .wizard-fade-slide-in {
     animation: wizard-fade-slide-in 280ms ease-out;
   }
+
+  .wizard-trace-line-enter {
+    animation: wizard-trace-line-enter 240ms ease-out;
+  }
 }
 
 #industry {
@@ -363,6 +367,17 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes wizard-trace-line-enter {
+  from {
+    opacity: 0;
+    transform: translateX(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
