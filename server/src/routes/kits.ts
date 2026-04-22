@@ -408,15 +408,24 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
         includeUsage: true,
       })) as {
         id: string;
-        brief_json: string;
+        brief_json: unknown;
         result_json: unknown;
-        created_at: string;
+        created_at: unknown;
       };
+      const briefJson =
+        typeof kit.brief_json === "string"
+          ? kit.brief_json
+          : JSON.stringify((kit.brief_json as Record<string, unknown>) ?? {});
+      const createdAt =
+        typeof kit.created_at === "string" && kit.created_at.trim()
+          ? kit.created_at
+          : new Date().toISOString();
       const pdf = await generateKitPdf({
         id: kit.id,
-        brief_json: kit.brief_json,
-        result_json: kit.result_json,
-        created_at: kit.created_at,
+        brief_json: briefJson,
+        result_json:
+          kit.result_json && typeof kit.result_json === "object" ? kit.result_json : {},
+        created_at: createdAt,
       });
       return new Response(new Uint8Array(pdf), {
         headers: {

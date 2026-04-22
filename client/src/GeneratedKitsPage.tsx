@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { deleteKit, listKits } from "./api";
+import { deleteKit, exportKitPdf, listKits } from "./api";
 import type { KitSummary } from "./types";
 import { useCompactTable } from "./layout/compactTableContext";
 import { briefBrand, briefClientMeta, briefIndustry } from "./kitSearchUtils";
@@ -24,6 +24,7 @@ export default function GeneratedKitsPage({ adminMode = false }: { adminMode?: b
   const [kits, setKits] = useState<KitSummary[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [downloadingLatest, setDownloadingLatest] = useState(false);
   const { toasts, push } = useToast();
   const thPad = compactTable ? "px-4 py-3" : "px-6 py-4";
   const tdPad = compactTable ? "px-4 py-3" : "px-6 py-5";
@@ -54,6 +55,48 @@ export default function GeneratedKitsPage({ adminMode = false }: { adminMode?: b
     }
   };
 
+  const handleDownloadLatestThree = async () => {
+    if (!adminMode || downloadingLatest || !kits?.length) return;
+    const latestThree = kits.slice(0, 3);
+    if (!latestThree.length) {
+      push("No kits available to export.", "error");
+      return;
+    }
+    setDownloadingLatest(true);
+    let successCount = 0;
+    let failedCount = 0;
+    try {
+      for (const kit of latestThree) {
+        try {
+          const blob = await exportKitPdf(kit.id);
+          const url = URL.createObjectURL(blob);
+          const anchor = document.createElement("a");
+          anchor.href = url;
+          anchor.download = `kit-${kit.id}.pdf`;
+          document.body.appendChild(anchor);
+          anchor.click();
+          anchor.remove();
+          URL.revokeObjectURL(url);
+          successCount += 1;
+        } catch {
+          failedCount += 1;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+      if (successCount > 0 && failedCount === 0) {
+        push("Latest 3 kit PDFs exported.", "info");
+      } else if (successCount > 0 && failedCount > 0) {
+        push(`Exported ${successCount} PDF(s). Failed: ${failedCount}.`, "error");
+      } else {
+        push("Failed to export latest 3 PDFs.", "error");
+      }
+    } catch (error) {
+      push(error instanceof Error ? error.message : "Failed to export latest 3 PDFs.", "error");
+    } finally {
+      setDownloadingLatest(false);
+    }
+  };
+
   return (
     <>
       <div className="toast-host fixed bottom-4 end-4 z-[100] flex flex-col gap-2" aria-live="polite">
@@ -75,13 +118,26 @@ export default function GeneratedKitsPage({ adminMode = false }: { adminMode?: b
           </h2>
           <p className="mt-2 text-base text-gray-500 dark:text-gray-400">Browse and open your previously generated content kits.</p>
         </div>
-        <Link
-          to="/wizard"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gray-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-100 sm:w-auto"
-        >
-          <span className="material-symbols-outlined text-[18px]">add</span>
-          New Kit
-        </Link>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          {adminMode && (
+            <button
+              type="button"
+              onClick={() => void handleDownloadLatestThree()}
+              disabled={downloadingLatest || !kits || kits.length === 0}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-6 py-2.5 text-sm font-semibold text-gray-900 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 sm:w-auto"
+            >
+              <span className="material-symbols-outlined text-[18px]">download</span>
+              {downloadingLatest ? "Exporting latest 3..." : "Export latest 3 PDFs"}
+            </button>
+          )}
+          <Link
+            to="/wizard"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gray-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-100 sm:w-auto"
+          >
+            <span className="material-symbols-outlined text-[18px]">add</span>
+            New Kit
+          </Link>
+        </div>
       </section>
 
       {latestKits.length > 0 && (
