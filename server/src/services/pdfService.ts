@@ -58,8 +58,14 @@ const PROMPT_EXCLUDED_KEYS = new Set([
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const templatePath = path.resolve(__dirname, "pdf", "kit-template.hbs");
-const cssPath = path.resolve(__dirname, "pdf", "kit-template.css");
+const templatePathCandidates = [
+  path.resolve(__dirname, "pdf", "kit-template.hbs"),
+  path.resolve(process.cwd(), "server", "src", "services", "pdf", "kit-template.hbs"),
+];
+const cssPathCandidates = [
+  path.resolve(__dirname, "pdf", "kit-template.css"),
+  path.resolve(process.cwd(), "server", "src", "services", "pdf", "kit-template.css"),
+];
 
 type CompiledTemplate = ReturnType<typeof Handlebars.compile>;
 
@@ -196,10 +202,27 @@ function createViewModel(kit: KitPayload): KitPdfViewModel {
 
 async function getCompiledTemplate(): Promise<CompiledTemplate> {
   if (cachedTemplate) return cachedTemplate;
-  const [templateSource, cssSource] = await Promise.all([
-    fs.readFile(templatePath, "utf-8"),
-    fs.readFile(cssPath, "utf-8"),
-  ]);
+  let templateSource = "";
+  let cssSource = "";
+  for (const candidate of templatePathCandidates) {
+    try {
+      templateSource = await fs.readFile(candidate, "utf-8");
+      break;
+    } catch {
+      continue;
+    }
+  }
+  for (const candidate of cssPathCandidates) {
+    try {
+      cssSource = await fs.readFile(candidate, "utf-8");
+      break;
+    } catch {
+      continue;
+    }
+  }
+  if (!templateSource || !cssSource) {
+    throw new Error("PDF template assets not found in dist or src paths.");
+  }
   cachedCss = cssSource;
   cachedTemplate = Handlebars.compile(templateSource, { noEscape: true });
   return cachedTemplate;
