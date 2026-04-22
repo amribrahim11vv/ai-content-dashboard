@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { getKit, retryKit, exportKitPdf, ApiError } from "./api";
+import { getKit, retryKit, exportKitPdf, exportKitExcel, ApiError } from "./api";
 import type { KitSummary } from "./types";
 import { useToast } from "./useToast";
 import { emitWizardEvent } from "./lib/wizardAnalytics";
@@ -42,6 +42,7 @@ export default function KitDetail({ showTechnical = false }: { showTechnical?: b
   const [err, setErr] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportingExcel, setExportingExcel] = useState(false);
   const [conflict, setConflict] = useState(false);
   const { toasts, push } = useToast();
 
@@ -116,6 +117,27 @@ export default function KitDetail({ showTechnical = false }: { showTechnical?: b
       push(e instanceof Error ? e.message : "Failed to export PDF.", "error");
     } finally {
       setExportingPdf(false);
+    }
+  };
+
+  const doExportExcel = async () => {
+    if (!kit || !showTechnical) return;
+    setExportingExcel(true);
+    try {
+      const blob = await exportKitExcel(kit.id);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `kit-${kit.id}.xlsx`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      push("Excel exported", "info");
+    } catch (e) {
+      push(e instanceof Error ? e.message : "Failed to export Excel.", "error");
+    } finally {
+      setExportingExcel(false);
     }
   };
 
@@ -237,6 +259,17 @@ export default function KitDetail({ showTechnical = false }: { showTechnical?: b
             >
               <span className="material-symbols-outlined text-lg">download</span>
               {exportingPdf ? "Exporting PDF…" : "Export PDF"}
+            </button>
+          ) : null}
+          {showTechnical ? (
+            <button
+              type="button"
+              className={btnSecondary + " w-full sm:w-auto"}
+              disabled={exportingExcel}
+              onClick={() => void doExportExcel()}
+            >
+              <span className="material-symbols-outlined text-lg">table_view</span>
+              {exportingExcel ? "Exporting Excel…" : "Export Excel"}
             </button>
           ) : null}
           {showTechnical && kit.result_json ? (

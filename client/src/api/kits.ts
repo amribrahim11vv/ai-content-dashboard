@@ -228,3 +228,11 @@ export async function exportKitPdf(id: string): Promise<Blob> {
   if (!res.ok) throw new ApiError(await parseErrorMessage(res, res.statusText), res.status);
   return res.blob();
 }
+
+export async function exportKitExcel(id: string): Promise<Blob> {
+  const res = await fetch(apiUrl(`/api/kits/${id}/export-excel?scope=all`), {
+    headers: buildHeaders(),
+  });
+  if (!res.ok) throw new ApiError(await parseErrorMessage(res, res.statusText), res.status);
+  return res.blob();
+}

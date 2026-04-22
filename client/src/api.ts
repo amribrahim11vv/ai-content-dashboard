@@ -12,6 +12,7 @@ export {
   updateKitUiPreferences,
   deleteKit,
   exportKitPdf,
+  exportKitExcel,
 } from "./api/kits";
 export type {
   KitGenerationStreamEvent,

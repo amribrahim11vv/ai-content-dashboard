@@ -12,6 +12,7 @@ import {
   regenerateKitItemService,
   retryKitService,
 } from "../services/kitGenerationService.js";
+import { generateKitExcel } from "../services/excelService.js";
 import { generateKitPdf } from "../services/pdfService.js";
 import { respondHttpError } from "./httpErrorMapping.js";
 import { getAuthUser } from "../middleware/userAuth.js";
@@ -20,34 +21,11 @@ import { db } from "../db/index.js";
 import { users } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import { isAgencyAdminRequest } from "../middleware/agencyAdminAuth.js";
+import { normalizeBriefJson, normalizeCreatedAt, normalizeResultJson } from "../services/exportModel.js";
 
 const deviceIdSchema = z.string().uuid();
 const REASONING_TRACE_MAX_LINES = 24;
 const REASONING_TRACE_MAX_CHARS = 240;
-
-function normalizeBriefJson(value: unknown): string {
-  if (typeof value === "string") return value;
-  try {
-    return JSON.stringify((value as Record<string, unknown>) ?? {});
-  } catch {
-    return "{}";
-  }
-}
-
-function normalizeResultJson(value: unknown): Record<string, unknown> {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return {};
-}
-
-function normalizeCreatedAt(value: unknown): string {
-  if (typeof value === "string" && value.trim()) {
-    const parsed = new Date(value);
-    if (!Number.isNaN(parsed.getTime())) return value;
-  }
-  return new Date().toISOString();
-}
 
 const generateBodySchema = z
   .object({
@@ -457,6 +435,41 @@ export function createKitsRouter(mw: (c: import("hono").Context, next: Next) => 
         console.error("[export-pdf] unexpected failure", { kitId, message });
       }
       return respondHttpError(c, err, "Unexpected error while exporting PDF.");
+    }
+  });
+
+  app.get("/api/kits/:id/export-excel", async (c) => {
+    const blocked = await requireAdminAccess(c);
+    if (blocked) return blocked;
+    const kitId = c.req.param("id");
+    try {
+      const kit = (await getKitByIdService(kitId, undefined, {
+        includeUsage: true,
+      })) as {
+        id: string;
+        brief_json: unknown;
+        result_json: unknown;
+        created_at: unknown;
+      };
+      const workbook = await generateKitExcel({
+        id: kit.id,
+        brief_json: normalizeBriefJson(kit.brief_json),
+        result_json: normalizeResultJson(kit.result_json),
+        created_at: normalizeCreatedAt(kit.created_at),
+      });
+      return new Response(new Uint8Array(workbook), {
+        headers: {
+          "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "Content-Disposition": `attachment; filename="kit-${kit.id}.xlsx"`,
+          "Cache-Control": "no-store",
+        },
+      });
+    } catch (err) {
+      if (!(err instanceof HttpError)) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error("[export-excel] unexpected failure", { kitId, message });
+      }
+      return respondHttpError(c, err, "Unexpected error while exporting Excel.");
     }
   });
 

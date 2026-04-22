@@ -8,6 +8,7 @@ const retryKitService = vi.fn();
 const patchKitUiPreferencesService = vi.fn();
 const deleteKitService = vi.fn();
 const generateKitPdf = vi.fn();
+const generateKitExcel = vi.fn();
 const isAgencyAdminRequest = vi.fn();
 
 vi.mock("../services/kitGenerationService.js", () => ({
@@ -22,6 +23,10 @@ vi.mock("../services/kitGenerationService.js", () => ({
 
 vi.mock("../services/pdfService.js", () => ({
   generateKitPdf,
+}));
+
+vi.mock("../services/excelService.js", () => ({
+  generateKitExcel,
 }));
 
 vi.mock("../middleware/agencyAdminAuth.js", () => ({
@@ -245,6 +250,47 @@ describe("kits routes device header enforcement", () => {
     });
     expect([401, 403]).toContain(res.status);
     expect(generateKitPdf).not.toHaveBeenCalled();
+  });
+
+  it("exports excel for admin sessions only", async () => {
+    isAgencyAdminRequest.mockImplementation(async (c: { set: (k: string, v: unknown) => void }) => {
+      c.set("agencyAdminSession", { username: "ops-admin" });
+      return true;
+    });
+    getKitByIdService.mockResolvedValueOnce({
+      id: "k-xlsx",
+      brief_json: "{\"brand_name\":\"Florenza\"}",
+      result_json: { posts: [] },
+      created_at: "2026-04-22T10:00:00.000Z",
+    });
+    generateKitExcel.mockResolvedValueOnce(Buffer.from("xlsx-bytes"));
+
+    const res = await appRequest("/api/kits/k-xlsx/export-excel?scope=all", {
+      method: "GET",
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain(
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    expect(res.headers.get("content-disposition")).toContain("kit-k-xlsx.xlsx");
+    expect(getKitByIdService).toHaveBeenCalledWith("k-xlsx", undefined, { includeUsage: true });
+    expect(generateKitExcel).toHaveBeenCalledWith({
+      id: "k-xlsx",
+      brief_json: "{\"brand_name\":\"Florenza\"}",
+      result_json: { posts: [] },
+      created_at: "2026-04-22T10:00:00.000Z",
+    });
+  });
+
+  it("blocks excel export when requester is not admin", async () => {
+    isAgencyAdminRequest.mockResolvedValue(false);
+    const res = await appRequest("/api/kits/k-xlsx/export-excel?scope=all", {
+      method: "GET",
+      headers: { "X-Device-ID": "a4be40b8-2ac6-4f59-9e14-a5cf6f39b4bd" },
+    });
+    expect([401, 403]).toContain(res.status);
+    expect(generateKitExcel).not.toHaveBeenCalled();
   });
 
   it("normalizes malformed export payload fields before PDF generation", async () => {
