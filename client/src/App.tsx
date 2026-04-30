@@ -18,6 +18,7 @@ import HelpPage from "./pages/HelpPage";
 import IntegrationsPage from "./pages/IntegrationsPage";
 import OrderReceivedPage from "./pages/OrderReceivedPage";
 import MyBrandsPage from "./pages/MyBrandsPage";
+import ClientOverview from "./pages/ClientOverview";
 import { useAuth } from "./auth/AuthContext";
 import { getV2CanonicalUrl, isAgencyEdition, isV1PublicDecommissionEnabled } from "./lib/appEdition";
 import AdminLoginPage from "./pages/AdminLoginPage";
@@ -160,7 +161,7 @@ export default function App() {
           />
         }
       >
-        <Route path="/" element={agencyEdition ? <Navigate to="/wizard/social" replace /> : v1PublicDecommission ? <V1PublicRedirect /> : <Dashboard />} />
+        <Route path="/" element={agencyEdition ? <ClientOverview /> : v1PublicDecommission ? <V1PublicRedirect /> : <Dashboard />} />
         <Route path="/my-brands" element={<MyBrandsPage />} />
         <Route path="/generated-kits" element={agencyEdition ? <Navigate to="/" replace /> : v1PublicDecommission ? <V1PublicRedirect /> : <GeneratedKitsPage />} />
         <Route path="/pricing" element={<PricingPage />} />

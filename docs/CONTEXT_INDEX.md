@@ -17,6 +17,7 @@ Use this file when the **full** [PROJECT_BRIEF.md](PROJECT_BRIEF.md) does not fi
 | [docs/TASKING.md](TASKING.md) | Task granularity rules | Breaking work into PR-sized units |
 | [docs/templates/phase-audit.md](templates/phase-audit.md) | Requirements vs codebase table | Phase verification (guideline #4) |
 | [docs/TESTING.md](TESTING.md) | Commands + self-review checklist | guideline #6 |
+| [docs/SERVER_SCRIPTS.md](SERVER_SCRIPTS.md) | Server-side operational/debug/export scripts | Running PDF/export debugging utilities safely |
 | [docs/GIT_WORKFLOW.md](GIT_WORKFLOW.md) | Commits and branches | guideline #8 |
 | [docs/DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) | Tailwind / tokens / constraints | guideline #7 |
 | [AGENTS.md](../AGENTS.md) | AI agent collaboration rules | guidelines #9–11 |

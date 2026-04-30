@@ -20,7 +20,7 @@ const AuthCtx = createContext<AuthState | null>(null);
 function resolveAuthRedirectUrl(): string {
   const configured = String(import.meta.env.VITE_AUTH_REDIRECT_URL ?? "").trim();
   if (configured) return configured;
-  if (isAgencyEdition()) return `${window.location.origin}/wizard/social`;
+  if (isAgencyEdition()) return `${window.location.origin}/`;
   if (isV1PublicDecommissionEnabled()) return `${window.location.origin}/admin/legacy-v1`;
   return window.location.href;
 }

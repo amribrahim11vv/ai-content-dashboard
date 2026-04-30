@@ -34,7 +34,8 @@
 
 **New agent / handoff:** [`AI_HANDOFF.md`](AI_HANDOFF.md). For full doc routing (scope, architecture, DB, prompts, tasking), use **[`docs/CONTEXT_INDEX.md`](docs/CONTEXT_INDEX.md)**. Collaboration rules: [`AGENTS.md`](AGENTS.md).
 
-Agency pivot implementation details: [`docs/PIVOT_AGENCY_EXECUTION.md`](docs/PIVOT_AGENCY_EXECUTION.md).
+Agency pivot implementation details: [`docs/archive/execution-plans/PIVOT_AGENCY_EXECUTION.md`](docs/archive/execution-plans/PIVOT_AGENCY_EXECUTION.md).
+Server debug/export scripts catalog: [`docs/SERVER_SCRIPTS.md`](docs/SERVER_SCRIPTS.md).
 
 ---
 
@@ -139,11 +140,30 @@ Required production env guards:
 - Visual wizard with per-path auto-save drafts in localStorage (`ai-content-dashboard:wizard-draft:social:v1`, `...:offer:v1`, `...:deep:v1`)
 - Idempotent synchronous kit generation
 - Dashboard list + searchable kit viewer
-- V2 client portal with sidebar navigation (Overview, My Brands, Request Content, Pricing)
+- V2 client portal with sidebar navigation: **Overview** (`/`) is a dedicated landing (process + portfolio); **Request Content** opens the wizard at `/wizard/social`; plus My Brands and Pricing
 - Structured social/image/video rendering (with copy actions)
 - Retry flow for failed generation (full regenerate)
 - Admin-only hard delete for duplicate/junk kits (`DELETE /api/kits/:id`)
+- Admin kit exports with downloadable PDF and styled Excel (`.xlsx`)
 - Prompt Catalog authoring as creative direction (client context auto-injected server-side)
+
+---
+
+## Plan behavior (Free vs Paid)
+
+The active plan controls wizard access depth and generation limits:
+
+| Area | Starter (free sample) | Early Adopter (paid) |
+|---|---|---|
+| Campaign modes | `social` only | `social`, `offer`, `deep` |
+| Wizard advanced step (`volume`) | locked (submit free test path) | unlocked |
+| Reference image upload | locked | enabled |
+| Monthly video prompts | 1 | 2 |
+| Monthly image prompts | 2 | 10 |
+| Retry / regenerate | not available | available (unlimited by plan policy) |
+| Agency intake contact fields | required | required |
+
+In agency mode, users submit once and are routed to `order-received`; internal/admin flow handles fulfillment and export operations.
 
 ---
 
@@ -270,6 +290,8 @@ Rejected by default:
 | `GET` | `/api/kits/:id` | Kit detail |
 | `POST` | `/api/kits/:id/retry` | Retry only `failed_generation` with `{ brief_json, row_version }` |
 | `POST` | `/api/kits/:id/regenerate-item` | Regenerate one item only with `{ item_type, index, row_version, feedback? }` |
+| `GET` | `/api/kits/:id/export-pdf` | Admin-only PDF export (`.pdf`) |
+| `GET` | `/api/kits/:id/export-excel` | Admin-only Excel export (`.xlsx`, styled + RTL) |
 | `PATCH` | `/api/kits/:id/ui-preferences` | Persist viewer UI state with `{ ui_preferences }` (`lang`, section/panel maps) |
 | `POST` | `/api/telemetry/interaction` | Fire-and-forget interaction telemetry with `{ kit_id, interaction_type, meta? }` |
 | `POST` | `/api/analytics/wizard-events` | Public ingest with guardrails: per-IP throttling + global/body caps + text-field limits |
