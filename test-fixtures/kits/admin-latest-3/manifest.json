@@ -1,0 +1,29 @@
+{
+  "generated_at": "2026-04-22T15:59:29.316Z",
+  "kits": [
+    {
+      "rank": 1,
+      "kit_id": "IYt-ydObbcHxYjdeMRtq8",
+      "created_at": "2026-04-20T13:39:01.674Z",
+      "delivery_status": "failed_generation",
+      "json_file": "01-IYt-ydObbcHxYjdeMRtq8.json",
+      "pdf_file": "01-IYt-ydObbcHxYjdeMRtq8.preview.pdf"
+    },
+    {
+      "rank": 2,
+      "kit_id": "LZSIMEigMs3sgVzUhWlRB",
+      "created_at": "2026-04-19T16:45:42.790Z",
+      "delivery_status": "generated",
+      "json_file": "02-LZSIMEigMs3sgVzUhWlRB.json",
+      "pdf_file": "02-LZSIMEigMs3sgVzUhWlRB.preview.pdf"
+    },
+    {
+      "rank": 3,
+      "kit_id": "VuoAP2dhvu1Giw_3635-Q",
+      "created_at": "2026-04-17T19:06:38.968Z",
+      "delivery_status": "generated",
+      "json_file": "03-VuoAP2dhvu1Giw_3635-Q.json",
+      "pdf_file": "03-VuoAP2dhvu1Giw_3635-Q.preview.pdf"
+    }
+  ]
+}

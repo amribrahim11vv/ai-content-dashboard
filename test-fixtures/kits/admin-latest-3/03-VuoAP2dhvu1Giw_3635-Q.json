@@ -1,0 +1,197 @@
+{
+  "fixture_name": "latest-admin-kit",
+  "fixture_version": 1,
+  "source": {
+    "rank": 3,
+    "kit_id": "VuoAP2dhvu1Giw_3635-Q",
+    "created_at": "2026-04-17T19:06:38.968Z",
+    "delivery_status": "generated"
+  },
+  "brief": {
+    "submitted_at": "2026-04-17T19:06:04.355Z",
+    "email": "",
+    "brand_name": "Baytak",
+    "industry": "real-estate",
+    "target_audience": [
+      "youth",
+      "entrepreneurs"
+    ],
+    "main_goal": "زيادة مبيعات",
+    "platforms": [
+      "instagram",
+      "tiktok",
+      "facebook"
+    ],
+    "brand_tone": "ودي ومقنع",
+    "brand_colors": "",
+    "offer": "",
+    "competitors": "",
+    "visual_notes": "",
+    "reference_image": "",
+    "campaign_duration": "",
+    "budget_level": "",
+    "best_content_types": [
+      "offers_promotions",
+      "faq"
+    ],
+    "campaign_mode": "social",
+    "num_posts": 1,
+    "num_image_designs": 1,
+    "num_video_prompts": 1,
+    "content_package_idea_count": 1,
+    "diagnostic_role": "",
+    "diagnostic_account_stage": "",
+    "diagnostic_followers_band": "",
+    "diagnostic_primary_blocker": "",
+    "diagnostic_revenue_goal": "",
+    "include_content_package": true
+  },
+  "result_json": {
+    "posts": [
+      {
+        "platform": "instagram",
+        "format": "carousel",
+        "goal": "زيادة المبيعات والوعي الاستثماري",
+        "post_ar": "عارف إيه الفرق بين رائد الأعمال اللي بيكبر بسرعة واللي بيفضل مكانه؟ الاستثمار في الأصول. بدل ما تضيع فلوسك كل شهر في إيجار مكتب أو سكن، ليه ما تحولش المصروف ده لقسط لملكيتك الخاصة؟ في 'بيتك' (Baytak)، فاهمين دماغ الشباب وعارفين إنك محتاج مساحة تعبر عن طموحك وتكون في نفس الوقت استثمار ذكي لمستقبلك. إحنا مش بس بنبيع جدران، إحنا بنقدم لك القاعدة اللي هتبني منها إمبراطوريتك. خطط دفع مرنة تبدأ من أقل مقدم وأطول فترة سداد، عشان نضمن إن تدفقك النقدي (Cash flow) يفضل في أمان. سواء كنت بتدور على أول بيت ليك أو مقر لشركتك الناشئة، الحل عندنا. انضم لمئات الشباب اللي اختاروا الاستثمار الصح مع بيتك. الأماكن محدودة في أميز المواقع، والفرصة بتيجي مرة واحدة.",
+        "post_en": "Do you know the difference between an entrepreneur who scales fast and one who stays stagnant? It is investing in assets. Instead of wasting money every month on rent for an office or home, why not turn that expense into an installment for your own property? At Baytak, we understand the modern mindset; you need a space that reflects your ambition while serving as a smart investment for your future. We don't just sell walls; we provide the foundation from which you build your empire. With flexible payment plans starting from the lowest down payment and longest repayment periods, we ensure your cash flow remains healthy. Whether you are looking for your first home or a headquarters for your startup, we have the solution. Join hundreds of young professionals who chose the right investment with Baytak. Prime locations are limited, and the opportunity knocks only once.",
+        "hashtags": [
+          "Baytak_RealEstate",
+          "EntrepreneurLife",
+          "InvestmentGoals",
+          "StartupSpace",
+          "عقارات_مصر",
+          "بيتك",
+          "استثمار_الشباب"
+        ],
+        "cta": "ارسل كلمة 'استثمار' في رسالة خاصة لنرسل لك قائمة بأفضل الوحدات المتاحة حالياً."
+      }
+    ],
+    "image_designs": [
+      {
+        "platform_format": "instagram_post",
+        "design_type": "lifestyle_entrepreneur",
+        "goal": "جذب انتباه رواد الأعمال الشباب",
+        "visual_scene": "A modern, sun-drenched minimalist apartment with a dedicated high-tech home office corner. A young professional is seen in the background looking out of a floor-to-ceiling window at a city skyline. The furniture is sleek and contemporary.",
+        "headline_text_overlay": "تملك مستقبلك، لا تستأجره",
+        "supporting_copy": "خطط سداد تناسب طموحك",
+        "full_ai_image_prompt": "Cinematic wide shot of a luxury modern minimalist apartment interior, high ceilings, floor-to-ceiling windows with city view, sunlight streaming in, professional home office setup with dual monitors, aesthetic decor, 8k resolution, photorealistic, architectural photography style.",
+        "caption_ar": "مساحتك الخاصة هي أول خطوة في نجاح مشروعك. استثمر في مكان يشبهك.",
+        "caption_en": "Your private space is the first step in your project's success. Invest in a place that looks like you.",
+        "text_policy": "لا تضع أي نصوص داخل الصورة المولدة بواسطة الذكاء الاصطناعي. سيتم إضافة النصوص يدوياً عبر المصمم.",
+        "conversion_trigger": "إبراز قيمة التملك مقابل الإيجار"
+      }
+    ],
+    "video_prompts": [
+      {
+        "platform": "tiktok",
+        "duration": "15s",
+        "style": "cinematic_fast_paced",
+        "hook_type": "تحدي الواقع",
+        "scenes": [
+          {
+            "time": "00:00-00:05",
+            "label": "The Hook",
+            "visual": "Close-up of a hand signing a lease agreement, then quickly transitioning to a wide shot of a modern, stylish living room.",
+            "text": "بتدفع إيجار؟ كأنك بترميهم في البحر!",
+            "audio": "صوت تمزيق ورقة يتبعه موسيقى حماسية سريعة."
+          },
+          {
+            "time": "00:05-00:10",
+            "label": "The Solution",
+            "visual": "Fast cuts of premium amenities: a gym, a sleek lobby, and a rooftop garden.",
+            "text": "مع بيتك، قسطك هو استثمارك الحقيقي.",
+            "audio": "صوت 'Ding' خفيف مع كل لقطة."
+          },
+          {
+            "time": "00:10-00:15",
+            "label": "CTA",
+            "visual": "The brand logo 'Baytak' appearing over a blurred background of a happy young couple receiving keys.",
+            "text": "ابدأ رحلتك النهاردة. الرابط في البايو.",
+            "audio": "موسيقى هادئة وملهمة في النهاية."
+          }
+        ],
+        "caption_ar": "ليه تستأجر لما ممكن تملك؟ استثمر في مستقبلك مع 'بيتك'. 🏠✨",
+        "caption_en": "Why rent when you can own? Invest in your future with 'Baytak'. 🏠✨",
+        "ai_tool_instructions": "Wide shot dolly-in cinematic lighting 4k; slow motion subtle movement smooth pacing; Ensure no text, no floating letters, no watermarks. Maintain strict physical consistency.",
+        "why_this_converts": "يخاطب الألم المالي المباشر (الإيجار الضائع) ويقدم الحل كبديل منطقي ومغري."
+      }
+    ],
+    "marketing_strategy": {
+      "content_mix_plan": "الاعتماد بنسبة 50% على محتوى تعليمي حول فوائد العقار كأصل مالي، 30% عروض مباشرة، و20% إجابات على أسئلة الجمهور الشائعة لبناء الثقة.",
+      "weekly_posting_plan": "نشر 3 ريلز أسبوعياً (الاثنين، الأربعاء، الجمعة) تركز على نمط الحياة والاستثمار، مع كاروسيل واحد يوم السبت يشرح تفاصيل الدفع، وستوريات يومية تفاعلية.",
+      "platform_strategy": "تيك توك للوصول الواسع (Reach) عبر تريندات العقار، إنستجرام لبناء الهوية البصرية (Aesthetic) والثقة، وفيسبوك للتواصل المباشر مع المهتمين بجدية.",
+      "key_messaging_angles": [
+        "العقار هو الملاذ الآمن لمدخراتك كرائد أعمال",
+        "امتلاك مكتبك الخاص يقلل من تكاليف تشغيل شركتك",
+        "بيتك يوفر لك مجتمعاً يشبهك من الطموحين والناجحين"
+      ],
+      "brand_positioning_statement": "بيتك هو الشريك العقاري الأول للشباب ورواد الأعمال في مصر، حيث نجمع بين الفخامة المعقولة والذكاء الاستثماري."
+    },
+    "sales_system": {
+      "pain_points": [
+        "خسارة الأموال في الإيجارات الشهرية دون عائد",
+        "صعوبة الحصول على تمويل أو خطط سداد مريحة للشباب",
+        "الخوف من التضخم وتأثيره على قيمة المدخرات الكاش"
+      ],
+      "offer_structuring": "باقة 'مؤسس المستقبل': مقدم 5% فقط، وأول قسط بعد 6 شهور، مع استشارة عقارية مجانية لتحديد أفضل وحدة استثمارية.",
+      "funnel_plan": "إعلان ريلز (وعي) -> ليد ماجنت 'دليل الاستثمار العقاري للشباب' (اهتمام) -> مكالمة مبيعات استشارية (قرار) -> حجز الوحدة (تحويل).",
+      "ad_angles": [
+        "زاوية 'الاستثمار الذكي': قارن بين وضع فلوسك في البنك وبين وضعها في عقار",
+        "زاوية 'نمط الحياة': عيش في المكان اللي كنت بتحلم بيه بقسط بسيط"
+      ],
+      "objection_handling": [
+        {
+          "objection": "الأسعار غالية جداً عليّ حالياً",
+          "response": "إحنا بنقدم خطط سداد مرنة جداً بتبدأ من مبالغ شهرية بسيطة، العقار قيمته بتزيد مع الوقت يعني السعر النهاردة هو أرخص سعر هتاخده."
+        },
+        {
+          "objection": "خايف من الالتزام بقسط طويل الأمد",
+          "response": "العقار أصل تقدر تبيعه أو تأجره في أي وقت وتغطي القسط وزيادة، إحنا بنساعدك تختار وحدة ليها طلب عالي في السوق."
+        }
+      ],
+      "cta_strategy": "استخدام عبارات تحث على الندم على فوات الفرصة مثل 'احجز مكانك قبل زيادة الأسعار القادمة' و 'كن من القلة التي تملك في هذا الموقع'."
+    },
+    "offer_optimization": {
+      "rewritten_offer": "تملك وحدتك الآن بمقدم يبدأ من 50 ألف جنيه فقط، واستمتع بفترة سماح من الأقساط لمدة 6 أشهر لضمان استقرار مشروعك أو عملك الخاص.",
+      "urgency_or_scarcity": "العرض ساري لأول 10 متعاقدين فقط خلال هذا الشهر بمناسبة إطلاق المرحلة الجديدة.",
+      "alternative_offers": [
+        "خصم 10% عند الدفع كاش",
+        "أثاث مكتبي مجاني عند شراء وحدة إدارية قبل نهاية الأسبوع"
+      ]
+    },
+    "diagnosis_plan": {
+      "quickWin24h": "تغيير الـ Bio في إنستجرام ليشمل رابط واتساب مباشر وعبارة توضح القيمة المضافة للشباب.",
+      "focus7d": "إطلاق حملة إعلانية ممولة (Lead Generation) تستهدف رواد الأعمال وأصحاب المهن الحرة في المناطق الراقية.",
+      "priority": "بناء الثقة (Social Proof) من خلال نشر فيديوهات قصيرة لمواقع العمل أو تسليمات سابقة.",
+      "rationale": "بما أن الهدف هو زيادة المبيعات لجمهور شاب، يجب تقليل الاحتكاك في عملية الشراء وإظهار العقار كخطوة منطقية للنمو الشخصي والمالي."
+    },
+    "narrative_summary": "نحن في 'بيتك' نحول مفهوم العقار من مجرد جدران إلى أداة لتمكين الشباب ورواد الأعمال. استراتيجيتنا تركز على محتوى يخاطب العقل الاستثماري بلهجة قريبة من القلب، مع توفير حلول مالية تكسر حاجز الخوف من التملك.",
+    "content_ideas_package": {
+      "ideas": [
+        {
+          "id": 1,
+          "title": "استثمر في مستقبلك: من الإيجار إلى التملك",
+          "description": "فيديو قصير يوضح مقارنة سريعة بين دفع الإيجار الشهري وبين سداد أقساط تملك وحدة سكنية من بيتك. المحتوى يركز على رواد الأعمال والشباب، موضحاً كيف أن التملك هو استثمار طويل الأمد يوفر استقراراً لمشاريعهم وحياتهم الشخصية، مع عرض ميزة تقسيط مرنة تناسب ميزانياتهم."
+        }
+      ],
+      "hooks": [
+        {
+          "idea_id": 1,
+          "variant_index": 1,
+          "hook_text": "ليه تضيع فلوسك كل شهر في الإيجار وأنت تقدر تمتلك عقارك الخاص وتأمن مستقبلك مع بيتك؟"
+        },
+        {
+          "idea_id": 1,
+          "variant_index": 2,
+          "hook_text": "لكل شاب ورائد أعمال: حول أقساط الإيجار لاستثمار حقيقي في عقار يضمن لك الاستقرار والنجاح."
+        }
+      ],
+      "templates": [
+        {
+          "idea_id": 1,
+          "template_format": "Short-form Video (Reel/TikTok) Beat Sheet: [00:00-00:03] Hook: Split screen visual comparing 'Monthly Rent' as a loss vs. 'Baytak Installment' as an investment. [00:03-00:08] Context: Quick voiceover explaining why entrepreneurs should convert rent expenses into property assets for long-term stability. [00:08-00:12] Solution: Text overlay highlighting Baytak's flexible installment plans tailored for youth budgets. [00:12-00:15] CTA: Friendly invitation to DM for a customized payment plan or visit the link in bio."
+        }
+      ]
+    }
+  }
+}

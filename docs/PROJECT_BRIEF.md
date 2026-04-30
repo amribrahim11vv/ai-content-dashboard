@@ -102,6 +102,7 @@ The UI shows **one screen per step** with **“Step *i* of *n*”**, a **progres
 | | | | | B: `diagnosis` → then same as A |
 
 The **last step is always `volume`**: output counts, optional content-package toggle, optional email, and (when logged in) a **plan usage** summary.
+In `starter`, this step is treated as a limited free-sample submit gate; in `early_adopter`, advanced controls are fully available.
 
 #### 5.2.2 Inputs collected (payload shape: `brief_json`)
 
@@ -118,6 +119,8 @@ All modes share one **form model** (`BriefForm` / `briefSchema` in `briefSchema.
 | **volume** | `num_posts`, `num_image_designs`, `num_video_prompts`, `include_content_package`, `content_package_idea_count`, `email` | Numeric inputs (clamped: posts **0–25**, images **0–10**, videos **0–10**, package ideas **0–25**), checkbox + explainer, optional email | **All modes**; moving **Next** on prior steps only validates **that step’s** field list (`useWizardOrchestrator` + `trigger`). **Final** submit runs **full** path schema |
 
 **Always set server-side from defaults:** `campaign_mode` is `social` | `offer` | `deep` per wizard entry route.
+
+**Agency intake requirement:** `client_name`, `client_phone`, and `client_email` are required in both free and paid agency submissions. Payment/access changes unlocked capabilities, not these intake requirements.
 
 **Validation behavior:** `react-hook-form` with **`mode: "onTouched"`**; **Next** triggers validation for **only** the keys mapped to the current step (`stepFieldMap`). Red inline errors appear under invalid fields.
 
@@ -153,7 +156,7 @@ Purpose: **One authoritative run** per logical request. In V2 agency mode, users
 
 ### 5.4 Kit detail (viewer)
 
-Purpose: **Make the kit actionable** for internal/admin workflows. Collapsible sections, copy actions, optional technical JSON, and **partial regeneration** (one post, one image block, one video item) support the real workflow: *“Everything else is fine—redo item 3 with this feedback.”*
+Purpose: **Make the kit actionable** for internal/admin workflows. Collapsible sections, copy actions, optional technical JSON, **admin exports (PDF + Excel)**, and **partial regeneration** (one post, one image block, one video item) support the real workflow: *“Everything else is fine—redo item 3 with this feedback.”*
 
 ### 5.5 Admin: Prompt catalog
 
@@ -183,6 +186,18 @@ The V2 public model is **productized service packaging**, not a recurring SaaS c
 - **Payment path:** CTA redirects to WhatsApp (`wa.me`) with prefilled Arabic payment message for manual completion.
 
 The pricing philosophy is intentional: reduce purchase friction, route demand into a managed agency workflow, and optimize package conversion through operational feedback.
+
+### 6.1 Capability matrix (free vs paid operations)
+
+| Capability | Starter (free sample) | Early Adopter (paid) |
+|---|---|---|
+| Allowed campaign modes | `social` only | `social`, `offer`, `deep` |
+| Advanced wizard controls (`volume` step) | limited/free-submit gate | fully enabled |
+| Reference image upload | locked | enabled |
+| Monthly video prompts | 1 | 2 |
+| Monthly image prompts | 2 | 10 |
+| Retry/regenerate actions | blocked by plan limits | available (plan allows unlimited) |
+| Agency order intent after submit | `free` | `paid` |
 
 ---
 
@@ -760,6 +775,8 @@ All paths are relative to the deployed API origin (e.g. `https://…onrender.com
 | `DELETE` | `/api/kits/:id` | **Admin-only** hard delete with related cleanup |
 | `POST` | `/api/kits/:id/retry` | Retry failed generation from stored brief |
 | `POST` | `/api/kits/:id/regenerate-item` | Regenerate a single post/image/video slice |
+| `GET` | `/api/kits/:id/export-pdf` | Admin-only PDF export |
+| `GET` | `/api/kits/:id/export-excel` | Admin-only styled Excel export (RTL-ready) |
 
 **Features (`server/src/routes/features.ts`) — mounted under `/api`**
 

@@ -1,0 +1,51 @@
+{
+  "fixture_name": "latest-admin-kit",
+  "fixture_version": 1,
+  "source": {
+    "rank": 1,
+    "kit_id": "IYt-ydObbcHxYjdeMRtq8",
+    "created_at": "2026-04-20T13:39:01.674Z",
+    "delivery_status": "failed_generation"
+  },
+  "brief": {
+    "submitted_at": "2026-04-20T13:37:41.965Z",
+    "email": "medo.omar.salama@gmail.com",
+    "brand_name": "Atlas Studio",
+    "industry": "ecommerce",
+    "business_links": "https://atlas.example.com",
+    "target_audience": [
+      "youth",
+      "entrepreneurs"
+    ],
+    "main_goal": "زيادة التفاعل",
+    "platforms": [
+      "instagram",
+      "tiktok",
+      "facebook"
+    ],
+    "brand_tone": "حديث وعصري",
+    "brand_colors": "",
+    "offer": "",
+    "competitors": "",
+    "visual_notes": "Quick visual direction",
+    "reference_image": "",
+    "campaign_duration": "",
+    "budget_level": "",
+    "best_content_types": [
+      "product_demo",
+      "problem_solving"
+    ],
+    "campaign_mode": "social",
+    "num_posts": 8,
+    "num_image_designs": 1,
+    "num_video_prompts": 1,
+    "content_package_idea_count": 1,
+    "diagnostic_role": "",
+    "diagnostic_account_stage": "",
+    "diagnostic_followers_band": "",
+    "diagnostic_primary_blocker": "",
+    "diagnostic_revenue_goal": "",
+    "include_content_package": false
+  },
+  "result_json": {}
+}
