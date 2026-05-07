@@ -47,6 +47,7 @@ function snapshotMap(s: SubmissionSnapshot): Record<string, string> {
     competitors: s.competitors,
     audience_pain_point: s.audience_pain_point,
     visual_notes: s.visual_notes,
+    product_details: s.product_details,
     campaign_duration: s.campaign_duration,
     budget_level: s.budget_level,
     best_content_types: list(s.best_content_types),

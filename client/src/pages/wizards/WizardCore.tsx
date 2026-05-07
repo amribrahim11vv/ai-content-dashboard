@@ -117,8 +117,8 @@ const STEP_FIELDS: Record<StepId, (keyof BriefForm)[]> = {
   brand: ["client_name", "client_phone", "client_email", "brand_name", "industry", "business_links"],
   audience: ["target_audience", "main_goal"],
   channels: ["platforms", "brand_tone", "brand_colors"],
-  offer: ["offer", "competitors"],
-  creative: ["visual_notes", "reference_image", "campaign_duration", "budget_level", "best_content_types"],
+  offer: ["offer", "competitors", "product_details"],
+  creative: ["visual_notes", "product_details", "reference_image", "campaign_duration", "budget_level", "best_content_types"],
   volume: [],
 };
 
@@ -945,6 +945,24 @@ export default function WizardCore(props: WizardCoreProps) {
                     <div className={fieldShell}><textarea id="competitors" className={textareaCls} {...register("competitors")} /></div>
                   </div>
                 )}
+                {showField("offer", "product_details") && (
+                  <div>
+                    <label htmlFor="product_details_offer_agency" className={labelCls} dir="rtl" lang="ar">
+                      تفاصيل المنتج / الخدمة (اختياري بس مهم جداً)
+                    </label>
+                    <div className={fieldShell}>
+                      <textarea
+                        id="product_details_offer_agency"
+                        className={textareaCls}
+                        dir="rtl"
+                        lang="ar"
+                        placeholder="اوصف منتجك بدقة شديدة (مثال: تيشيرت أوفر سايز أسود خامة قطن، أو كنبة مودرن قطيفة كحلي...)."
+                        {...register("product_details")}
+                      />
+                    </div>
+                    {errors.product_details && <p className={errCls}>{errors.product_details.message}</p>}
+                  </div>
+                )}
               </div>
             )}
 
@@ -952,6 +970,24 @@ export default function WizardCore(props: WizardCoreProps) {
               <div className="space-y-6">
                 {showField("creative", "visual_notes") && (
                   <AdditionalNotes {...register("visual_notes")} error={errors.visual_notes?.message} />
+                )}
+                {showField("creative", "product_details") && (
+                  <div>
+                    <label htmlFor="product_details" className={labelCls} dir="rtl" lang="ar">
+                      تفاصيل المنتج / الخدمة (اختياري بس مهم جداً)
+                    </label>
+                    <div className={fieldShell}>
+                      <textarea
+                        id="product_details"
+                        className={textareaCls}
+                        dir="rtl"
+                        lang="ar"
+                        placeholder="اوصف منتجك بدقة شديدة (مثال: تيشيرت أوفر سايز أسود خامة قطن، أو كنبة مودرن قطيفة كحلي...)."
+                        {...register("product_details")}
+                      />
+                    </div>
+                    {errors.product_details && <p className={errCls}>{errors.product_details.message}</p>}
+                  </div>
                 )}
                 {showField("creative", "reference_image") && (
                   <div>

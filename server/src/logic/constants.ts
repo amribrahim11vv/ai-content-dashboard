@@ -31,6 +31,7 @@ export type SubmissionSnapshot = {
   competitors: string;
   audience_pain_point: string;
   visual_notes: string;
+  product_details: string;
   reference_image: string;
   campaign_duration: string;
   budget_level: string;

@@ -38,7 +38,7 @@ export default function SocialCampaignWizard() {
       stepFields={{
         audience: ["target_audience", "main_goal"],
         channels: ["platforms", "brand_tone"],
-        creative: ["visual_notes", "reference_image", "best_content_types"],
+        creative: ["visual_notes", "product_details", "reference_image", "best_content_types"],
       }}
       defaults={{
         campaign_mode: "social",

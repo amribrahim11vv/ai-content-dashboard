@@ -36,7 +36,7 @@ export default function OfferProductWizard() {
         creative: "الاتجاه الإبداعي (Creative Direction)",
       }}
       stepFields={{
-        offer: ["offer", "competitors"],
+        offer: ["offer", "competitors", "product_details"],
         audience: ["target_audience", "main_goal"],
         creative: ["visual_notes", "reference_image", "best_content_types"],
       }}

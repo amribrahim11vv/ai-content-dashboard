@@ -12,6 +12,7 @@ import {
   buildDiagnosticRulesBlock,
   buildFewShotGuidanceBlock,
   buildMetaPromptBlock,
+  buildProductAccuracyPolicyBlock,
   buildOutputPolicyBlock,
   buildVideoDirectorPolicyBlock,
   composePrompt,
@@ -123,13 +124,14 @@ describe("promptComposer", () => {
     expect(composed).toContain("Business links: https://example.com/alpha");
     expect(composed).toContain("Use `post_ar` and `post_en`");
     expect(composed).toContain("equivalent versions in meaning");
+    expect(composed).toContain("Product Accuracy Rules");
     expect(composed).toContain("DO NOT include Arabic typography");
     expect(composed).toContain("Video Director Rules");
     expect(composed).toContain("Treat all video prompts as cinematic direction");
   });
 
   it("output policy contains media caption constraints", () => {
-    const block = buildOutputPolicyBlock("social");
+    const block = buildOutputPolicyBlock("social", buildSubmissionSnapshot({}));
     expect(block).toContain("caption_ar");
     expect(block).toContain("caption_en");
     expect(block).toContain("diagnosis_plan");
@@ -143,6 +145,17 @@ describe("promptComposer", () => {
     expect(block).toContain("literal word-by-word translation");
     expect(block).toContain("localization_check_passed");
     expect(block).toContain("Ensure no text, no floating letters, no watermarks. Maintain strict physical consistency.");
+  });
+
+  it("output policy adds reference-image directive rules when reference_image present", () => {
+    const withRef = buildOutputPolicyBlock(
+      "social",
+      buildSubmissionSnapshot({ reference_image: "data:image/png;base64,abc" })
+    );
+    expect(withRef).toContain("[INSTRUCTION: USE ATTACHED IMAGE AS EXACT REFERENCE]");
+    expect(withRef).toContain("full_ai_image_prompt");
+    const withoutRef = buildOutputPolicyBlock("social", buildSubmissionSnapshot({ reference_image: "" }));
+    expect(withoutRef).not.toContain("[INSTRUCTION: USE ATTACHED IMAGE AS EXACT REFERENCE]");
   });
 
   it("video director policy enforces cinematic camera and motion control", () => {
@@ -164,6 +177,17 @@ describe("promptComposer", () => {
     expect(block).toContain("Requested image designs count: 5");
     expect(block).toContain("Requested video prompts count: 3");
     expect(block).toContain("Diagnostic context (JSON):");
+    expect(block).toContain("Detailed product/service facts:");
+  });
+
+  it("product accuracy block requires strict adherence when details provided", () => {
+    const block = buildProductAccuracyPolicyBlock(
+      buildSubmissionSnapshot({ product_details: "Black oversized cotton tee." })
+    );
+    expect(block).toContain("Black oversized cotton tee");
+    expect(block).toContain("DO NOT invent");
+    const empty = buildProductAccuracyPolicyBlock(buildSubmissionSnapshot({ product_details: "" }));
+    expect(empty).toContain("No dedicated");
   });
 
   it("diagnostic rules branch by followers and blocker", () => {

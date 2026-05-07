@@ -9,6 +9,7 @@ import { recordKitNotification } from "../logic/notifyKit.js";
 import { CONTENT_IDEAS_PACKAGE_KEY } from "../logic/packageConstants.js";
 import { shouldRunContentPackageChain } from "../logic/packageEnv.js";
 import { buildSubmissionSnapshot, briefFingerprint, isPlainObject, parseSubmissionSnapshotJson } from "../logic/parse.js";
+import { REFERENCE_IMAGE_PROMPT_PREFIX } from "../logic/promptComposer.js";
 import { resolvePrompt } from "../logic/promptResolver.js";
 import { normalizeDeliveryStatus } from "../logic/status.js";
 import { generateWithGuardrails } from "./aiGenerationProvider.js";
@@ -854,9 +855,11 @@ export async function regenerateKitItemService(input: {
     "",
     "Original full creative context:",
     resolved.renderedPrompt,
-    referenceImage
-      ? "A visual reference image is attached for this request. Preserve its visual style and color direction in the regenerated item."
-      : "No visual reference image is attached for this request.",
+    referenceImage && input.item_type === "image"
+      ? `CRITICAL: A reference image is attached. The regenerated item's \`full_ai_image_prompt\` MUST begin with exactly: ${REFERENCE_IMAGE_PROMPT_PREFIX} After that prefix, describe only environment, lighting, camera, composition, and interaction—do not verbally redescribe the product or logo that appears in the attachment.`
+      : referenceImage
+        ? "A visual reference image is attached for this request. Use brief and product facts for copy; do not invent product attributes beyond the brief."
+        : "No visual reference image is attached for this request.",
     "",
     "Current item to replace:",
     JSON.stringify(section.items[input.index], null, 2),

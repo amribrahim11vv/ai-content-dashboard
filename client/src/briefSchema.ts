@@ -37,6 +37,11 @@ export const briefSchema = z.object({
   competitors: z.string(),
   audience_pain_point: z.string().default(""),
   visual_notes: z.string(),
+  product_details: z
+    .string()
+    .trim()
+    .max(8000, { message: "Product details must be at most 8000 characters." })
+    .default(""),
   reference_image: z
     .string()
     .max(3_000_000, { message: "Reference image exceeds the maximum allowed size." })
@@ -165,7 +170,7 @@ export const STEP_FIELD_KEYS: readonly (readonly (keyof BriefForm)[])[] = [
   ["target_audience", "main_goal"],
   ["platforms", "brand_tone", "brand_colors"],
   ["offer", "competitors"],
-  ["visual_notes", "reference_image", "campaign_duration", "budget_level", "best_content_types"],
+  ["visual_notes", "product_details", "reference_image", "campaign_duration", "budget_level", "best_content_types"],
   ["include_content_package", "content_package_idea_count", "num_posts", "num_image_designs", "num_video_prompts"],
 ] as const;
 
@@ -187,6 +192,7 @@ export function initialBriefForm(): BriefForm {
     competitors: "",
     audience_pain_point: "",
     visual_notes: "",
+    product_details: "",
     reference_image: "",
     campaign_duration: "",
     budget_level: "",

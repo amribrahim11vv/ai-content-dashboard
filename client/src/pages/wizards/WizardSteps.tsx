@@ -439,6 +439,24 @@ export function OfferStep({ form, showField }: StepProps) {
           <div className={fieldShell}><textarea id="competitors" className={textareaCls} {...register("competitors")} /></div>
         </div>
       )}
+      {showField("offer", "product_details") && (
+        <div>
+          <label htmlFor="product_details_offer" className={labelCls} dir="rtl" lang="ar">
+            تفاصيل المنتج / الخدمة (اختياري بس مهم جداً)
+          </label>
+          <div className={fieldShell}>
+            <textarea
+              id="product_details_offer"
+              className={textareaCls}
+              dir="rtl"
+              lang="ar"
+              placeholder="اوصف منتجك بدقة شديدة (مثال: تيشيرت أوفر سايز أسود خامة قطن، أو كنبة مودرن قطيفة كحلي...)."
+              {...register("product_details")}
+            />
+          </div>
+          {errors.product_details && <p className={errCls}>{errors.product_details.message}</p>}
+        </div>
+      )}
     </div>
   );
 }
@@ -459,6 +477,24 @@ export function CreativeStep({ form, showField }: StepProps) {
           <label htmlFor="visual_notes" className={labelCls}>ملاحظات الديزاين والاتجاه الإبداعي</label>
           <div className={fieldShell}><textarea id="visual_notes" className={textareaCls} {...register("visual_notes")} /></div>
           {errors.visual_notes && <p className={errCls}>{errors.visual_notes.message}</p>}
+        </div>
+      )}
+      {showField("creative", "product_details") && (
+        <div>
+          <label htmlFor="product_details" className={labelCls} dir="rtl" lang="ar">
+            تفاصيل المنتج / الخدمة (اختياري بس مهم جداً)
+          </label>
+          <div className={fieldShell}>
+            <textarea
+              id="product_details"
+              className={textareaCls}
+              dir="rtl"
+              lang="ar"
+              placeholder="اوصف منتجك بدقة شديدة (مثال: تيشيرت أوفر سايز أسود خامة قطن، أو كنبة مودرن قطيفة كحلي...)."
+              {...register("product_details")}
+            />
+          </div>
+          {errors.product_details && <p className={errCls}>{errors.product_details.message}</p>}
         </div>
       )}
       {showField("creative", "reference_image") && (

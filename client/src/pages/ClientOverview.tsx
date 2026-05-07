@@ -90,6 +90,7 @@ function parseBrief(briefJson: string): BriefForm | null {
       competitors: typeof parsed.competitors === "string" ? parsed.competitors : "",
       audience_pain_point: typeof parsed.audience_pain_point === "string" ? parsed.audience_pain_point : "",
       visual_notes: typeof parsed.visual_notes === "string" ? parsed.visual_notes : "",
+      product_details: typeof parsed.product_details === "string" ? parsed.product_details : "",
       reference_image: typeof parsed.reference_image === "string" ? parsed.reference_image : "",
       campaign_duration: typeof parsed.campaign_duration === "string" ? parsed.campaign_duration : "",
       budget_level: typeof parsed.budget_level === "string" ? parsed.budget_level : "",

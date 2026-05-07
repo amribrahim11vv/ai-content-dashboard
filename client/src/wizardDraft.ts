@@ -25,6 +25,7 @@ const BRIEF_KEYS: (keyof BriefForm)[] = [
   "competitors",
   "audience_pain_point",
   "visual_notes",
+  "product_details",
   "reference_image",
   "campaign_duration",
   "budget_level",
@@ -67,6 +68,7 @@ export function isWizardDirty(form: BriefForm, step: number, limits: WizardLimit
     form.competitors.trim() ||
     form.audience_pain_point.trim() ||
     form.visual_notes.trim() ||
+    form.product_details.trim() ||
     form.reference_image?.trim() ||
     form.campaign_duration.trim() ||
     form.budget_level.trim() ||
@@ -101,6 +103,7 @@ export function parseWizardDraft(raw: string, limits: WizardLimits, maxStep: num
         if (k === "client_phone") continue;
         if (k === "client_email") continue;
         if (k === "source_mode") continue;
+        if (k === "product_details") continue;
         return null;
       }
     }
@@ -144,6 +147,7 @@ export function parseWizardDraft(raw: string, limits: WizardLimits, maxStep: num
       competitors: str(f.competitors),
       audience_pain_point: str(f.audience_pain_point),
       visual_notes: str(f.visual_notes),
+      product_details: str("product_details" in f ? f.product_details : ""),
       reference_image: str(f.reference_image),
       campaign_duration: str(f.campaign_duration),
       budget_level: str(f.budget_level),

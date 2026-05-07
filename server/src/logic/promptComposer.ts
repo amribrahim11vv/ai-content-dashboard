@@ -144,6 +144,7 @@ export function buildClientContextBlock(snapshot: SubmissionSnapshot): string {
     `Competitors: ${cleanText(snapshot.competitors)}`,
     `Audience pain point: ${cleanText(snapshot.audience_pain_point)}`,
     `Visual notes: ${cleanText(snapshot.visual_notes)}`,
+    `Detailed product/service facts: ${cleanText(snapshot.product_details) || "not_provided"}`,
     `Reference image attached: ${cleanText(snapshot.reference_image) ? "yes" : "no"}`,
     `Campaign duration/timing: ${cleanText(snapshot.campaign_duration)}`,
     `Budget level: ${cleanText(snapshot.budget_level)}`,
@@ -157,7 +158,40 @@ export function buildClientContextBlock(snapshot: SubmissionSnapshot): string {
   return lines.join("\n");
 }
 
-export function buildOutputPolicyBlock(mode: CampaignMode): string {
+export const REFERENCE_IMAGE_PROMPT_PREFIX = "[INSTRUCTION: USE ATTACHED IMAGE AS EXACT REFERENCE]";
+
+export function buildProductAccuracyPolicyBlock(snapshot: SubmissionSnapshot): string {
+  const details = cleanText(snapshot.product_details);
+  if (details) {
+    return [
+      "CRITICAL — product facts (zero hallucination):",
+      "The user provided the following detailed product/service description. Treat it as the only source of truth for specific product attributes (colors, materials, fit, shape, features, variants) in all social posts, captions, headlines, and supporting copy:",
+      "---",
+      details,
+      "---",
+      "You MUST strictly adhere to this description. DO NOT invent, hallucinate, or assume any product features, colors, materials, shapes, or specs that are not explicitly stated above or in other brief fields when describing the product itself.",
+      "If something is unspecified, keep copy at the brand/offer level or use neutral wording; do not fill gaps with invented product traits.",
+    ].join("\n");
+  }
+  return [
+    "Product facts: No dedicated `Detailed product/service facts` block was provided.",
+    "Do not invent specific physical product attributes (exact colors, materials, dimensions, model variants) in posts or captions unless they appear explicitly elsewhere in the brief (e.g. offer, visual notes, brand colors). Prefer brand- and offer-level messaging when product specifics are absent.",
+  ].join("\n");
+}
+
+export function buildOutputPolicyBlock(mode: CampaignMode, snapshot: SubmissionSnapshot): string {
+  const hasReferenceImage = Boolean(cleanText(snapshot.reference_image));
+  const referenceImageImagePromptRules = hasReferenceImage
+    ? [
+        "",
+        "CRITICAL — reference image + `image_designs[].full_ai_image_prompt`:",
+        `A reference image is attached. For EVERY item in \`image_designs\`, the field \`full_ai_image_prompt\` MUST begin with this exact string (including brackets): ${REFERENCE_IMAGE_PROMPT_PREFIX}`,
+        "After that prefix, describe ONLY the surrounding lifestyle environment, lighting, camera angle, composition, and how models or hands interact with the product—without verbally redescribing the product, logo, marks, silhouette, or colors that duplicate what is already in the attachment.",
+        "Do NOT paraphrase the reference (e.g. do not say 'a star-shaped logo'); the tool must use the attachment as the exact visual for the product or logo.",
+        "Product-specific wording in captions may still align with the brief and `Detailed product/service facts` when provided; keep `full_ai_image_prompt` directive-first as above.",
+      ].join("\n")
+    : "";
+
   return [
     "Return strict JSON matching the response schema exactly.",
     "Preserve response property order exactly as schema-defined (light fields first).",
@@ -181,6 +215,7 @@ export function buildOutputPolicyBlock(mode: CampaignMode): string {
     "Return `diagnosis_plan` object with keys: `quickWin24h`, `focus7d`, `priority`, `rationale`.",
     "Return `narrative_summary` as a short 2-4 line user-facing summary in Arabic.",
     `Campaign mode: ${mode}. Keep style aligned with this mode while preserving factual clarity.`,
+    referenceImageImagePromptRules,
   ].join("\n");
 }
 
@@ -218,7 +253,7 @@ export function buildMetaPromptBlock(snapshot: SubmissionSnapshot): string {
     `Reference image available: ${hasReferenceImage ? "yes" : "no"}`,
     "",
     hasReferenceImage
-      ? "You are given a visual reference image. Infer color palette, style language, and art direction, then apply it consistently in all generated outputs."
+      ? "A visual reference image is attached for this run. Use brief fields (including brand colors, tone, offer, and any detailed product/service facts) for strategy and copy. For image generation, do not substitute a verbal redescription of the attachment: follow Output Rules so each `image_designs[].full_ai_image_prompt` uses the required directive prefix and focuses on environment, lighting, and scene—while the attached image supplies exact product or logo appearance."
       : "No visual reference image was provided. Infer the visual identity from client context only.",
     "",
     "Apply the deduced strategy directly in the generated assets.",
@@ -309,7 +344,8 @@ export function composePrompt(input: {
     section("Few-shot Guidance", buildFewShotGuidanceBlock()),
     section("Diversity Rules", buildDiversityPolicyBlock(input.snapshot)),
     section("Video Director Rules", buildVideoDirectorPolicyBlock()),
-    section("Output Rules", buildOutputPolicyBlock(input.mode)),
+    section("Product Accuracy Rules", buildProductAccuracyPolicyBlock(input.snapshot)),
+    section("Output Rules", buildOutputPolicyBlock(input.mode, input.snapshot)),
   ]
     .map((x) => cleanText(x))
     .filter(Boolean);

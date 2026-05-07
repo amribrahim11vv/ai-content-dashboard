@@ -58,6 +58,8 @@ export type BriefForm = {
   competitors: string;
   audience_pain_point: string;
   visual_notes: string;
+  /** Optional locked product/service facts for copy and grounding (materials, colors, fit, etc.). */
+  product_details: string;
   reference_image?: string;
   campaign_duration: string;
   budget_level: string;
